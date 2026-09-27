@@ -1,0 +1,292 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Stock and price configuration for a product item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "barcode": { "type": "string" },
+        "category": { "type": "string" },
+        "priceUSD": { "type": "number" },
+        "priceLBP": { "type": "number" },
+        "quantity": { "type": "number" },
+        "warehouseQuantity": { "type": "number" },
+        "expiryDate": { "type": "string" },
+        "sku": { "type": "string" },
+        "priceWholesale": { "type": "number" },
+        "minWholesaleQty": { "type": "number" },
+        "costPriceUSD": { "type": "number" }
+      },
+      "required": ["id", "name", "barcode", "category", "priceUSD", "quantity", "expiryDate"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product hierarchy category with visual emoji",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "emoji": { "type": "string" }
+      },
+      "required": ["id", "name", "emoji"]
+    },
+    "InvoiceItem": {
+      "title": "InvoiceItem",
+      "description": "Sub-item list stored inside a Sales invoice document",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "priceUSD": { "type": "number" },
+        "quantity": { "type": "number" },
+        "totalUSD": { "type": "number" },
+        "priceType": { "type": "string", "enum": ["retail", "wholesale"] },
+        "discountApplied": { "type": "number" },
+        "promotionId": { "type": "string" }
+      },
+      "required": ["productId", "productName", "priceUSD", "quantity", "totalUSD"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Sales receipt invoice record from cash registers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotalUSD": { "type": "number" },
+        "discountUSD": { "type": "number" },
+        "totalUSD": { "type": "number" },
+        "totalLBP": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["cash", "card", "transfer", "debt"] },
+        "cashier": { "type": "string" },
+        "exchangeRate": { "type": "number" },
+        "paidAmountUSD": { "type": "number" },
+        "paidAmountLBP": { "type": "number" },
+        "changeAmountUSD": { "type": "number" },
+        "changeAmountLBP": { "type": "number" },
+        "barcode": { "type": "string" },
+        "saleType": { "type": "string", "enum": ["retail", "wholesale"] },
+        "hasReturn": { "type": "boolean" },
+        "returnRef": { "type": "string" },
+        "customerId": { "type": "string" }
+      },
+      "required": ["id", "invoiceNumber", "date", "time", "items", "subtotalUSD", "discountUSD", "totalUSD", "totalLBP", "paymentMethod", "cashier", "exchangeRate"]
+    },
+    "PurchaseItem": {
+      "title": "PurchaseItem",
+      "description": "Item specified in procurement supplier invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "qty": { "type": "number" },
+        "costPriceUSD": { "type": "number" },
+        "newPriceUSD": { "type": "number" },
+        "newPriceWholesale": { "type": "number" },
+        "expiryDate": { "type": "string" }
+      },
+      "required": ["id", "productId", "productName", "qty", "costPriceUSD", "newPriceUSD"]
+    },
+    "PurchaseInvoice": {
+      "title": "PurchaseInvoice",
+      "description": "Supplier purchase / procurement invoice details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "supplierName": { "type": "string" },
+        "date": { "type": "string" },
+        "items": { "type": "array" },
+        "totalAmountUSD": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["paid", "pending"] },
+        "note": { "type": "string" },
+        "destination": { "type": "string", "enum": ["shop", "warehouse"] },
+        "transportationCostUSD": { "type": "number" }
+      },
+      "required": ["id", "invoiceNumber", "supplierName", "date", "items", "totalAmountUSD", "paymentStatus"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer accounts, store credits and loyalty logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "type": { "type": "string", "enum": ["retail", "wholesale"] },
+        "loyaltyPoints": { "type": "number" },
+        "creditBalance": { "type": "number" },
+        "debtLimit": { "type": "number" }
+      },
+      "required": ["id", "name", "type", "loyaltyPoints", "creditBalance"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Wholesaler / logistics provider information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "companyName": { "type": "string" },
+        "debtBalance": { "type": "number" }
+      },
+      "required": ["id", "name", "debtBalance"]
+    },
+    "ExpenseRecord": {
+      "title": "ExpenseRecord",
+      "description": "Indirect expenses, overheads, rents, etc.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["rent", "electricity", "salaries", "generator", "other"] },
+        "amountUSD": { "type": "number" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "title", "category", "amountUSD", "date"]
+    },
+    "WasteRecord": {
+      "title": "WasteRecord",
+      "description": "Logged items lost/damaged",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "qty": { "type": "number" },
+        "type": { "type": "string", "enum": ["damage", "expired", "entry_error"] },
+        "reason": { "type": "string" },
+        "cost": { "type": "number" },
+        "estimatedLossUSD": { "type": "number" },
+        "compensationStatus": { "type": "string", "enum": ["loss", "compensated"] },
+        "date": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "required": ["id", "productId", "qty", "type", "cost", "date"]
+    },
+    "ReturnRecord": {
+      "title": "ReturnRecord",
+      "description": "Customer return records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceId": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "qty": { "type": "number" },
+        "reason": { "type": "string" },
+        "action": { "type": "string", "enum": ["cash", "swap", "credit"] },
+        "refundAmountUSD": { "type": "number" },
+        "refundMethod": { "type": "string", "enum": ["cash", "credit"] },
+        "customerId": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "invoiceId", "productId", "qty", "reason", "action", "date"]
+    },
+    "WarehouseTransfer": {
+      "title": "WarehouseTransfer",
+      "description": "Stock movement transfers between storage spaces",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "barcode": { "type": "string" },
+        "quantity": { "type": "number" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "required": ["id", "productId", "productName", "barcode", "quantity", "date", "time"]
+    },
+    "Promotion": {
+      "title": "Promotion",
+      "description": "Promotional rules and point campaigns",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["percentage", "bxgy", "bundle"] },
+        "value": { "type": "number" },
+        "buyX": { "type": "number" },
+        "getY": { "type": "number" },
+        "daysOfWeek": { "type": "array" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "type", "value", "daysOfWeek", "startDate", "endDate", "active"]
+    },
+    "SystemSettings": {
+      "title": "SystemSettings",
+      "description": "Operational settings and exchange indices",
+      "type": "object",
+      "properties": {
+        "shopName": { "type": "string" },
+        "exchangeRate": { "type": "number" },
+        "lowStockThreshold": { "type": "number" },
+        "expiryAlertDays": { "type": "number" },
+        "receiptFooter": { "type": "string" },
+        "defaultMarginPercent": { "type": "number" }
+      },
+      "required": ["shopName", "exchangeRate", "lowStockThreshold", "expiryAlertDays", "receiptFooter"]
+    }
+  },
+  "firestore": {
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Available items and metadata in retail/secondary stock"
+    },
+    "categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Visual department directories"
+    },
+    "invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Customer store checkouts and point-of-sale registers"
+    },
+    "purchaseInvoices/{purchaseInvoiceId}": {
+      "schema": "PurchaseInvoice",
+      "description": "Supplements logs and supplier bills"
+    },
+    "customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Customer balances, memberships, and late payments/debts"
+    },
+    "suppliers/{supplierId}": {
+      "schema": "Supplier",
+      "description": "Information about distribution centers and partners"
+    },
+    "expenses/{expenseId}": {
+      "schema": "ExpenseRecord",
+      "description": "Business expense bills"
+    },
+    "wasteRecords/{wasteId}": {
+      "schema": "WasteRecord",
+      "description": "Damage report ledgers"
+    },
+    "returns/{returnId}": {
+      "schema": "ReturnRecord",
+      "description": "Returned checkouts ledger"
+    },
+    "warehouseTransfers/{transferId}": {
+      "schema": "WarehouseTransfer",
+      "description": "Inventory transfer registers"
+    },
+    "promotions/{promotionId}": {
+      "schema": "Promotion",
+      "description": "Current system discount rates and offers"
+    },
+    "settings/{settingId}": {
+      "schema": "SystemSettings",
+      "description": "Common variables for conversion indices and thresholds"
+    }
+  }
+}

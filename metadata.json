@@ -1,0 +1,6 @@
+{
+  "name": "نظام مبيعات السوبرماركت المطور",
+  "description": "نظام نقطة بيع متكامل (POS) للمحلات والسوبرماركت يدعم تعدد العملات (دولار وليرة لبنانية)، إدارة المخزون والمبيعات، جرد المخزن، وتنبيهات الصلاحية، مع إمكانية عرض وتنزيل كود Python + SQLite للتشغيل المكتبي.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
