@@ -81,6 +81,7 @@ import { UsersTab } from './features/users/UsersTab';
 import { StockCountTab } from './features/stock-count/StockCountTab';
 import * as storage from './lib/storage';
 import { useResizableColumns } from './hooks/useResizableColumns';
+import { useToday, toISODate, addDays } from './lib/date';
 import { PurchasesTab } from './components/PurchasesTab';
 import { WarehouseTab } from './components/WarehouseTab';
 import { FirebaseSyncTab } from './components/FirebaseSyncTab';
@@ -90,7 +91,6 @@ import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 import { ColumnSelector } from './components/ColumnSelector';
 
 // System operational date base
-const SYS_DATE = "2026-05-29";
 
 // Helper to generate a procedural 1D barcode pattern
 function generateBarcodePattern(barcodeStr: string): string[] {
@@ -493,6 +493,9 @@ const menuItems = [
 ];
 
 export default function App() {
+  // Today's date (YYYY-MM-DD, local time); rolls over at midnight
+  const SYS_DATE = useToday();
+
   // --- FIREBASE LIVE SYNC WRITE-THROUGH HELPER ---
   const syncWriteToCloud = async (collectionName: string, docId: string, data: any, isDelete: boolean = false) => {
     if (!auth.currentUser) return;
@@ -2377,7 +2380,7 @@ export default function App() {
   const [promoName, setPromoName] = useState<string>(''); 
   const [promoBarcode, setPromoBarcode] = useState<string>('');
   const [promoStartDate, setPromoStartDate] = useState<string>(SYS_DATE);
-  const [promoEndDate, setPromoEndDate] = useState<string>("2026-06-30");
+  const [promoEndDate, setPromoEndDate] = useState<string>(() => toISODate(addDays(new Date(), 30)));
   const [bundleProductsList, setBundleProductsList] = useState<Array<{ productId: string; quantity: number }>>([]);
   const [bundleTempProductId, setBundleTempProductId] = useState<string>('');
   const [bundleTempQty, setBundleTempQty] = useState<string>('1');
@@ -3996,11 +3999,11 @@ export default function App() {
     }
     
     const now = new Date();
-    const startDateStr = now.toISOString().split('T')[0];
+    const startDateStr = toISODate(now);
     
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + durationDays);
-    const endDateStr = endDate.toISOString().split('T')[0];
+    const endDateStr = toISODate(endDate);
     
     const newPromo: Promotion = {
       id: `promo-${Date.now()}`,

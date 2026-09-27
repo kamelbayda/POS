@@ -4,6 +4,7 @@
  */
 
 import { Product, Category, SystemSettings, User, Invoice, Customer, Promotion, ExpenseRecord, Supplier } from './types';
+import { toISODate, parseISODate } from './lib/date';
 
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'dairy', name: 'ألبان وأجبان', emoji: '🥛' },
@@ -94,19 +95,19 @@ export const DEFAULT_EXPENSES: ExpenseRecord[] = [
 ];
 
 export const getSeededProducts = (currentDateStr: string): Product[] => {
-  const current = new Date(currentDateStr);
+  const current = parseISODate(currentDateStr);
   
   // Format helpers
   const addDays = (d: Date, days: number): string => {
     const copy = new Date(d);
     copy.setDate(copy.getDate() + days);
-    return copy.toISOString().split('T')[0];
+    return toISODate(copy);
   };
 
   const subDays = (d: Date, days: number): string => {
     const copy = new Date(d);
     copy.setDate(copy.getDate() - days);
-    return copy.toISOString().split('T')[0];
+    return toISODate(copy);
   };
 
   return [
@@ -258,11 +259,11 @@ export const getSeededProducts = (currentDateStr: string): Product[] => {
 };
 
 export const getSeededInvoices = (currentDateStr: string): Invoice[] => {
-  const current = new Date(currentDateStr);
+  const current = parseISODate(currentDateStr);
   const formatDate = (offset: number) => {
     const d = new Date(current);
     d.setDate(d.getDate() - offset);
-    return d.toISOString().split('T')[0];
+    return toISODate(d);
   };
 
   return [
