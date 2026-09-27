@@ -257,3 +257,12 @@ export interface WarehouseTransfer {
   note?: string;
 }
 
+
+/** A product with the derived expiry / sales-activity flags computed in App.tsx. */
+export interface ProcessedProduct extends Product {
+  isExpired: boolean;
+  isNearExpiry: boolean;
+  lastSoldDate: string | null;
+  daysSinceLastSale: number | null;
+  isStagnant: boolean;
+}
