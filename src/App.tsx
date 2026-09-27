@@ -85,6 +85,10 @@ import { PriceLabelsTab } from './features/price-labels/PriceLabelsTab';
 import { InventoryTab } from './features/inventory/InventoryTab';
 import { ReportsTab } from './features/reports/ReportsTab';
 import { SettingsTab } from './features/settings/SettingsTab';
+import { AdminOnlyNotice } from './components/AdminOnlyNotice';
+import { VirtualKeyboard } from './components/VirtualKeyboard';
+import { LoginScreen } from './screens/LoginScreen';
+import { LockScreen } from './screens/LockScreen';
 import { PrintReportModal } from './modals/PrintReportModal';
 import { BarcodeLabelModal } from './modals/BarcodeLabelModal';
 import { SetupWizardModal } from './modals/SetupWizardModal';
@@ -3284,497 +3288,40 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
     .sort((a, b) => b.qty - a.qty)
     .slice(0, 5);
 
-  const [keyboardLanguage, setKeyboardLanguage] = useState<'ar' | 'en' | 'num'>('ar');
 
   const renderVirtualKeyboard = () => {
-    if (!isBarcodeKeyboardOpen) return null;
-    
-    const appendChar = (char: string) => {
-      if (keyboardTarget === 'barcode') {
-        setBarcodeInput(prev => prev + char);
-      } else {
-        setSearchQuery(prev => {
-          const res = prev + char;
-          setTerminalProductPage(0);
-          return res;
-        });
-      }
-    };
-    
-    const handleBackspace = () => {
-      if (keyboardTarget === 'barcode') {
-        setBarcodeInput(prev => prev.slice(0, -1));
-      } else {
-        setSearchQuery(prev => {
-          const res = prev.slice(0, -1);
-          setTerminalProductPage(0);
-          return res;
-        });
-      }
-    };
-    
-    const handleClear = () => {
-      if (keyboardTarget === 'barcode') {
-        setBarcodeInput('');
-      } else {
-        setSearchQuery('');
-        setTerminalProductPage(0);
-      }
-    };
-
-    const handleEnter = () => {
-      if (keyboardTarget === 'barcode') {
-        handleBarcodeSubmit(new Event('submit') as any);
-      }
-      setIsBarcodeKeyboardOpen(false);
-    };
-
-    const numbersRow = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '*'];
-    
-    const arKeys = [
-      ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج', 'د'],
-      ['ش', 'س', 'ي', 'ب', 'ل', 'ت', 'ن', 'م', 'ك', 'ط', 'ذ', 'أ'],
-      ['ئ', 'ء', 'ؤ', 'ر', 'لا', 'ى', 'ة', 'و', 'ز', 'ظ', 'إ', 'آ']
-    ];
-    
-    const enKeys = [
-      ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']'],
-      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'", '\\'],
-      ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', '@', '_']
-    ];
-
-    const currentRows = keyboardLanguage === 'ar' ? arKeys : enKeys;
-
     return (
-      <div className={`p-4 rounded-2xl border transition shadow-lg w-full text-right select-none ${
-        theme === 'dark' ? 'bg-[#1C1C1E] border-stone-850 text-white' : 'bg-slate-50 border-slate-200 text-slate-820'
-      }`}>
-        <div className="flex items-center justify-between border-b pb-2 mb-3 border-slate-200 dark:border-stone-800">
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => setIsBarcodeKeyboardOpen(false)}
-              className="text-[10px] bg-slate-200 hover:bg-slate-300 dark:bg-stone-800 dark:hover:bg-stone-700 px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 dark:text-stone-300 dark:hover:text-white font-extrabold cursor-pointer transition-all"
-            >
-              إغلاق ×
-            </button>
-            <span className="text-[10px] bg-[#1D9E75]/10 text-[#1D9E75] px-2 py-0.5 rounded-full font-bold font-sans">
-              {keyboardTarget === 'barcode' ? 'مستهدف: حقل الباركود 📟' : 'مستهدف: مربع البحث الفوري 🔍'}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-1.5 flex-row-reverse">
-            <span className="text-xs font-black font-sans flex items-center gap-1">
-              <span>لوحة المفاتيح الافتراضية المدمجة</span>
-              <span>⌨️</span>
-            </span>
-            <div className="flex bg-slate-200 dark:bg-stone-900 rounded-xl p-0.5 text-[10px] font-bold">
-              <button
-                onClick={() => setKeyboardLanguage('ar')}
-                className={`px-3 py-1 rounded-lg transition cursor-pointer ${keyboardLanguage === 'ar' ? 'bg-[#1D9E75] text-white font-black shadow-xs' : 'text-slate-400'}`}
-              >
-                عربي
-              </button>
-              <button
-                onClick={() => setKeyboardLanguage('en')}
-                className={`px-3 py-1 rounded-lg transition cursor-pointer ${keyboardLanguage === 'en' ? 'bg-[#1D9E75] text-white font-black shadow-xs' : 'text-slate-400'}`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setKeyboardLanguage('num')}
-                className={`px-3 py-1 rounded-lg transition cursor-pointer ${keyboardLanguage === 'num' ? 'bg-[#1D9E75] text-white font-black shadow-xs' : 'text-slate-400'}`}
-              >
-                123 فقط
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {keyboardLanguage === 'num' ? (
-          /* Numpad Grid */
-          <div className="grid grid-cols-4 gap-2 max-w-sm mx-auto p-2" dir="ltr">
-            {['7', '8', '9', 'Backspace'].map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => k === 'Backspace' ? handleBackspace() : appendChar(k)}
-                className={`h-11 rounded-xl text-sm font-black transition cursor-pointer flex items-center justify-center ${
-                  k === 'Backspace' 
-                    ? 'bg-amber-500 hover:bg-amber-600 text-white col-span-1 shadow-xs' 
-                    : theme === 'dark' ? 'bg-stone-800 hover:bg-stone-700 text-stone-100' : 'bg-white hover:bg-slate-100 text-slate-800 shadow-xs border border-slate-200'
-                }`}
-              >
-                {k === 'Backspace' ? '←' : k}
-              </button>
-            ))}
-            {['4', '5', '6', 'Clear'].map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => k === 'Clear' ? handleClear() : appendChar(k)}
-                className={`h-11 rounded-xl text-sm font-black transition cursor-pointer flex items-center justify-center ${
-                  k === 'Clear' 
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white col-span-1 shadow-xs' 
-                    : theme === 'dark' ? 'bg-stone-800 hover:bg-stone-700 text-stone-100' : 'bg-white hover:bg-slate-100 text-slate-800 shadow-xs border border-slate-200'
-                }`}
-              >
-                {k === 'Clear' ? 'C' : k}
-              </button>
-            ))}
-            {['1', '2', '3', 'Enter'].map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => k === 'Enter' ? handleEnter() : appendChar(k)}
-                className={`h-11 rounded-xl text-sm font-black transition cursor-pointer flex items-center justify-center ${
-                  k === 'Enter' 
-                    ? 'bg-[#1D9E75] hover:bg-[#15805e] text-white col-span-1 row-span-2 h-[96px] shadow-xs' 
-                    : theme === 'dark' ? 'bg-stone-800 hover:bg-stone-700 text-stone-100' : 'bg-white hover:bg-slate-100 text-slate-800 shadow-xs border border-slate-200'
-                }`}
-              >
-                {k === 'Enter' ? 'Enter' : k}
-              </button>
-            ))}
-            {['0', '.', '-'].map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => appendChar(k)}
-                className={`h-11 rounded-xl text-sm font-black transition cursor-pointer flex items-center justify-center ${
-                  theme === 'dark' ? 'bg-stone-800 hover:bg-stone-700 text-stone-100' : 'bg-white hover:bg-slate-100 text-slate-800 shadow-xs border border-slate-200'
-                }`}
-              >
-                {k}
-              </button>
-            ))}
-          </div>
-        ) : (
-          /* Full Text Layout */
-          <div className="space-y-2 flex flex-col items-center" dir={keyboardLanguage === 'ar' ? 'rtl' : 'ltr'}>
-            <div className="flex gap-1.5 w-full justify-center">
-              {numbersRow.map(num => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => appendChar(num)}
-                  className={`flex-1 h-10 min-w-[28px] max-w-[45px] rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                    theme === 'dark' 
-                      ? 'bg-stone-800 hover:bg-stone-700 text-white' 
-                      : 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-150'
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-
-            {currentRows.map((row, rowIdx) => (
-              <div key={rowIdx} className="flex gap-1 w-full justify-center">
-                {row.map(char => (
-                  <button
-                    key={char}
-                    type="button"
-                    onClick={() => appendChar(char)}
-                    className={`flex-1 h-10 min-w-[28px] max-w-[45px] rounded-xl text-xs font-bold transition cursor-pointer ${
-                      theme === 'dark' 
-                        ? 'bg-stone-800 hover:bg-stone-750 text-white' 
-                        : 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-xs'
-                    }`}
-                  >
-                    {char}
-                  </button>
-                ))}
-              </div>
-            ))}
-
-            <div className="flex gap-1.5 w-full justify-center">
-              <button
-                onClick={handleClear}
-                type="button"
-                className="px-3 h-10 rounded-xl text-xs font-black bg-rose-500 hover:bg-rose-600 text-white transition cursor-pointer shrink-0"
-              >
-                مسح الكل
-              </button>
-              <button
-                onClick={handleBackspace}
-                type="button"
-                className="px-4 h-10 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white transition cursor-pointer shrink-0"
-              >
-                مسح
-              </button>
-              <button
-                onClick={() => appendChar(' ')}
-                type="button"
-                className={`flex-1 h-10 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  theme === 'dark' 
-                    ? 'bg-stone-700 hover:bg-stone-600 text-white' 
-                    : 'bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300'
-                }`}
-              >
-                مــســافــة
-              </button>
-              <button
-                onClick={handleEnter}
-                type="button"
-                className="px-5 h-10 rounded-xl text-xs font-extrabold bg-[#1D9E75] hover:bg-emerald-600 text-white transition cursor-pointer shrink-0"
-              >
-                تأكيد
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <VirtualKeyboard
+        setBarcodeInput={setBarcodeInput}
+        setSearchQuery={setSearchQuery}
+        isBarcodeKeyboardOpen={isBarcodeKeyboardOpen}
+        setIsBarcodeKeyboardOpen={setIsBarcodeKeyboardOpen}
+        keyboardTarget={keyboardTarget}
+        theme={theme}
+        setTerminalProductPage={setTerminalProductPage}
+        handleBarcodeSubmit={handleBarcodeSubmit}
+      />
     );
   };
 
   // Render role lockout screens for cashiers
-  const renderAdminLockScreen = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center max-w-lg mx-auto my-12" id="admin-lock">
-      <div className="bg-amber-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-        <Lock className="text-amber-600 w-10 h-10" />
-      </div>
-      <h3 className="text-xl font-bold text-slate-800 mb-3 font-sans">صفحة مغلقة ومخصصة للمدير</h3>
-      <p className="text-slate-500 leading-relaxed mb-6">
-        عفواً يا {currentUser?.name}! صلاحية حسابك الحالي هي (كاشير). لا يمكنك تعديل جرد المستودع، الإعدادات، أو الإيرادات والتقارير المالية بالنظام.
-      </p>
-      <div className="text-xs text-slate-400 bg-slate-50 rounded-lg p-3 inline-block">
-        يرجى تسجيل الخروج والولوج بحساب <span className="font-mono font-bold text-slate-600">admin</span> لرؤية هذه المعلومات.
-      </div>
-    </div>
-  );
-
   // PRESTIGIOUS INTEGRATED SALES LOCK SCREEN
   const renderLockScreen = () => {
-    if (!currentUser) return null;
-
-    // Daily stats filtered strictly for current cashier context
-    const todayInvoices = invoices.filter(inv => inv.cashier === currentUser.name && inv.date === SYS_DATE);
-    const invoiceCount = todayInvoices.length;
-    const totalSalesUSD = todayInvoices.reduce((sum, inv) => sum + inv.totalUSD, 0);
-    const totalSalesLBP = todayInvoices.reduce((sum, inv) => sum + inv.totalLBP, 0);
-
-    const initials = currentUser.name.split(' ').map(n => n ? n[0] : '').join('').slice(0, 2).toUpperCase();
-
     return (
-      <div 
-        className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden font-sans select-none"
-        id="lock-screen-container"
-      >
-        {/* Glowing backdrop ambient orbs */}
-        <div className="absolute top-1/4 -left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl opacity-30" />
-        <div className="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl opacity-30" />
-        
-        <div className="w-full max-w-4xl bg-slate-900/60 border border-white/5 rounded-[32px] shadow-2xl backdrop-blur-xl overflow-hidden relative z-10 grid grid-cols-1 md:grid-cols-12 animate-fade-in">
-          {/* LEFT COLUMN: Date, Ticking Clock, Active cashier profile details, and Shift metrics */}
-          <div className="md:col-span-12 lg:col-span-5 bg-gradient-to-b from-slate-900/40 to-slate-950/40 p-8 border-b lg:border-b-0 lg:border-l border-white/5 flex flex-col justify-between gap-8 text-right">
-            
-            {/* Live Ticking Clock segment */}
-            <LockScreenClock lang={lang} />
-
-            {/* Active Cashier context card & shift performance statistics */}
-            <div className="space-y-6">
-              
-              {/* Cashier profile block */}
-              <div className="flex items-center gap-3.5 flex-row-reverse">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center font-black text-emerald-400 text-lg shadow-inner">
-                  {initials || 'POS'}
-                </div>
-                <div className="space-y-0.5">
-                  <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    {lang === 'ar' ? 'المستخدم النشط حالياً' : 'Active cashier on terminal'}
-                  </span>
-                  <h3 className="text-base font-black text-white leading-tight">{currentUser.name}</h3>
-                  <span className={`inline-block text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
-                    currentUser.role === 'admin' 
-                      ? 'bg-amber-400/20 text-amber-400 border border-amber-400/30' 
-                      : 'bg-emerald-400/20 text-emerald-400 border border-emerald-400/30'
-                  }`}>
-                    {currentUser.role === 'admin' ? (lang === 'ar' ? 'المدير العام' : 'Admin Mode') : (lang === 'ar' ? 'كاشير مبيعات' : 'Cashier Mode')}
-                  </span>
-                </div>
-              </div>
-
-              {/* Dynamic shift metrics */}
-              <div className="space-y-3 pt-3 border-t border-white/5">
-                <h4 className="text-xs font-bold text-slate-400 flex items-center gap-1 flex-row-reverse">
-                  <span>📈 {lang === 'ar' ? 'موجز الوردية الحالية وبطاقة الأداء:' : 'Session statistics & workflow details'}</span>
-                </h4>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center space-y-0.5">
-                    <span className="text-[10px] text-slate-400 font-bold block">
-                      {lang === 'ar' ? 'الفواتير الصادرة' : 'Invoices emitted'}
-                    </span>
-                    <span className="font-mono text-lg font-black text-white">
-                      {invoiceCount}
-                    </span>
-                  </div>
-                  
-                  <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center space-y-0.5">
-                    <span className="text-[10px] text-slate-400 font-bold block">
-                      {lang === 'ar' ? 'إجمالي المدخول' : 'Session gross'}
-                    </span>
-                    <span className="font-mono text-lg font-black text-emerald-400">
-                      ${totalSalesUSD.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-white/5 border border-white/5 rounded-xl p-3 flex justify-between items-center text-sm flex-row-reverse">
-                  <span className="text-slate-400 text-xs font-bold">
-                    {lang === 'ar' ? 'المدخول بالعملة المحلية:' : 'LBP Exchange Sum:'}
-                  </span>
-                  <span className="font-mono font-black text-slate-200">
-                    {totalSalesLBP.toLocaleString()} ل.ل
-                  </span>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Hint message explaining capabilities */}
-            <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-xs text-slate-400 leading-relaxed hidden lg:block">
-              💡 {lang === 'ar' 
-                ? 'الشاشة مقفلة بوضع الأمان لحفظ سرية المبيعات والمشتريات. يمكنك استخدام لوحة المفاتيح والضغط على Enter بعد كتابة الرمز مباشرة.' 
-                : 'Locked for security. You can type credentials on physical keyboard and press Enter to directly unlock.'}
-            </div>
-
-          </div>
-
-          {/* RIGHT COLUMN: Keypad passcode dialer */}
-          <div className="md:col-span-12 lg:col-span-7 p-8 flex flex-col justify-center items-center text-center">
-            
-            {/* Icon lock header block */}
-            <motion.div 
-              animate={isLockShaking ? { x: [-10, 10, -10, 10, -5, 5, 0] } : {}}
-              transition={{ duration: 0.4 }}
-              className="flex flex-col items-center"
-            >
-              <div className="bg-emerald-500/10 w-16 h-16 rounded-3xl flex items-center justify-center border border-emerald-500/20 mb-3 shadow-xl shadow-emerald-500/5">
-                <Lock className="text-emerald-400 w-7 h-7" />
-              </div>
-              <h2 className="text-xl font-bold tracking-tight text-white mb-2">
-                {lang === 'ar' ? 'تأمين شاشة نقطة البيع' : 'Supermarket Terminal Locked'}
-              </h2>
-              <p className="text-slate-400 text-xs mb-4">
-                {lang === 'ar' ? 'أدخل كلمة المرور أو الباسكود لاستئناف المبيعات' : 'Enter your password or passcode to resume sales'}
-              </p>
-            </motion.div>
-
-            {/* Security Interface Panel */}
-            <div className="w-full max-w-xs space-y-4">
-              
-              {/* Floating pin dots indicators */}
-              <div className="flex gap-2.5 justify-center py-1">
-                {Array.from({ length: Math.max(4, lockPasscode.length) }).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
-                      i < lockPasscode.length 
-                        ? 'bg-emerald-400 scale-110 shadow-lg shadow-emerald-500/50' 
-                        : 'bg-white/10 border border-white/5'
-                    }`} 
-                  />
-                ))}
-              </div>
-
-              {/* Password visual masked screen string input display */}
-              <div className="relative">
-                <input 
-                  type="password"
-                  readOnly
-                  value={lockPasscode}
-                  placeholder={lang === 'ar' ? '••••••••' : '••••••••'}
-                  className={`w-full bg-white/5 border text-center text-xl font-bold py-3.5 px-4 rounded-2xl text-white ltr:font-mono focus:outline-none transition-all duration-300 ${
-                    lockError ? 'border-red-500 bg-red-500/5' : 'border-white/10'
-                  }`}
-                />
-                {lockPasscode && (
-                  <button
-                    type="button"
-                    onClick={() => setLockPasscode('')}
-                    className="absolute left-3.5 top-3.5 text-slate-400 hover:text-white transition duration-150 cursor-pointer"
-                    title={lang === 'ar' ? 'إعادة تعيين' : 'Clear'}
-                  >
-                    <X className="w-5 h-5 opacity-60 hover:opacity-100" />
-                  </button>
-                )}
-              </div>
-
-              {/* Error messages feedback overlay */}
-              <AnimatePresence>
-                {lockError && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-red-400 text-xs font-bold bg-red-500/10 border border-red-500/20 py-1.5 px-3 rounded-xl block text-center"
-                  >
-                    ⚠️ {lockError}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Keypad selector blocks */}
-              <div className="grid grid-cols-3 gap-2.5 max-w-[270px] mx-auto pt-1">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map(key => {
-                  const isAction = key === 'C' || key === '⌫';
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        if (key === 'C') {
-                          setLockPasscode('');
-                          setLockError('');
-                        } else if (key === '⌫') {
-                          setLockPasscode(prev => prev.slice(0, -1));
-                          setLockError('');
-                        } else {
-                          setLockPasscode(prev => prev + key);
-                          setLockError('');
-                        }
-                      }}
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold transition-all duration-100 cursor-pointer ${
-                        isAction 
-                          ? 'bg-white/10 hover:bg-white/15 text-slate-200 active:scale-95' 
-                          : 'bg-white/5 hover:bg-white/10 border border-white/5 text-white active:bg-[#1D9E75]/20 active:scale-95'
-                      }`}
-                    >
-                      {key}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Controls triggers */}
-              <div className="flex gap-2.5 pt-4">
-                <button
-                  type="button"
-                  onClick={handleUnlock}
-                  className="flex-1 bg-[#1D9E75] hover:bg-[#15805e] border border-emerald-500/20 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-[0.98] cursor-pointer text-sm font-sans"
-                >
-                  {lang === 'ar' ? 'فتح الشاشة 🔓' : 'Unlock Screen 🔓'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsScreenLocked(false);
-                    localStorage.setItem('pos_screen_locked', 'false');
-                    handleLogout();
-                  }}
-                  className="bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-350 hover:text-rose-400 font-bold py-3.5 px-3 rounded-xl transition duration-150 active:scale-[0.98] cursor-pointer text-xs flex items-center justify-center gap-1"
-                  title={lang === 'ar' ? 'الخروج والتبديل لحساب آخر' : 'Logout of account'}
-                >
-                  <span>{lang === 'ar' ? 'تبديل المستخدم' : 'Switch Operator'}</span>
-                </button>
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      </div>
+      <LockScreen
+        SYS_DATE={SYS_DATE}
+        lang={lang}
+        invoices={invoices}
+        currentUser={currentUser}
+        setIsScreenLocked={setIsScreenLocked}
+        lockPasscode={lockPasscode}
+        setLockPasscode={setLockPasscode}
+        lockError={lockError}
+        setLockError={setLockError}
+        isLockShaking={isLockShaking}
+        handleUnlock={handleUnlock}
+        handleLogout={handleLogout}
+      />
     );
   };
 
@@ -3786,106 +3333,17 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
   // IF NOT LOGGED IN, SHOW BEAUTIFUL LOGIN SCREEN
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-tr from-emerald-50 via-slate-50 to-emerald-100/30 flex items-center justify-center p-4" id="login-screen">
-        <div className="bg-white rounded-3xl ltr:shadow-2xl shadow-emerald-950/5 border border-slate-100 w-full max-w-md overflow-hidden animate-fade-in">
-          {/* Brand header */}
-          <div className="bg-[#1D9E75] p-8 text-center text-white relative">
-            <div className="absolute top-4 right-4 bg-white/10 text-xs px-2 py-1 rounded backdrop-blur-sm font-mono">
-              {lang === 'ar' ? 'التوقيت اليومي' : 'System Time'}: {SYS_DATE}
-            </div>
-            
-            {/* Language switcher button flag */}
-            <button 
-              type="button"
-              onClick={handleToggleLang}
-              className="absolute top-4 left-4 bg-white/10 hover:bg-white/20 text-xs px-2.5 py-1 rounded backdrop-blur-sm font-bold flex items-center gap-1 transition cursor-pointer"
-            >
-              <Globe className="w-3 h-3" />
-              <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
-            </button>
-
-            <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
-              <ShoppingCart className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold font-sans tracking-tight">
-              {lang === 'ar' ? 'نظام مبيعات السوبرماركت المطور' : 'Advanced Supermarket POS System'}
-            </h1>
-            <p className="text-emerald-100 text-sm mt-1">
-              {lang === 'ar' ? 'بوابتك لإدارة البيع، المخزون والجرد بكفاءة' : 'Your gateway for sales, inventory, and stock auditing'}
-            </p>
-          </div>
-
-          <form onSubmit={handleLogin} className="p-8 space-y-5 text-right">
-            {loginError && (
-              <div className="bg-rose-50 border border-rose-100 text-rose-600 text-sm p-4 rounded-xl flex items-start gap-2 text-right">
-                <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
-                <span>{loginError}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-slate-700 font-bold mb-1.5 text-sm text-right" htmlFor="username">
-                {lang === 'ar' ? 'اسم المستخدم' : 'Username'}
-              </label>
-              <div className="relative">
-                <input 
-                  id="username"
-                  type="text" 
-                  value={loginUsername}
-                  onChange={e => setLoginUsername(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-right focus:outline-none focus:ring-2 focus:ring-[#1D9E75] focus:bg-white transition"
-                  placeholder={lang === 'ar' ? 'مثال: admin' : 'e.g., admin'}
-                  required
-                />
-                <User className="absolute left-3.5 top-3.5 text-slate-400 w-5 h-5" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-slate-700 font-bold mb-1.5 text-sm text-right" htmlFor="password">
-                {lang === 'ar' ? 'كلمة المرور' : 'Password'}
-              </label>
-              <div className="relative">
-                <input 
-                  id="password"
-                  type="password" 
-                  value={loginPassword}
-                  onChange={e => setLoginPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-right ltr:font-mono focus:outline-none focus:ring-2 focus:ring-[#1D9E75] focus:bg-white transition"
-                  placeholder="••••••••"
-                  required
-                />
-                <Lock className="absolute left-3.5 top-3.5 text-slate-400 w-5 h-5" />
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              className="w-full bg-[#1D9E75] hover:bg-[#15805e] text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-700/10 hover:shadow-emerald-700/20 active:scale-[0.98] cursor-pointer"
-            >
-              {lang === 'ar' ? 'دخول للنظام 🔓' : 'Login to System 🔓'}
-            </button>
-
-            <div className="bg-slate-50 rounded-xl p-4 text-xs text-slate-500 space-y-1 border border-slate-100 text-right">
-              <div className="font-bold text-slate-700 mb-1">
-                {lang === 'ar' ? '💡 مستندات الدخول الافتراضية للتجربة:' : '💡 Experience Default Login Accounts:'}
-              </div>
-              <div>
-                {lang === 'ar' ? '• حساب المدير: ' : '• Admin Mode: '}
-                <span className="font-mono bg-slate-200 px-1 rounded text-red-700">admin</span>
-                {lang === 'ar' ? ' كلمة السر: ' : ' pass: '}
-                <span className="font-mono bg-slate-200 px-1 rounded text-red-700">admin123</span>
-              </div>
-              <div>
-                {lang === 'ar' ? '• حساب الكاشير: ' : '• Cashier Mode: '}
-                <span className="font-mono bg-slate-200 px-1 rounded text-red-700">kaseer</span>
-                {lang === 'ar' ? ' كلمة السر: ' : ' pass: '}
-                <span className="font-mono bg-slate-200 px-1 rounded text-red-700">1234</span>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
+      <LoginScreen
+        SYS_DATE={SYS_DATE}
+        lang={lang}
+        handleToggleLang={handleToggleLang}
+        loginUsername={loginUsername}
+        setLoginUsername={setLoginUsername}
+        loginPassword={loginPassword}
+        setLoginPassword={setLoginPassword}
+        loginError={loginError}
+        handleLogin={handleLogin}
+      />
     );
   }
 
@@ -6695,7 +6153,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               TAB EXTENSION C: PROCUREMENT & PURCHASES (🛒)
               ========================================== */}
           {activeTab === 'purchases' && (
-            (currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? renderAdminLockScreen() : (
+            (currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? <AdminOnlyNotice userName={currentUser?.name} /> : (
               <PurchasesTab 
                 products={products}
                 setProducts={setProducts}
@@ -6714,7 +6172,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               TAB EXTENSION W: WAREHOUSE & STOCK TRANSFERS (📦)
               ========================================== */}
           {activeTab === 'warehouse' && (
-            (currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? renderAdminLockScreen() : (
+            (currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? <AdminOnlyNotice userName={currentUser?.name} /> : (
               <WarehouseTab 
                 products={products}
                 setProducts={setProducts}
@@ -6755,7 +6213,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
           {activeTab === 'stock_count' && (
             <div className="space-y-6" id="tab-stock-reconciliation">
               {(currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? (
-                renderAdminLockScreen()
+                <AdminOnlyNotice userName={currentUser?.name} />
               ) : (
                 <StockCountTab
                   products={products}
@@ -6773,7 +6231,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
           {activeTab === 'reports' && (
             <div className="space-y-6" id="tab-reports-view">
               {(currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? (
-                renderAdminLockScreen()
+                <AdminOnlyNotice userName={currentUser?.name} />
               ) : (
                 <ReportsTab
                   products={products}
@@ -6819,7 +6277,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
           {activeTab === 'users' && (
             <div className="space-y-6" id="tab-users-settings">
               {currentUser.role !== 'admin' ? (
-                renderAdminLockScreen()
+                <AdminOnlyNotice userName={currentUser?.name} />
               ) : (
                 <UsersTab
                   users={users}
@@ -6855,7 +6313,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
           {activeTab === 'settings' && (
             <div className="space-y-6" id="tab-settings-view">
               {currentUser.role !== 'admin' ? (
-                renderAdminLockScreen()
+                <AdminOnlyNotice userName={currentUser?.name} />
               ) : (
                 <SettingsTab
                   settings={settings}
@@ -6915,7 +6373,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
           {activeTab === 'firebase_sync' && (
             <div className="space-y-6" id="tab-firebase-sync-section">
               {currentUser.role !== 'admin' ? (
-                renderAdminLockScreen()
+                <AdminOnlyNotice userName={currentUser?.name} />
               ) : (
                 <FirebaseSyncTab
                   lang={lang}
