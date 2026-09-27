@@ -1,11 +1,10 @@
 {
-  "name": "react-example",
+  "name": "kamel-pos",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "tauri": "tauri",
     "dev": "tsx server.ts",
     "vite-dev": "vite",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
@@ -18,7 +17,6 @@
     "electron:build": "npm run build && electron-builder"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
@@ -42,7 +40,6 @@
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.3",
     "wait-on": "^9.0.10"
   },
   "build": {

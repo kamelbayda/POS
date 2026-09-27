@@ -76,7 +76,6 @@ import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { Product, Category, Invoice, User as UserType, SystemSettings, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier } from './types';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, DEFAULT_USERS, getSeededProducts, getSeededInvoices, DEFAULT_CUSTOMERS, DEFAULT_SUPPLIERS, DEFAULT_PROMOTIONS, DEFAULT_EXPENSES } from './mockData';
-import { PYTHON_POS_CODE } from './pythonPOSCode';
 import { CustomersTab, ReturnsWasteTab } from './components/DatabaseExtensions';
 import { PurchasesTab } from './components/PurchasesTab';
 import { WarehouseTab } from './components/WarehouseTab';
@@ -4556,25 +4555,6 @@ export default function App() {
     showToast('success', 'تم تجميع وتصدير ملف جردة المخازن كـ Excel CSV بنجاح!');
   };
 
-  // Python manual download
-  const handleDownloadPythonScript = () => {
-    const blob = new Blob([PYTHON_POS_CODE], { type: 'text/plain;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "pos_supermarket_app.py");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('success', 'تم تحميل ملف الكود المصدري البايثون (pos_supermarket_app.py) للكمبيوتر!');
-  };
-
-  // Helper copy to clipboard
-  const copyPythonCodeToClipboard = () => {
-    navigator.clipboard.writeText(PYTHON_POS_CODE);
-    showToast('success', 'تم نسخ كود بايثون 100% بنجاح للمذكرة!');
-  };
-
   // --- AI INTEGRATION HANDLERS ---
   const callGeminiDirectlyClientSide = async (apiKey: string, reqType: 'chat' | 'audit', promptPayload: any) => {
     // Standard model configuration for high speed & compatibility
@@ -5782,17 +5762,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               <Monitor className="w-3.5 h-3.5 text-emerald-600" />
               <span>{posLayoutMode === 'terminal' ? (lang === 'ar' ? '🖥️ واجهة عادية' : '🖥️ Standard Dashboard') : (lang === 'ar' ? '🖥️ واجهة الكاشير لمس' : '🖥️ Terminal Cashier')}</span>
             </button>
-
-            {/* Download Project ZIP Button */}
-            <a
-              href="/pos-project-source.zip"
-              download="pos-system-source.zip"
-              className="text-xs bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0"
-              title={lang === 'ar' ? 'تحميل كامل ملفات وسورس كود البرنامج (ZIP)' : 'Download Project Source Code (ZIP)'}
-            >
-              <Download className="w-3.5 h-3.5 text-indigo-600" />
-              <span>{lang === 'ar' ? 'تحميل كود البرنامج (ZIP) 📦' : 'Source Code (ZIP) 📦'}</span>
-            </a>
 
             {/* Accessibility / Global Scale Panel Button */}
             <div className="relative">
@@ -15714,51 +15683,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                   </div>
                 </div>
 
-                {/* --- DOWNLOAD COMPLETE SOURCE CODE ZIP SECTION --- */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 shadow-xs w-full text-right space-y-4 mt-6">
-                  <div className="flex flex-col sm:flex-row-reverse items-center justify-between gap-4 pb-3 border-b border-indigo-100 dark:border-indigo-900/50">
-                    <div className="flex items-center gap-2.5 flex-row-reverse">
-                      <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs">
-                        <Download className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-850 dark:text-white text-base">
-                          {lang === 'ar' ? 'تحميل كامل ملفات وسورس كود البرنامج (ZIP Archive)' : 'Download Full Project Source Code (ZIP)'}
-                        </h3>
-                        <p className="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium">
-                          {lang === 'ar' ? 'حزمة كاملة ونظيفة تحتوي كافة ملفات المشروع، الواجهات، المخدم، والإعدادات جاهزة للتشغيل المحلي أو على سطح المكتب' : 'Complete package containing all code, interfaces, server, and configs'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <a
-                      href="/pos-project-source.zip"
-                      download="pos-system-source.zip"
-                      className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white px-5 py-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 shadow-md shadow-indigo-600/20 shrink-0"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>{lang === 'ar' ? 'تحميل ملف الـ ZIP الآن 📦' : 'Download ZIP Now 📦'}</span>
-                    </a>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 dark:text-slate-300 pt-1">
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-indigo-150/50 dark:border-slate-800">
-                      <span className="font-bold text-indigo-900 dark:text-indigo-200 block mb-1">
-                        🚀 {lang === 'ar' ? 'طريقة التشغيل محلياً (Web):' : 'Local Web Run:'}
-                      </span>
-                      <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-indigo-600 font-mono block mb-1">npm install</code>
-                      <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-emerald-600 font-mono block">npm run dev</code>
-                    </div>
-
-                    <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-indigo-150/50 dark:border-slate-800">
-                      <span className="font-bold text-indigo-900 dark:text-indigo-200 block mb-1">
-                        💻 {lang === 'ar' ? 'تشغيل أو بناء تطبيق سطح المكتب (Electron):' : 'Desktop Electron Run & Build:'}
-                      </span>
-                      <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-indigo-600 font-mono block mb-1">npm run electron:dev</code>
-                      <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-violet-600 font-mono block">npm run electron:build</code>
-                    </div>
-                  </div>
-                </div>
 
                 
               </>

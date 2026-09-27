@@ -56,17 +56,6 @@ async function startServer() {
     }
   });
 
-  // Endpoint to download the full project source code as a ZIP archive
-  app.get(["/api/download-zip", "/download-zip", "/pos-project-source.zip"], (req, res) => {
-    const zipPath = path.join(process.cwd(), "public", "pos-project-source.zip");
-    if (!fs.existsSync(zipPath)) {
-      return res.status(404).send("الملف غير متوفر حالياً، يرجى المحاولة لاحقاً.");
-    }
-    res.setHeader("Content-Disposition", 'attachment; filename="pos-system-source.zip"');
-    res.setHeader("Content-Type", "application/zip");
-    return res.sendFile(zipPath);
-  });
-
   // Serve static dist in production, use Vite in development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
