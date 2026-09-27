@@ -1,8 +1,11 @@
+import type { PosRegister } from './usePosRegister';
 import { ShoppingCart, Globe, Sun, Moon, Maximize, Menu, Monitor, X, Plus, Check, Lock, Percent, Truck, CreditCard, User, DollarSign, MessageSquare, Save, Trash2, Tag, Search, Home } from 'lucide-react';
 import { Product, Category, CartItem, SystemSettings, Promotion, Customer, CartSession } from '../../types';
 import React, { useState } from 'react';
 
 interface PosTerminalScreenProps {
+  /** Cart, sessions and checkout state from usePosRegister. */
+  register: PosRegister;
   SYS_DATE: string;
   lang: "ar" | "en";
   setLang: React.Dispatch<React.SetStateAction<"ar" | "en">>;
@@ -12,37 +15,6 @@ interface PosTerminalScreenProps {
   settings: SystemSettings;
   customers: Customer[];
   promotions: Promotion[];
-  cart: CartItem[];
-  setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
-  setBarcodeInput: React.Dispatch<React.SetStateAction<string>>;
-  searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-  selectedCategory: string;
-  setSelectedCategory: React.Dispatch<React.SetStateAction<string>>;
-  discountInput: string;
-  setDiscountInput: React.Dispatch<React.SetStateAction<string>>;
-  taxRate: number;
-  setTaxRate: React.Dispatch<React.SetStateAction<number>>;
-  deliveryUSD: number;
-  setDeliveryUSD: React.Dispatch<React.SetStateAction<number>>;
-  setIsNumpadOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setNumpadValue: React.Dispatch<React.SetStateAction<string>>;
-  setNumpadTitle: React.Dispatch<React.SetStateAction<string>>;
-  setNumpadOnSave: React.Dispatch<React.SetStateAction<{ fn: (val: string) => void; }>>;
-  paidUSDInput: string;
-  paidLBPInput: string;
-  posSaleType: "retail" | "wholesale";
-  setPosSaleType: React.Dispatch<React.SetStateAction<"retail" | "wholesale">>;
-  selectedCustomerId: string;
-  setSelectedCustomerId: React.Dispatch<React.SetStateAction<string>>;
-  voidedCartItemIds: string[];
-  setVoidedCartItemIds: React.Dispatch<React.SetStateAction<string[]>>;
-  noteInput: string;
-  setNoteInput: React.Dispatch<React.SetStateAction<string>>;
-  sessions: CartSession[];
-  activeSessionId: string;
-  switchSession: (toId: string) => void;
-  addNewSession: (customLabel?: string) => void;
   theme: "light" | "dark";
   setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
   setPosLayoutMode: React.Dispatch<React.SetStateAction<"modern" | "terminal">>;
@@ -54,16 +26,10 @@ interface PosTerminalScreenProps {
   processedProducts: { isExpired: boolean; isNearExpiry: boolean; lastSoldDate: string; daysSinceLastSale: number; isStagnant: boolean; id: string; name: string; barcode: string; barcodes?: string[]; category: string; priceUSD: number; priceLBP?: number; quantity: number; warehouseQuantity?: number; expiryDate: string; sku?: string; priceWholesale?: number; minWholesaleQty?: number; costPriceUSD?: number; image?: string; isWeighed?: boolean; plu?: string; }[];
   showToast: (type: "success" | "error" | "warning", message: string) => void;
   openCashDrawer: () => Promise<void>;
-  addToCart: (product: Product, customQty?: number) => void;
-  handleProductClick: (product: Product) => void;
-  clearCart: () => void;
-  triggerCustomerSearch: () => void;
-  getCalculatedDiscountUSD: (subtotal: number, input: string) => number;
-  handleCheckout: (overrideMethod?: "cash" | "card" | "transfer" | "debt") => void;
-  openTouchPayment: (method?: "cash" | "card" | "transfer" | "debt") => void;
 }
 
 export function PosTerminalScreen({
+  register,
   SYS_DATE,
   lang,
   setLang,
@@ -73,37 +39,6 @@ export function PosTerminalScreen({
   settings,
   customers,
   promotions,
-  cart,
-  setCart,
-  setBarcodeInput,
-  searchQuery,
-  setSearchQuery,
-  selectedCategory,
-  setSelectedCategory,
-  discountInput,
-  setDiscountInput,
-  taxRate,
-  setTaxRate,
-  deliveryUSD,
-  setDeliveryUSD,
-  setIsNumpadOpen,
-  setNumpadValue,
-  setNumpadTitle,
-  setNumpadOnSave,
-  paidUSDInput,
-  paidLBPInput,
-  posSaleType,
-  setPosSaleType,
-  selectedCustomerId,
-  setSelectedCustomerId,
-  voidedCartItemIds,
-  setVoidedCartItemIds,
-  noteInput,
-  setNoteInput,
-  sessions,
-  activeSessionId,
-  switchSession,
-  addNewSession,
   theme,
   setTheme,
   setPosLayoutMode,
@@ -115,14 +50,47 @@ export function PosTerminalScreen({
   processedProducts,
   showToast,
   openCashDrawer,
-  addToCart,
-  handleProductClick,
-  clearCart,
-  triggerCustomerSearch,
-  getCalculatedDiscountUSD,
-  handleCheckout,
-  openTouchPayment,
 }: PosTerminalScreenProps) {
+  const {
+    cart,
+    setCart,
+    setBarcodeInput,
+    searchQuery,
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    discountInput,
+    setDiscountInput,
+    taxRate,
+    setTaxRate,
+    deliveryUSD,
+    setDeliveryUSD,
+    setIsNumpadOpen,
+    setNumpadValue,
+    setNumpadTitle,
+    setNumpadOnSave,
+    paidUSDInput,
+    paidLBPInput,
+    posSaleType,
+    setPosSaleType,
+    selectedCustomerId,
+    setSelectedCustomerId,
+    voidedCartItemIds,
+    setVoidedCartItemIds,
+    noteInput,
+    setNoteInput,
+    sessions,
+    activeSessionId,
+    switchSession,
+    addNewSession,
+    addToCart,
+    handleProductClick,
+    clearCart,
+    triggerCustomerSearch,
+    getCalculatedDiscountUSD,
+    handleCheckout,
+    openTouchPayment,
+  } = register;
   const [selectedCartItemId, setSelectedCartItemId] = useState<string | null>(null);
 
   return (

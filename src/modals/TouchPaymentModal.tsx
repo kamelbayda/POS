@@ -1,65 +1,52 @@
+import type { PosRegister } from '../features/pos/usePosRegister';
 import { motion } from 'motion/react';
 import { Printer, Delete } from 'lucide-react';
 import { SystemSettings, Customer } from '../types';
 import React from 'react';
 
 interface TouchPaymentModalProps {
+  /** Cart, sessions and checkout state from usePosRegister. */
+  register: PosRegister;
   lang: "ar" | "en";
   settings: SystemSettings;
   customers: Customer[];
-  discountInput: string;
-  setDiscountInput: React.Dispatch<React.SetStateAction<string>>;
-  paidUSDInput: string;
-  setPaidUSDInput: React.Dispatch<React.SetStateAction<string>>;
-  paidLBPInput: string;
-  setPaidLBPInput: React.Dispatch<React.SetStateAction<string>>;
-  setIsTouchPaymentModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  touchPaymentActiveField: "usd" | "lbp" | "discount";
-  setTouchPaymentActiveField: React.Dispatch<React.SetStateAction<"usd" | "lbp" | "discount">>;
-  paymentMethod: "cash" | "card" | "transfer" | "debt";
-  setPaymentMethod: React.Dispatch<React.SetStateAction<"cash" | "card" | "transfer" | "debt">>;
-  selectedCustomerId: string;
   theme: "light" | "dark";
   showToast: (type: "success" | "error" | "warning", message: string) => void;
   hardwarePrinterType: "system" | "usb" | "serial";
   openCashDrawer: () => Promise<void>;
-  triggerCustomerSearch: () => void;
-  cartSubtotalUSD: number;
-  cartTotalUSD: number;
-  cartTotalLBP: number;
-  changeUSD: number;
-  changeLBP: number;
-  handleCheckout: (overrideMethod?: "cash" | "card" | "transfer" | "debt") => void;
 }
 
 export function TouchPaymentModal({
+  register,
   lang,
   settings,
   customers,
-  discountInput,
-  setDiscountInput,
-  paidUSDInput,
-  setPaidUSDInput,
-  paidLBPInput,
-  setPaidLBPInput,
-  setIsTouchPaymentModalOpen,
-  touchPaymentActiveField,
-  setTouchPaymentActiveField,
-  paymentMethod,
-  setPaymentMethod,
-  selectedCustomerId,
   theme,
   showToast,
   hardwarePrinterType,
   openCashDrawer,
-  triggerCustomerSearch,
-  cartSubtotalUSD,
-  cartTotalUSD,
-  cartTotalLBP,
-  changeUSD,
-  changeLBP,
-  handleCheckout,
 }: TouchPaymentModalProps) {
+  const {
+    discountInput,
+    setDiscountInput,
+    paidUSDInput,
+    setPaidUSDInput,
+    paidLBPInput,
+    setPaidLBPInput,
+    setIsTouchPaymentModalOpen,
+    touchPaymentActiveField,
+    setTouchPaymentActiveField,
+    paymentMethod,
+    setPaymentMethod,
+    selectedCustomerId,
+    triggerCustomerSearch,
+    cartSubtotalUSD,
+    cartTotalUSD,
+    cartTotalLBP,
+    changeUSD,
+    changeLBP,
+    handleCheckout,
+  } = register;
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans" id="touch-payment-modal">
       <motion.div 

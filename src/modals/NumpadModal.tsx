@@ -1,26 +1,27 @@
+import type { PosRegister } from '../features/pos/usePosRegister';
 import { motion } from 'motion/react';
 import { X, Check, Delete } from 'lucide-react';
 import React from 'react';
 
 interface NumpadModalProps {
+  /** Cart, sessions and checkout state from usePosRegister. */
+  register: PosRegister;
   lang: "ar" | "en";
-  setIsNumpadOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  numpadValue: string;
-  setNumpadValue: React.Dispatch<React.SetStateAction<string>>;
-  numpadTitle: string;
-  numpadOnSave: { fn: (val: string) => void; };
   theme: "light" | "dark";
 }
 
 export function NumpadModal({
+  register,
   lang,
-  setIsNumpadOpen,
-  numpadValue,
-  setNumpadValue,
-  numpadTitle,
-  numpadOnSave,
   theme,
 }: NumpadModalProps) {
+  const {
+    setIsNumpadOpen,
+    numpadValue,
+    setNumpadValue,
+    numpadTitle,
+    numpadOnSave,
+  } = register;
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans" id="touch-numpad-modal">
       <motion.div 

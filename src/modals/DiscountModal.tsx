@@ -1,33 +1,33 @@
+import type { PosRegister } from '../features/pos/usePosRegister';
 import { motion } from 'motion/react';
 import { Tag, X, Delete, Check } from 'lucide-react';
 import { CartItem, SystemSettings } from '../types';
 import React, { useState } from 'react';
 
 interface DiscountModalProps {
+  /** Cart, sessions and checkout state from usePosRegister. */
+  register: PosRegister;
   lang: "ar" | "en";
   settings: SystemSettings;
-  cart: CartItem[];
-  setDiscountInput: React.Dispatch<React.SetStateAction<string>>;
-  setIsDiscountModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  posSaleType: "retail" | "wholesale";
-  voidedCartItemIds: string[];
   theme: "light" | "dark";
   showToast: (type: "success" | "error" | "warning", message: string) => void;
-  getCalculatedDiscountUSD: (subtotal: number, input: string) => number;
 }
 
 export function DiscountModal({
+  register,
   lang,
   settings,
-  cart,
-  setDiscountInput,
-  setIsDiscountModalOpen,
-  posSaleType,
-  voidedCartItemIds,
   theme,
   showToast,
-  getCalculatedDiscountUSD,
 }: DiscountModalProps) {
+  const {
+    cart,
+    setDiscountInput,
+    setIsDiscountModalOpen,
+    posSaleType,
+    voidedCartItemIds,
+    getCalculatedDiscountUSD,
+  } = register;
   const [discountModalMode, setDiscountModalMode] = useState<'usd' | 'percentage' | 'lbp'>('usd');
   const [discountModalVal, setDiscountModalVal] = useState<string>('0');
 

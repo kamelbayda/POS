@@ -1,3 +1,4 @@
+import type { PosRegister } from './usePosRegister';
 import { Plus, Edit, X, ShoppingCart, Trash2, Minus, Printer, Monitor, Gift, AlertTriangle, Scan, Keyboard, Search, Tag, ArrowLeft } from 'lucide-react';
 import { useStoredState } from '../../lib/storage';
 import { Customer, Product, Category, CartItem, SystemSettings, Promotion, CartSession } from '../../types';
@@ -6,6 +7,8 @@ import { getGridColsStyle, getCardStyle } from './posGrid';
 import React, { useState } from 'react';
 
 interface PosModernScreenProps {
+  /** Cart, sessions and checkout state from usePosRegister. */
+  register: PosRegister;
   SYS_DATE: string;
   syncWriteToCloud: (collectionName: string, docId: string, data: any, isDelete?: boolean) => Promise<void>;
   lang: "ar" | "en";
@@ -15,40 +18,10 @@ interface PosModernScreenProps {
   customers: Customer[];
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   promotions: Promotion[];
-  cart: CartItem[];
-  barcodeInput: string;
-  setBarcodeInput: React.Dispatch<React.SetStateAction<string>>;
-  searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-  selectedCategory: string;
-  setSelectedCategory: React.Dispatch<React.SetStateAction<string>>;
-  discountInput: string;
-  setDiscountInput: React.Dispatch<React.SetStateAction<string>>;
-  paidUSDInput: string;
-  setPaidUSDInput: React.Dispatch<React.SetStateAction<string>>;
-  paidLBPInput: string;
-  setPaidLBPInput: React.Dispatch<React.SetStateAction<string>>;
-  paymentMethod: "cash" | "card" | "transfer" | "debt";
-  setPaymentMethod: React.Dispatch<React.SetStateAction<"cash" | "card" | "transfer" | "debt">>;
-  posSaleType: "retail" | "wholesale";
-  setPosSaleType: React.Dispatch<React.SetStateAction<"retail" | "wholesale">>;
-  selectedCustomerId: string;
-  setSelectedCustomerId: React.Dispatch<React.SetStateAction<string>>;
   isBarcodeKeyboardOpen: boolean;
   setIsBarcodeKeyboardOpen: React.Dispatch<React.SetStateAction<boolean>>;
   keyboardTarget: "search" | "barcode";
   setKeyboardTarget: React.Dispatch<React.SetStateAction<"search" | "barcode">>;
-  sessions: CartSession[];
-  activeSessionId: string;
-  editingSessionId: string;
-  setEditingSessionId: React.Dispatch<React.SetStateAction<string>>;
-  editingLabelValue: string;
-  setEditingLabelValue: React.Dispatch<React.SetStateAction<string>>;
-  switchSession: (toId: string) => void;
-  addNewSession: (customLabel?: string) => void;
-  deleteSession: (sessionId: string, e?: React.MouseEvent) => void;
-  startRenameSession: (session: CartSession, e: React.MouseEvent) => void;
-  saveRenameSession: (sessionId: string) => void;
   setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
   setPosLayoutMode: React.Dispatch<React.SetStateAction<"modern" | "terminal">>;
   setExpiryWarningModal: React.Dispatch<React.SetStateAction<Product>>;
@@ -64,23 +37,11 @@ interface PosModernScreenProps {
   showToast: (type: "success" | "error" | "warning", message: string) => void;
   hardwarePrinterType: "system" | "usb" | "serial";
   openCashDrawer: () => Promise<void>;
-  handleBarcodeSubmit: (e: React.FormEvent) => void;
-  addToCart: (product: Product, customQty?: number) => void;
-  handleProductClick: (product: Product) => void;
-  updateCartQuantity: (productId: string, delta: number) => void;
-  removeFromCart: (productId: string) => void;
-  clearCart: () => void;
-  getProductDisplayPrice: (product: Product, quantity?: number) => number;
-  cartSubtotalUSD: number;
-  cartTotalUSD: number;
-  cartTotalLBP: number;
-  changeUSD: number;
-  changeLBP: number;
-  handleCheckout: (overrideMethod?: "cash" | "card" | "transfer" | "debt") => void;
   renderVirtualKeyboard: () => React.JSX.Element;
 }
 
 export function PosModernScreen({
+  register,
   SYS_DATE,
   syncWriteToCloud,
   lang,
@@ -90,40 +51,10 @@ export function PosModernScreen({
   customers,
   setCustomers,
   promotions,
-  cart,
-  barcodeInput,
-  setBarcodeInput,
-  searchQuery,
-  setSearchQuery,
-  selectedCategory,
-  setSelectedCategory,
-  discountInput,
-  setDiscountInput,
-  paidUSDInput,
-  setPaidUSDInput,
-  paidLBPInput,
-  setPaidLBPInput,
-  paymentMethod,
-  setPaymentMethod,
-  posSaleType,
-  setPosSaleType,
-  selectedCustomerId,
-  setSelectedCustomerId,
   isBarcodeKeyboardOpen,
   setIsBarcodeKeyboardOpen,
   keyboardTarget,
   setKeyboardTarget,
-  sessions,
-  activeSessionId,
-  editingSessionId,
-  setEditingSessionId,
-  editingLabelValue,
-  setEditingLabelValue,
-  switchSession,
-  addNewSession,
-  deleteSession,
-  startRenameSession,
-  saveRenameSession,
   setTheme,
   setPosLayoutMode,
   setExpiryWarningModal,
@@ -139,21 +70,53 @@ export function PosModernScreen({
   showToast,
   hardwarePrinterType,
   openCashDrawer,
-  handleBarcodeSubmit,
-  addToCart,
-  handleProductClick,
-  updateCartQuantity,
-  removeFromCart,
-  clearCart,
-  getProductDisplayPrice,
-  cartSubtotalUSD,
-  cartTotalUSD,
-  cartTotalLBP,
-  changeUSD,
-  changeLBP,
-  handleCheckout,
   renderVirtualKeyboard,
 }: PosModernScreenProps) {
+  const {
+    cart,
+    barcodeInput,
+    setBarcodeInput,
+    searchQuery,
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    discountInput,
+    setDiscountInput,
+    paidUSDInput,
+    setPaidUSDInput,
+    paidLBPInput,
+    setPaidLBPInput,
+    paymentMethod,
+    setPaymentMethod,
+    posSaleType,
+    setPosSaleType,
+    selectedCustomerId,
+    setSelectedCustomerId,
+    sessions,
+    activeSessionId,
+    editingSessionId,
+    setEditingSessionId,
+    editingLabelValue,
+    setEditingLabelValue,
+    switchSession,
+    addNewSession,
+    deleteSession,
+    startRenameSession,
+    saveRenameSession,
+    handleBarcodeSubmit,
+    addToCart,
+    handleProductClick,
+    updateCartQuantity,
+    removeFromCart,
+    clearCart,
+    getProductDisplayPrice,
+    cartSubtotalUSD,
+    cartTotalUSD,
+    cartTotalLBP,
+    changeUSD,
+    changeLBP,
+    handleCheckout,
+  } = register;
   // Remembered on this device so the panel stays collapsed across tab switches
   const [showLowStockPOSPanel, setShowLowStockPOSPanel] = useStoredState<boolean>('pos_show_low_stock_panel', true);
   const [categoryPage, setCategoryPage] = useState<number>(0);

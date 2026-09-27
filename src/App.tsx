@@ -1437,73 +1437,21 @@ export default function App() {
   const {
     cart,
     setCart,
-    barcodeInput,
     setBarcodeInput,
-    searchQuery,
     setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
-    discountInput,
     setDiscountInput,
-    taxRate,
-    setTaxRate,
-    deliveryUSD,
-    setDeliveryUSD,
     isDiscountModalOpen,
-    setIsDiscountModalOpen,
     isNumpadOpen,
-    setIsNumpadOpen,
-    numpadValue,
-    setNumpadValue,
-    numpadTitle,
-    setNumpadTitle,
-    numpadOnSave,
-    setNumpadOnSave,
-    paidUSDInput,
     setPaidUSDInput,
-    paidLBPInput,
     setPaidLBPInput,
     isTouchPaymentModalOpen,
-    setIsTouchPaymentModalOpen,
-    touchPaymentActiveField,
-    setTouchPaymentActiveField,
     paymentMethod,
-    setPaymentMethod,
-    posSaleType,
-    setPosSaleType,
     selectedCustomerId,
     setSelectedCustomerId,
-    voidedCartItemIds,
-    setVoidedCartItemIds,
-    noteInput,
-    setNoteInput,
     sessions,
     activeSessionId,
-    editingSessionId,
-    setEditingSessionId,
-    editingLabelValue,
-    setEditingLabelValue,
-    switchSession,
-    addNewSession,
-    deleteSession,
-    startRenameSession,
-    saveRenameSession,
     handleBarcodeSubmit,
     addToCart,
-    handleProductClick,
-    updateCartQuantity,
-    removeFromCart,
-    clearCart,
-    triggerCustomerSearch,
-    getProductDisplayPrice,
-    getCalculatedDiscountUSD,
-    cartSubtotalUSD,
-    cartTotalUSD,
-    cartTotalLBP,
-    changeUSD,
-    changeLBP,
-    handleCheckout,
-    openTouchPayment,
   } = posRegister;
 
   // --- DIRECT POS SIMULATED PRINT TRIGGER ---
@@ -2670,6 +2618,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
           {/* ACTIVE TERMINAL TAB WRAPPER */}
           {activeTab === 'pos' && posLayoutMode === 'terminal' && (
             <PosTerminalScreen
+              register={posRegister}
               SYS_DATE={SYS_DATE}
               lang={lang}
               setLang={setLang}
@@ -2679,37 +2628,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               settings={settings}
               customers={customers}
               promotions={promotions}
-              cart={cart}
-              setCart={setCart}
-              setBarcodeInput={setBarcodeInput}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              discountInput={discountInput}
-              setDiscountInput={setDiscountInput}
-              taxRate={taxRate}
-              setTaxRate={setTaxRate}
-              deliveryUSD={deliveryUSD}
-              setDeliveryUSD={setDeliveryUSD}
-              setIsNumpadOpen={setIsNumpadOpen}
-              setNumpadValue={setNumpadValue}
-              setNumpadTitle={setNumpadTitle}
-              setNumpadOnSave={setNumpadOnSave}
-              paidUSDInput={paidUSDInput}
-              paidLBPInput={paidLBPInput}
-              posSaleType={posSaleType}
-              setPosSaleType={setPosSaleType}
-              selectedCustomerId={selectedCustomerId}
-              setSelectedCustomerId={setSelectedCustomerId}
-              voidedCartItemIds={voidedCartItemIds}
-              setVoidedCartItemIds={setVoidedCartItemIds}
-              noteInput={noteInput}
-              setNoteInput={setNoteInput}
-              sessions={sessions}
-              activeSessionId={activeSessionId}
-              switchSession={switchSession}
-              addNewSession={addNewSession}
               theme={theme}
               setTheme={setTheme}
               setPosLayoutMode={setPosLayoutMode}
@@ -2721,18 +2639,12 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               processedProducts={processedProducts}
               showToast={showToast}
               openCashDrawer={openCashDrawer}
-              addToCart={addToCart}
-              handleProductClick={handleProductClick}
-              clearCart={clearCart}
-              triggerCustomerSearch={triggerCustomerSearch}
-              getCalculatedDiscountUSD={getCalculatedDiscountUSD}
-              handleCheckout={handleCheckout}
-              openTouchPayment={openTouchPayment}
             />
           )}
 
           {activeTab === 'pos' && posLayoutMode === 'modern' && (
             <PosModernScreen
+              register={posRegister}
               SYS_DATE={SYS_DATE}
               syncWriteToCloud={syncWriteToCloud}
               lang={lang}
@@ -2742,40 +2654,10 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               customers={customers}
               setCustomers={setCustomers}
               promotions={promotions}
-              cart={cart}
-              barcodeInput={barcodeInput}
-              setBarcodeInput={setBarcodeInput}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              discountInput={discountInput}
-              setDiscountInput={setDiscountInput}
-              paidUSDInput={paidUSDInput}
-              setPaidUSDInput={setPaidUSDInput}
-              paidLBPInput={paidLBPInput}
-              setPaidLBPInput={setPaidLBPInput}
-              paymentMethod={paymentMethod}
-              setPaymentMethod={setPaymentMethod}
-              posSaleType={posSaleType}
-              setPosSaleType={setPosSaleType}
-              selectedCustomerId={selectedCustomerId}
-              setSelectedCustomerId={setSelectedCustomerId}
               isBarcodeKeyboardOpen={isBarcodeKeyboardOpen}
               setIsBarcodeKeyboardOpen={setIsBarcodeKeyboardOpen}
               keyboardTarget={keyboardTarget}
               setKeyboardTarget={setKeyboardTarget}
-              sessions={sessions}
-              activeSessionId={activeSessionId}
-              editingSessionId={editingSessionId}
-              setEditingSessionId={setEditingSessionId}
-              editingLabelValue={editingLabelValue}
-              setEditingLabelValue={setEditingLabelValue}
-              switchSession={switchSession}
-              addNewSession={addNewSession}
-              deleteSession={deleteSession}
-              startRenameSession={startRenameSession}
-              saveRenameSession={saveRenameSession}
               setTheme={setTheme}
               setPosLayoutMode={setPosLayoutMode}
               setExpiryWarningModal={setExpiryWarningModal}
@@ -2791,19 +2673,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               showToast={showToast}
               hardwarePrinterType={hardwarePrinterType}
               openCashDrawer={openCashDrawer}
-              handleBarcodeSubmit={handleBarcodeSubmit}
-              addToCart={addToCart}
-              handleProductClick={handleProductClick}
-              updateCartQuantity={updateCartQuantity}
-              removeFromCart={removeFromCart}
-              clearCart={clearCart}
-              getProductDisplayPrice={getProductDisplayPrice}
-              cartSubtotalUSD={cartSubtotalUSD}
-              cartTotalUSD={cartTotalUSD}
-              cartTotalLBP={cartTotalLBP}
-              changeUSD={changeUSD}
-              changeLBP={changeLBP}
-              handleCheckout={handleCheckout}
               renderVirtualKeyboard={renderVirtualKeyboard}
             />
           )}
@@ -3246,12 +3115,8 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
       {/* --- TOUCH NUMPAD MODAL --- */}
       {isNumpadOpen && (
         <NumpadModal
+          register={posRegister}
           lang={lang}
-          setIsNumpadOpen={setIsNumpadOpen}
-          numpadValue={numpadValue}
-          setNumpadValue={setNumpadValue}
-          numpadTitle={numpadTitle}
-          numpadOnSave={numpadOnSave}
           theme={theme}
         />
       )}
@@ -3259,48 +3124,25 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
       {/* --- TOUCH SCREEN CASH SETTLEMENT & CHANGE CALCULATOR MODAL --- */}
       {isTouchPaymentModalOpen && (
         <TouchPaymentModal
+          register={posRegister}
           lang={lang}
           settings={settings}
           customers={customers}
-          discountInput={discountInput}
-          setDiscountInput={setDiscountInput}
-          paidUSDInput={paidUSDInput}
-          setPaidUSDInput={setPaidUSDInput}
-          paidLBPInput={paidLBPInput}
-          setPaidLBPInput={setPaidLBPInput}
-          setIsTouchPaymentModalOpen={setIsTouchPaymentModalOpen}
-          touchPaymentActiveField={touchPaymentActiveField}
-          setTouchPaymentActiveField={setTouchPaymentActiveField}
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-          selectedCustomerId={selectedCustomerId}
           theme={theme}
           showToast={showToast}
           hardwarePrinterType={hardwarePrinterType}
           openCashDrawer={openCashDrawer}
-          triggerCustomerSearch={triggerCustomerSearch}
-          cartSubtotalUSD={cartSubtotalUSD}
-          cartTotalUSD={cartTotalUSD}
-          cartTotalLBP={cartTotalLBP}
-          changeUSD={changeUSD}
-          changeLBP={changeLBP}
-          handleCheckout={handleCheckout}
         />
       )}
 
       {/* --- FINANCIAL DISCOUNT DIALOG MODAL --- */}
       {isDiscountModalOpen && (
         <DiscountModal
+          register={posRegister}
           lang={lang}
           settings={settings}
-          cart={cart}
-          setDiscountInput={setDiscountInput}
-          setIsDiscountModalOpen={setIsDiscountModalOpen}
-          posSaleType={posSaleType}
-          voidedCartItemIds={voidedCartItemIds}
           theme={theme}
           showToast={showToast}
-          getCalculatedDiscountUSD={getCalculatedDiscountUSD}
         />
       )}
 

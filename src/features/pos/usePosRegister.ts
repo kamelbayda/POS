@@ -1039,3 +1039,5 @@ export function usePosRegister({
     openTouchPayment,
   };
 }
+
+export type PosRegister = ReturnType<typeof usePosRegister>;
