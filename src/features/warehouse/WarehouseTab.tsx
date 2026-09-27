@@ -22,7 +22,7 @@ import {
   Archive,
   ArrowRightLeft
 } from 'lucide-react';
-import { Product, WarehouseTransfer, Category } from '../types';
+import { Product, WarehouseTransfer, Category } from '../../types';
 
 interface WarehouseTabProps {
   products: Product[];

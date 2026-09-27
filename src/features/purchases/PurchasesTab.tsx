@@ -24,8 +24,8 @@ import {
   Cpu,
   Upload
 } from 'lucide-react';
-import { Product, PurchaseInvoice, PurchaseItem, Category } from '../types';
-import { handleMathBlur, handleMathKeyDown } from '../mathEvaluator';
+import { Product, PurchaseInvoice, PurchaseItem, Category } from '../../types';
+import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 
 interface PurchasesTabProps {
   products: Product[];

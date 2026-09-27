@@ -23,7 +23,7 @@ import {
   googleProvider, 
   toggleNetwork, 
   testConnection 
-} from '../firebase';
+} from '../../firebase';
 import { 
   signInWithPopup, 
   signInAnonymously, 
@@ -55,7 +55,7 @@ import {
   ExpenseRecord, 
   PurchaseInvoice, 
   SystemSettings 
-} from '../types';
+} from '../../types';
 
 interface FirebaseSyncTabProps {
   lang: 'ar' | 'en';
