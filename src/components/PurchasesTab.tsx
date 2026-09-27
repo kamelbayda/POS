@@ -856,7 +856,7 @@ export function PurchasesTab({
                           value={newProdCost}
                           onChange={e => setNewProdCost(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdCost)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdCost)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdCost)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
                           placeholder="0.00"
                         />
@@ -871,7 +871,7 @@ export function PurchasesTab({
                           value={newProdSellRetail}
                           onChange={e => setNewProdSellRetail(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdSellRetail)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdSellRetail)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdSellRetail)}
                           className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono font-bold text-indigo-700"
                           placeholder="0.00"
                         />
@@ -885,7 +885,7 @@ export function PurchasesTab({
                           value={newProdSellWholesale}
                           onChange={e => setNewProdSellWholesale(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdSellWholesale)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdSellWholesale)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdSellWholesale)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
                           placeholder="أو يترك تلقائي"
                         />

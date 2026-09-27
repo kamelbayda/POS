@@ -28,21 +28,16 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   receiptMarginLeft: 4,
   posGridSize: 'auto',
   printersList: [
-    { name: 'XP-80 POS Thermal', type: 'thermal', connection: 'USB', address: 'USB001' },
-    { name: 'HP LaserJet 400 M402', type: 'laser', connection: 'Network/IP', address: '192.168.1.50' },
-    { name: 'POS-80 Kitchen Printer', type: 'thermal', connection: 'USB', address: 'USB002' }
+    { id: 'p-default-receipt', name: 'XP-80 POS Thermal', connectionType: 'USB', paperWidth: '80mm', address: 'USB001' },
+    { id: 'p-default-laser', name: 'HP LaserJet 400 M402', connectionType: 'Network', paperWidth: 'A4', address: '192.168.1.50' },
+    { id: 'p-default-kitchen', name: 'POS-80 Kitchen Printer', connectionType: 'USB', paperWidth: '80mm', address: 'USB002' }
   ],
   printerAssignments: {
     receiptEnabled: true,
-    receiptPrinter: 'XP-80 POS Thermal',
-    creditEnabled: false,
-    creditPrinter: 'XP-80 POS Thermal',
-    closeShiftEnabled: true,
-    closeShiftPrinter: 'HP LaserJet 400 M402',
+    receiptPrinterId: 'p-default-receipt',
     kitchenEnabled: false,
-    kitchenPrinter: 'POS-80 Kitchen Printer',
-    serviceEnabled: false,
-    servicePrinter: 'XP-80 POS Thermal'
+    kitchenPrinterId: 'p-default-kitchen',
+    targetPrinterId: 'p-default-laser'
   },
   directSilentPrint: true,
   cashDrawerCodes: '27,112,0,148,49',

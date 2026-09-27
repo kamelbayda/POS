@@ -74,7 +74,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
-import { Product, Category, Invoice, User as UserType, SystemSettings, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier } from './types';
+import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier } from './types';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, DEFAULT_USERS, getSeededProducts, getSeededInvoices, DEFAULT_CUSTOMERS, DEFAULT_SUPPLIERS, DEFAULT_PROMOTIONS, DEFAULT_EXPENSES } from './mockData';
 import { CustomersTab, ReturnsWasteTab } from './components/DatabaseExtensions';
 import { UsersTab } from './features/users/UsersTab';
@@ -974,8 +974,8 @@ export default function App() {
           updatedList.push({
             id: sysPr.id,
             name: sysPr.name,
-            connectionType: sysPr.connectionType as any,
-            paperWidth: sysPr.paperWidth as any,
+            connectionType: sysPr.connectionType as PrinterConfig['connectionType'],
+            paperWidth: sysPr.paperWidth as PrinterConfig['paperWidth'],
             address: sysPr.address
           });
         }
@@ -7365,7 +7365,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                           value={paidUSDInput}
                           onChange={e => setPaidUSDInput(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setPaidUSDInput)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setPaidUSDInput)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setPaidUSDInput)}
                           className="w-full bg-white border border-emerald-200 rounded-lg py-1 px-1.5 text-center font-mono font-bold"
                           placeholder="مثال: =50*3 أو 20"
                         />
@@ -7378,7 +7378,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                           value={paidLBPInput}
                           onChange={e => setPaidLBPInput(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setPaidLBPInput)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setPaidLBPInput)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setPaidLBPInput)}
                           className="w-full bg-white border border-emerald-200 rounded-lg py-1 px-1.5 text-center font-mono font-bold"
                           placeholder="مثال: =100000*4"
                         />
@@ -7433,7 +7433,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
 
                   {/* Big Checkout F1 trigger */}
                   <button 
-                    onClick={handleCheckout}
+                    onClick={() => handleCheckout()}
                     className="w-full bg-[#1D9E75] hover:bg-[#15805e] text-white font-extrabold py-3.5 rounded-xl transition shadow-lg shadow-emerald-700/15 text-sm flex items-center justify-center gap-2 shrink-0 active:scale-[0.98] cursor-pointer"
                   >
                     <Printer className="w-5 h-5" />
@@ -8150,7 +8150,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
 
                                   {item.image && (
                                     <div className="w-full h-16 sm:h-20 mb-1.5 overflow-hidden rounded-xl border border-slate-150/50 bg-slate-100 flex items-center justify-center">
-                                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                     </div>
                                   )}
 
@@ -8472,7 +8472,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                           value={newProdPriceUSD}
                           onChange={e => setNewProdPriceUSD(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdPriceUSD)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdPriceUSD)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdPriceUSD)}
                           className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-emerald-500"
                           placeholder="0.00"
                           required
@@ -8486,7 +8486,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                           value={newProdPriceWholesale}
                           onChange={e => setNewProdPriceWholesale(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdPriceWholesale)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdPriceWholesale)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdPriceWholesale)}
                           className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-emerald-500"
                           placeholder="0.00"
                         />
@@ -8536,7 +8536,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                           value={newProdMinWholesaleQty}
                           onChange={e => setNewProdMinWholesaleQty(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdMinWholesaleQty)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdMinWholesaleQty)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdMinWholesaleQty)}
                           className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-emerald-500"
                           placeholder="5"
                         />
@@ -8559,7 +8559,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                           value={newProdQuantity}
                           onChange={e => setNewProdQuantity(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdQuantity)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdQuantity)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdQuantity)}
                           className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-emerald-500"
                           required
                         />
@@ -8895,7 +8895,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                           </label>
                           {newProdImage && (
                             <div className="relative group">
-                              <img src={newProdImage} alt="Product" className="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-sm" referrerpolicy="no-referrer" />
+                              <img src={newProdImage} alt="Product" className="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-sm" referrerPolicy="no-referrer" />
                               <button 
                                 type="button" 
                                 onClick={() => setNewProdImage(undefined)}
@@ -10015,7 +10015,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                               if (!q) return true;
                               const prod = processedProducts.find(p => p.id === item.productId);
                               return (
-                                item.productName.toLowerCase().includes(q) ||
+                                item.name.toLowerCase().includes(q) ||
                                 item.barcode.toLowerCase().includes(q) ||
                                 (prod && prod.barcodes && prod.barcodes.some(b => b.toLowerCase().includes(q)))
                               );
@@ -14545,7 +14545,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                                         printElementViaIFrame('test-thermal-print', testStyles, false);
                                         
                                         // 3. If direct USB/Serial modes are active, stream raw bytes as well
-                                        if (hardwarePrinterType === 'usb' || pr.connectionType === 'USB Cable') {
+                                        if (hardwarePrinterType === 'usb') {
                                           printInvoiceToRawHardware({
                                             invoiceNumber: 'TEST-PAGE',
                                             date: new Date().toLocaleDateString(),
@@ -14557,7 +14557,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                                             totalLBP: 0,
                                             items: [{ productName: 'صفحة اختبار الطابعة المدمجة', quantity: 1, priceUSD: 0, totalUSD: 0 }]
                                           });
-                                        } else if (hardwarePrinterType === 'serial' || pr.connectionType === 'Serial COM') {
+                                        } else if (hardwarePrinterType === 'serial') {
                                           printInvoiceToRawHardware({
                                             invoiceNumber: 'TEST-PAGE',
                                             date: new Date().toLocaleDateString(),
@@ -18574,8 +18574,8 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                               <tr key={idx}>
                                 <td className="p-2 border font-mono text-xs">{exp.date}</td>
                                 <td className="p-2 border font-bold text-rose-900">{exp.category}</td>
-                                <td className="p-2 border text-center text-slate-650">{exp.cashier || 'المدير العام'}</td>
-                                <td className="p-2 border text-slate-600 font-sans text-xs">{exp.description}</td>
+                                <td className="p-2 border text-center text-slate-650">المدير العام</td>
+                                <td className="p-2 border text-slate-600 font-sans text-xs">{exp.title}</td>
                                 <td className="p-2 border text-left font-mono font-bold text-red-650">-{exp.amountUSD.toFixed(2)} $</td>
                               </tr>
                             ))}
@@ -18785,7 +18785,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                                     <tr key={idx}>
                                       <td className="p-2 border font-mono text-slate-500 text-xs">{r.invoiceNumber || 'إرجاع يدوي'}</td>
                                       <td className="p-2 border font-bold text-slate-900">{r.productName}</td>
-                                      <td className="p-2 border text-slate-500 text-xs">{r.date} | {r.time}</td>
+                                      <td className="p-2 border text-slate-500 text-xs">{r.date}</td>
                                       <td className="p-2 border text-center font-bold">{r.quantity} قطع</td>
                                       <td className="p-2 border text-xs text-slate-650 font-sans">{r.reason || 'تلف طفيف / تغيير خيار عابر'}</td>
                                       <td className="p-2 border text-left font-mono font-bold text-blue-800">{r.refundAmountUSD.toFixed(2)} $</td>
@@ -18834,9 +18834,9 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                             {waste.map((w, idx) => (
                               <tr key={idx}>
                                 <td className="p-2 border font-mono text-slate-500 text-xs">{w.date}</td>
-                                <td className="p-2 border font-bold text-slate-900">{w.name}</td>
+                                <td className="p-2 border font-bold text-slate-900">{w.productName}</td>
                                 <td className="p-2 border text-center font-bold text-rose-900">{w.quantity} قطعة</td>
-                                <td className="p-2 border text-slate-600 font-sans text-xs">{w.notes || 'سوء تخزين / تضرر الغلاف / كسر'}</td>
+                                <td className="p-2 border text-slate-600 font-sans text-xs">{w.note || 'سوء تخزين / تضرر الغلاف / كسر'}</td>
                                 <td className="p-2 border text-left font-mono font-bold text-rose-700">{(w.estimatedLossUSD || 0).toFixed(2)} $</td>
                               </tr>
                             ))}
