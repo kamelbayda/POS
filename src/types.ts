@@ -266,3 +266,18 @@ export interface ProcessedProduct extends Product {
   daysSinceLastSale: number | null;
   isStagnant: boolean;
 }
+
+/** A parked/secondary cart ("invoice tab") on the POS screen. */
+export interface CartSession {
+  id: string;
+  label: string;
+  cart: CartItem[];
+  discountInput: string;
+  paidUSDInput: string;
+  paidLBPInput: string;
+  paymentMethod: 'cash' | 'card' | 'transfer' | 'debt';
+  posSaleType: 'retail' | 'wholesale';
+  selectedCustomerId: string;
+  voidedCartItemIds?: string[];
+  noteInput?: string;
+}
