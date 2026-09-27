@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 /**
  * Single entry point for the app's local (per-device) persistence.
  *
@@ -43,4 +45,17 @@ export function getJSON<T>(key: string, fallback: T): T {
 
 export function setJSON(key: string, value: unknown): void {
   setItem(key, JSON.stringify(value));
+}
+
+/**
+ * useState that is remembered on this device under `key` (JSON-encoded).
+ * Use for per-device UI preferences, not for business data.
+ */
+export function useStoredState<T>(key: string, initial: T): [T, (value: T) => void] {
+  const [value, setValue] = useState<T>(() => getJSON<T>(key, initial));
+  const set = (next: T) => {
+    setValue(next);
+    setJSON(key, next);
+  };
+  return [value, set];
 }
