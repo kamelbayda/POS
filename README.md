@@ -43,7 +43,7 @@
 ---
 
 ## 📁 هيكلية المشروع (Project Structure)
-- `src/App.tsx`: الغلاف الرئيسي: تسجيل الدخول، القائمة الجانبية، شاشة البيع (POS)، النوافذ المنبثقة، والحالة المشتركة (المنتجات، الفواتير، الإعدادات...).
+- `src/App.tsx`: بيربط الـ hooks بالشاشات والنوافذ، وبيحدّد شو بينعرض (الدخول، القفل، أو النظام).
 - `src/features/`: كل تاب بمجلد لحاله:
   - `inventory/` إدارة المخزن والأصناف · `stock-count/` جرد المخزون والتسوية
   - `purchases/` فواتير المشتريات والموردين · `warehouse/` التحويل بين المستودعات
@@ -52,7 +52,7 @@
   - `promotions/` العروض والخصومات · `price-labels/` ملصقات الأسعار
   - `users/` المستخدمين والصلاحيات · `settings/` الإعدادات والطابعات والتفعيل
   - `firebase-sync/` المزامنة السحابية
-- `src/hooks/`: `useResizableColumns` (تغيير عرض أعمدة الجداول)، `usePrinterHardware` (طباعة USB/Serial ودرج الكاش).
+- `src/hooks/`: منطق مشترك بعيد عن الواجهة. `useStoreData` بيحمّل الداتا ويحفظها، و`useStoreActions` فيه عمليات المنتجات والعروض والمصاريف، و`useAccounts` للدخول والقفل وكلمات السر، و`useLicense` للتفعيل، و`usePrintSpooler` و`usePrinterHardware` للطباعة ودرج الكاش، و`useDataMaintenance` لحفظ الإعدادات والمسح، و`useUiPreferences` للثيم والأحجام، و`useResizableColumns` لأعمدة الجداول. وبـ `src/features/` في كمان `usePosRegister` (السلة والدفع) و`useExcelImport` و`useInvoiceActions`.
 - `src/lib/`: `storage` (التخزين المحلي)، `date` (تاريخ اليوم بالتوقيت المحلي)، `print`، `barcode`.
 - `src/components/`: مكونات صغيرة مشتركة (`ColumnSelector`، `LockScreenClock`).
 - `src/types.ts`: أنواع البيانات · `src/mockData.ts`: البيانات التجريبية الافتراضية.

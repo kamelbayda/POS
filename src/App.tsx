@@ -85,6 +85,14 @@ import { PriceLabelsTab } from './features/price-labels/PriceLabelsTab';
 import { InventoryTab } from './features/inventory/InventoryTab';
 import { ReportsTab } from './features/reports/ReportsTab';
 import { SettingsTab } from './features/settings/SettingsTab';
+import { useStoreActions } from './hooks/useStoreActions';
+import { useUiPreferences } from './hooks/useUiPreferences';
+import { useDataMaintenance } from './hooks/useDataMaintenance';
+import { useInvoiceActions } from './features/invoices/useInvoiceActions';
+import { useAccounts } from './hooks/useAccounts';
+import { useStoreData } from './hooks/useStoreData';
+import { usePrintSpooler } from './hooks/usePrintSpooler';
+import { useExcelImport } from './features/inventory/useExcelImport';
 import { usePosRegister } from './features/pos/usePosRegister';
 import { PosModernScreen } from './features/pos/PosModernScreen';
 import { PosTerminalScreen } from './features/pos/PosTerminalScreen';
@@ -188,288 +196,37 @@ export default function App() {
   }, [lang]);
 
   // --- DATABASE & APP STATE INITIALIZATION ---
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
-  const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
-  const [users, setUsers] = useState<UserType[]>(DEFAULT_USERS);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+
+  const storeData = useStoreData({ SYS_DATE });
+  const {
+    products,
+    setProducts,
+    categories,
+    setCategories,
+    settings,
+    setSettings,
+    users,
+    setUsers,
+    invoices,
+    setInvoices,
+    customers,
+    setCustomers,
+    suppliers,
+    setSuppliers,
+    returns,
+    setReturns,
+    waste,
+    setWaste,
+    promotions,
+    setPromotions,
+    expenses,
+    setExpenses,
+    purchaseInvoices,
+    setPurchaseInvoices,
+  } = storeData;
   
-  // New 5 data tables representing SQLite extensions
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [returns, setReturns] = useState<ReturnRecord[]>([]);
-  const [waste, setWaste] = useState<WasteRecord[]>([]);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
-  const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>([]);
   
-  // --- EXCEL IMPORT STATES ---
-  const [showImportExcelModal, setShowImportExcelModal] = useState<boolean>(false);
-  const [importStatus, setImportStatus] = useState<'idle' | 'parsing' | 'preview' | 'error'>('idle');
-  const [importError, setImportError] = useState<string | null>(null);
-  const [parsedProducts, setParsedProducts] = useState<{
-    product: Product;
-    status: 'new' | 'update' | 'invalid';
-    warning?: string;
-  }[]>([]);
-  const [updateExistingOnMatch, setUpdateExistingOnMatch] = useState<boolean>(true);
 
-  // --- EXCEL TEMPLATE DOWNLOAD & EXCEL IMPORT LOGIC ---
-  const downloadExcelTemplate = () => {
-    const headers = [
-      'الاسم / Product Name',
-      'الباركود / Barcode',
-      'التصنيف / Category',
-      'سعر التجزئة بالدولار / Retail Price USD',
-      'سعر الجملة بالدولار / Wholesale Price USD',
-      'سعر التكلفة بالدولار / Cost Price USD',
-      'الكمية المتاحة / Quantity',
-      'تاريخ الانتهاء / Expiry Date'
-    ];
-    const sampleRows = [
-      ['خيار طازج بلدي 1 كغ / Cucumber local 1kg', '5282001928372', 'خضار وفواكه', 1.25, 1.10, 0.95, 50, '2026-06-15'],
-      ['زيت عافية ذرة 1.5 لتر / Afia Corn Oil 1.5L', '6281007201029', 'زيوت ودهون', 4.50, 4.25, 3.80, 24, '2027-01-01'],
-      ['حليب نيدو مجفف 900 غ / Nido Dry Milk 900g', '', 'حليب ومشتقاته', 9.00, 8.50, 7.80, 15, ''],
-    ];
-    
-    const wsData = [headers, ...sampleRows];
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, 'الأصناف - Products');
-    XLSX.writeFile(wb, 'POS_Products_Template.xlsx');
-    showToast('success', lang === 'ar' ? 'تم تحميل قالب الإكسل النموذجي بنجاح! 📥' : 'Excel sample template downloaded successfully!');
-  };
-
-  const handleExcelImport = (file: File) => {
-    if (!file) return;
-    setImportStatus('parsing');
-    setImportError(null);
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        
-        const rows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1 });
-        if (rows.length < 2) {
-          throw new Error(lang === 'ar' ? 'ملف الإكسيل فارغ أو لا يحتوي على صفوف بيانات!' : 'Excel file is empty or has no data rows!');
-        }
-        
-        const headers = rows[0].map((h: any) => String(h || '').trim().toLowerCase());
-        
-        const findColIndex = (keywords: string[]): number => {
-          return headers.findIndex((h: string) => 
-            keywords.some(kw => h.includes(kw))
-          );
-        };
-        
-        const nameIdx = findColIndex(['الاسم', 'product name', 'name', 'اسم']);
-        const barcodeIdx = findColIndex(['الباركود', 'barcode', 'باركود']);
-        const valCategoryIdx = findColIndex(['التصنيف', 'category', 'تصنيف']);
-        const priceUSDIdx = findColIndex(['سعر التجزئة', 'price', 'retail', 'البيع', 'usd', 'سعر البيع']);
-        const wholesaleIdx = findColIndex(['سعر الجملة', 'wholesale', 'جملة']);
-        const costIdx = findColIndex(['سعر التكلفة', 'cost', 'التكلفة', 'تكلفة']);
-        const qtyIdx = findColIndex(['الكمية', 'quantity', 'qty', 'كمية']);
-        const expiryIdx = findColIndex(['الانتهاء', 'expiry', 'date', 'تاريخ']);
-        
-        const finalNameIdx = nameIdx >= 0 ? nameIdx : 0;
-        const finalBarcodeIdx = barcodeIdx >= 0 ? barcodeIdx : 1;
-        const finalCategoryIdx = valCategoryIdx >= 0 ? valCategoryIdx : 2;
-        const finalPriceIdx = priceUSDIdx >= 0 ? priceUSDIdx : 3;
-        const finalWholesaleIdx = wholesaleIdx >= 0 ? wholesaleIdx : 4;
-        const finalCostIdx = costIdx >= 0 ? costIdx : 5;
-        const finalQtyIdx = qtyIdx >= 0 ? qtyIdx : 6;
-        const finalExpiryIdx = expiryIdx >= 0 ? expiryIdx : 7;
-        
-        const parsed: { product: Product; status: 'new' | 'update' | 'invalid'; warning?: string }[] = [];
-        
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
-          if (!row || row.length === 0) continue;
-          
-          const originalName = String(row[finalNameIdx] || '').trim();
-          if (!originalName) {
-            if (row.some(c => c !== undefined && c !== '')) {
-              parsed.push({
-                product: { id: '', name: 'صنف بدون اسم', barcode: '', category: 'عام', priceUSD: 0, quantity: 0, expiryDate: '' },
-                status: 'invalid',
-                warning: lang === 'ar' ? `السطر ${i + 1}: اسم الصنف مفقود` : `Row ${i + 1}: Product name is missing`
-              });
-            }
-            continue;
-          }
-          
-          let originalBarcode = String(row[finalBarcodeIdx] || '').trim();
-          const originalCategory = String(row[finalCategoryIdx] || 'عام').trim();
-          
-          const parseNumber = (val: any): number => {
-            if (typeof val === 'number') return val;
-            if (!val) return 0;
-            const cleaned = String(val).replace(/[^0-9.]/g, '');
-            return parseFloat(cleaned) || 0;
-          };
-          
-          const priceUSD = parseNumber(row[finalPriceIdx]);
-          const priceWholesale = wholesaleIdx >= 0 && row[finalWholesaleIdx] !== undefined ? parseNumber(row[finalWholesaleIdx]) : undefined;
-          const costPriceUSD = costIdx >= 0 && row[finalCostIdx] !== undefined ? parseNumber(row[finalCostIdx]) : undefined;
-          const quantity = qtyIdx >= 0 ? parseNumber(row[finalQtyIdx]) : 0;
-          
-          let expiryDate = '';
-          const rawExpiry = row[finalExpiryIdx];
-          if (rawExpiry) {
-            if (typeof rawExpiry === 'number' && rawExpiry > 20000) {
-              try {
-                const d = new Date((rawExpiry - 25569) * 86400 * 1000);
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                expiryDate = `${y}-${m}-${day}`;
-              } catch (_) {
-                expiryDate = '';
-              }
-            } else {
-              const str = String(rawExpiry).trim();
-              const matches = str.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-              if (matches) {
-                expiryDate = `${matches[1]}-${matches[2].padStart(2, '0')}-${matches[3].padStart(2, '0')}`;
-              } else {
-                expiryDate = str;
-              }
-            }
-          }
-          
-          let isNew = true;
-          let existingProduct: Product | undefined = undefined;
-          
-          if (originalBarcode) {
-            existingProduct = products.find(p => p.barcode === originalBarcode);
-            if (existingProduct) {
-              isNew = false;
-            }
-          }
-          
-          parsed.push({
-            product: {
-              id: existingProduct?.id || ('prod-' + Math.random().toString(36).substr(2, 9)),
-              name: originalName,
-              barcode: originalBarcode,
-              category: originalCategory,
-              priceUSD: priceUSD,
-              priceWholesale: priceWholesale,
-              costPriceUSD: costPriceUSD,
-              quantity: quantity,
-              expiryDate: expiryDate
-            },
-            status: isNew ? 'new' : 'update',
-            warning: !originalBarcode ? (lang === 'ar' ? 'سيتم توليد باركود تلقائيا' : 'Barcode will be auto-generated') : undefined
-          });
-        }
-        
-        if (parsed.length === 0) {
-          throw new Error(lang === 'ar' ? 'لم يتم العثور على أي بيانات سلع صالحة في ملف الإكسيل!' : 'No valid product rows were parsed from the Excel file!');
-        }
-        
-        setParsedProducts(parsed);
-        setImportStatus('preview');
-      } catch (err: any) {
-        setImportError(err.message || 'Error parsing file.');
-        setImportStatus('error');
-        showToast('error', lang === 'ar' ? 'الخطأ في الملف: ' + err.message : 'File error: ' + err.message);
-      }
-    };
-    
-    reader.onerror = () => {
-      setImportError(lang === 'ar' ? 'حدث خطأ أثناء قراءة الملف.' : 'Error reading file.');
-      setImportStatus('error');
-    };
-    
-    reader.readAsArrayBuffer(file);
-  };
-
-  const confirmExcelImport = () => {
-    const novelCategories = Array.from(new Set(parsedProducts
-      .filter(x => x.status !== 'invalid' && x.product.category)
-      .map(x => x.product.category)
-    )) as string[];
-    const existingCatNames = categories.map(c => c.name.trim().toLowerCase());
-    const catsToCreate: Category[] = [];
-    novelCategories.forEach(catName => {
-      if (catName && !existingCatNames.includes(catName.trim().toLowerCase())) {
-        catsToCreate.push({
-          id: 'cat-' + Math.random().toString(36).substr(2, 9),
-          name: catName.trim(),
-          emoji: '🏷️'
-        });
-      }
-    });
-
-    let randCounter = 1;
-    const finalProdsToSave = [...products];
-    const syncOperations: Product[] = [];
-    
-    parsedProducts.forEach(item => {
-      if (item.status === 'invalid') return;
-      
-      const p = { ...item.product };
-      if (!p.barcode) {
-        let generated = '';
-        do {
-          generated = '2999' + Math.floor(1000000 + Math.random() * 9000000).toString() + (randCounter++);
-        } while (products.some(x => x.barcode === generated) || finalProdsToSave.some(x => x.barcode === generated));
-        p.barcode = generated;
-      }
-      
-      const existingIndex = finalProdsToSave.findIndex(x => x.barcode === p.barcode);
-      if (existingIndex >= 0) {
-        if (updateExistingOnMatch) {
-          const existingItem = finalProdsToSave[existingIndex];
-          const updatedItem = {
-            ...existingItem,
-            name: p.name,
-            category: p.category,
-            priceUSD: p.priceUSD,
-            priceWholesale: p.priceWholesale !== undefined ? p.priceWholesale : existingItem.priceWholesale,
-            costPriceUSD: p.costPriceUSD !== undefined ? p.costPriceUSD : existingItem.costPriceUSD,
-            quantity: p.quantity,
-            expiryDate: p.expiryDate || existingItem.expiryDate || SYS_DATE
-          };
-          finalProdsToSave[existingIndex] = updatedItem;
-          syncOperations.push(updatedItem);
-        }
-      } else {
-        finalProdsToSave.push(p);
-        syncOperations.push(p);
-      }
-    });
-
-    setProducts(finalProdsToSave);
-    localStorage.setItem('pos_products', JSON.stringify(finalProdsToSave));
-
-    if (catsToCreate.length > 0) {
-      const updatedCats = [...categories, ...catsToCreate];
-      setCategories(updatedCats);
-      localStorage.setItem('pos_categories', JSON.stringify(updatedCats));
-    }
-
-    if (auth.currentUser) {
-      syncOperations.forEach(prod => {
-        syncWriteToCloud('products', prod.id, prod);
-      });
-    }
-
-    showToast('success', lang === 'ar' 
-      ? `🎉 تم إنهاء الاستيراد بنجاح! إجمالي المنتجات المحدثة/المضافة: (${syncOperations.length}) صنف.` 
-      : `🎉 Import finished successfully! (${syncOperations.length}) items updated/added.`
-    );
-
-    // Reset state & close
-    setShowImportExcelModal(false);
-    setImportStatus('idle');
-    setParsedProducts([]);
-  };
   
   // App navigation & session state
   const [activeTab, setActiveTab] = useState<string>('pos');
@@ -481,130 +238,9 @@ export default function App() {
 
   
 
-  // --- INTEGRATED ARONIUM PRINTERS & SPOOLER STATES ---
-  const [activePrintJobs, setActivePrintJobs] = useState<Array<{
-    id: string;
-    printerName: string;
-    jobName: string;
-    status: 'spooling' | 'printing' | 'completed' | 'error';
-    progress: number;
-    content: string;
-    timestamp: string;
-  }>>([]);
-  const [isSpoolerMonitorOpen, setIsSpoolerMonitorOpen] = useState<boolean>(false);
+  // --- ON-SCREEN KEYBOARD ---
   const [isBarcodeKeyboardOpen, setIsBarcodeKeyboardOpen] = useState<boolean>(false);
   const [keyboardTarget, setKeyboardTarget] = useState<'barcode' | 'search'>('barcode');
-
-  const playPrinterSound = () => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const audioCtx = new AudioContextClass();
-      const osc = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      osc.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      const now = audioCtx.currentTime;
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(140, now);
-      osc.frequency.exponentialRampToValueAtTime(160, now + 0.1);
-      osc.frequency.setValueAtTime(100, now + 0.15);
-      osc.frequency.exponentialRampToValueAtTime(110, now + 0.35);
-      
-      gainNode.gain.setValueAtTime(0.0, now);
-      gainNode.gain.linearRampToValueAtTime(0.12, now + 0.05);
-      gainNode.gain.setValueAtTime(0.12, now + 0.35);
-      gainNode.gain.linearRampToValueAtTime(0.0, now + 0.45);
-      
-      const osc2 = audioCtx.createOscillator();
-      osc2.type = 'sawtooth';
-      osc2.frequency.setValueAtTime(155, now + 0.5);
-      osc2.frequency.setValueAtTime(145, now + 0.65);
-      osc2.connect(gainNode);
-      
-      gainNode.gain.setValueAtTime(0.1, now + 0.5);
-      gainNode.gain.linearRampToValueAtTime(0.1, now + 0.8);
-      gainNode.gain.linearRampToValueAtTime(0.0, now + 0.9);
-      
-      osc.start(now);
-      osc.stop(now + 0.45);
-      osc2.start(now + 0.5);
-      osc2.stop(now + 0.9);
-    } catch (err) {
-      console.log("Audio feedback ignored", err);
-    }
-  };
-
-  const addPrintJob = (printerName: string, jobName: string, content: string) => {
-    const jobID = `job-${Date.now()}`;
-    const newJob = {
-      id: jobID,
-      printerName,
-      jobName,
-      status: 'spooling' as const,
-      progress: 10,
-      content,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    
-    setActivePrintJobs(prev => [newJob, ...prev]);
-    setIsSpoolerMonitorOpen(true);
-    playPrinterSound();
-
-    let prog = 10;
-    const interval = setInterval(() => {
-      prog += 30;
-      if (prog >= 100) {
-        clearInterval(interval);
-        setActivePrintJobs(prev => prev.map(j => j.id === jobID ? { ...j, status: 'completed' as const, progress: 100 } : j));
-        showToast('success', lang === 'ar' ? `✔️ اكتملت طباعة [${jobName}] على طابعة ${printerName}` : `✔️ Completed printing ${jobName} on ${printerName}`);
-      } else {
-        setActivePrintJobs(prev => prev.map(j => j.id === jobID ? { ...j, status: 'printing' as const, progress: prog } : j));
-      }
-    }, 600);
-  };
-
-  useEffect(() => {
-    const handleDirectPrintEvent = (e: Event) => {
-      const customEv = e as CustomEvent<{ elementId: string; textContents: string }>;
-      const { elementId, textContents } = customEv.detail;
-      
-      let printerName = 'طابعة الكاشير الافتراضية (Aronium)';
-      let jobName = 'فاتورة كاشير سريعة';
-
-      if (elementId === 'thermal-paper-print') {
-        const assignedId = settings.printerAssignments?.receiptPrinterId;
-        const assigned = (settings.printersList || []).find((pr: any) => pr.id === assignedId);
-        printerName = assigned ? assigned.name : 'XP-80 POS Thermal';
-        jobName = 'فاتورة مبيعات عملاء - POS Receipt';
-      } else if (elementId === 'barcode-paper-roll-print-area') {
-        printerName = 'طابعة باركود الملصقات Labels';
-        jobName = 'طباعة ملصقات الباركود والأسعار';
-      } else if (elementId === 'report-paper-sheet-content') {
-        const assignedId = settings.printerAssignments?.targetPrinterId;
-        const assigned = (settings.printersList || []).find((pr: any) => pr.id === assignedId);
-        printerName = assigned ? assigned.name : 'HP LaserJet 400 M402 (A4)';
-        jobName = 'تقرير تدقيق مبيعات وجرد أرباح';
-      }
-
-      // Automatically spool the print job inside our Aronium background spooler with tick sound
-      addPrintJob(printerName, jobName, textContents);
-
-      // Auto dismiss/advance after print
-      if (elementId === 'thermal-paper-print') {
-        setTimeout(() => {
-          setShowInvoiceReceipt(null);
-        }, 1200);
-      }
-    };
-
-    window.addEventListener('aronium-direct-print', handleDirectPrintEvent);
-    return () => {
-      window.removeEventListener('aronium-direct-print', handleDirectPrintEvent);
-    };
-  }, [settings, lang]);
 
   // --- INTERACTIVE CUSTOMER SELECT & REGISTER MODAL STATES ---
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState<boolean>(false);
@@ -617,57 +253,27 @@ export default function App() {
 
   // Operations to manage multi-client carts
 
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('pos_theme');
-    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
-  });
+  const uiPreferences = useUiPreferences();
+  const {
+    theme,
+    setTheme,
+    posLayoutMode,
+    setPosLayoutMode,
+    globalFontScale,
+    setGlobalFontScale,
+    globalButtonScale,
+    setGlobalButtonScale,
+    globalZoomScale,
+    setGlobalZoomScale,
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    terminalProductPage,
+    setTerminalProductPage,
+    terminalItemsPerPage,
+    setTerminalItemsPerPage,
+  } = uiPreferences;
   
-  // Custom states built for the high-end dark POS terminal style from screenshotted design:
-  const [posLayoutMode, setPosLayoutMode] = useState<'modern' | 'terminal'>(() => {
-    const saved = localStorage.getItem('pos_layout_mode');
-    return saved === 'modern' ? 'modern' : 'terminal';
-  });
 
-  // Global Text & Button Size Controllers:
-  const [globalFontScale, setGlobalFontScale] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_global_font_scale');
-    return saved ? parseFloat(saved) : 1.0;
-  });
-  const [globalButtonScale, setGlobalButtonScale] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_global_button_scale');
-    return saved ? parseFloat(saved) : 1.0;
-  });
-  const [globalZoomScale, setGlobalZoomScale] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_global_zoom_scale');
-    return saved ? parseFloat(saved) : 0.85; // Default to 85% to perfectly fit standard POS resolutions (1024x768 / 1366x768)
-  });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
-    return localStorage.getItem('pos_sidebar_collapsed') === 'true';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('pos_global_font_scale', String(globalFontScale));
-  }, [globalFontScale]);
-
-  useEffect(() => {
-    localStorage.setItem('pos_global_button_scale', String(globalButtonScale));
-  }, [globalButtonScale]);
-
-  useEffect(() => {
-    localStorage.setItem('pos_global_zoom_scale', String(globalZoomScale));
-  }, [globalZoomScale]);
-
-  useEffect(() => {
-    localStorage.setItem('pos_sidebar_collapsed', String(sidebarCollapsed));
-  }, [sidebarCollapsed]);
-  const [terminalProductPage, setTerminalProductPage] = useState<number>(0);
-  const [terminalItemsPerPage, setTerminalItemsPerPage] = useState<number>(() => {
-    return parseInt(localStorage.getItem('terminal_items_per_page') || '12');
-  });
-
-  useEffect(() => {
-    localStorage.setItem('terminal_items_per_page', String(terminalItemsPerPage));
-  }, [terminalItemsPerPage]);
   
   // Modals & alerts state
   const [showInvoiceReceipt, setShowInvoiceReceipt] = useState<Invoice | null>(null);
@@ -677,194 +283,10 @@ export default function App() {
   const [expiryWarningModal, setExpiryWarningModal] = useState<Product | null>(null);
   const [generalAlert, setGeneralAlert] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
 
-  // --- SCREEN LOCK STATES ---
-  const [isScreenLocked, setIsScreenLocked] = useState<boolean>(() => {
-    return localStorage.getItem('pos_screen_locked') === 'true';
-  });
-  const [lockPasscode, setLockPasscode] = useState<string>('');
-  const [lockError, setLockError] = useState<string>('');
-  const [isLockShaking, setIsLockShaking] = useState<boolean>(false);
-  const [autoLockMinutes, setAutoLockMinutes] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_auto_lock_minutes');
-    return saved ? parseInt(saved) : 5; // default is 5 mins, 0 means disabled
-  });
-
-  // Setup wizard states for custom admin/cashier customization after purchase
-  const [adminPasscode, setAdminPasscode] = useState<string>(() => {
-    return localStorage.getItem('pos_admin_passcode') || 'admin123';
-  });
-  const [cashierPasscode, setCashierPasscode] = useState<string>(() => {
-    return localStorage.getItem('pos_cashier_passcode') || '1234';
-  });
-  const [adminRealName, setAdminRealName] = useState<string>(() => {
-    return localStorage.getItem('pos_admin_real_name') || 'المدير المسؤول';
-  });
-  const [cashierRealName, setCashierRealName] = useState<string>(() => {
-    return localStorage.getItem('pos_cashier_real_name') || 'كاشير الورديات';
-  });
-
-  // Open the owner setup wizard on start if a licence was activated but the wizard was never finished
-  const [showSetupWizard, setShowSetupWizard] = useState<boolean>(() =>
-    !!storage.getItem('pos_license_token') && storage.getItem('pos_setup_wizard_completed') !== 'true'
-  );
-
-  // --- ADMIN PASSWORD VERIFICATION MODAL STATES ---
-  const [adminVerificationAction, setAdminVerificationAction] = useState<(() => void) | null>(null);
-  const [adminVerificationOpen, setAdminVerificationOpen] = useState<boolean>(false);
-  const [adminVerificationPasswordInput, setAdminVerificationPasswordInput] = useState<string>('');
-  const [adminVerificationError, setAdminVerificationError] = useState<string>('');
-  const [adminVerificationTitle, setAdminVerificationTitle] = useState<string>('');
-
-  const executeWithAdminAuth = (title: string, action: () => void) => {
-    setAdminVerificationTitle(title);
-    setAdminVerificationAction(() => action);
-    setAdminVerificationPasswordInput('');
-    setAdminVerificationError('');
-    setAdminVerificationOpen(true);
-  };
-
-  const saveWizardData = async (adminName: string, adminPass: string, cashierName: string, cashierPass: string) => {
-    localStorage.setItem('pos_admin_real_name', adminName.trim());
-    localStorage.setItem('pos_cashier_real_name', cashierName.trim());
-    setAdminRealName(adminName.trim());
-    setCashierRealName(cashierName.trim());
-    await setAccountPassword('admin', adminPass.trim());
-    await setAccountPassword('kaseer', cashierPass.trim());
-
-    // Update initial/current users local list
-    const updatedUsers = users.map(u => {
-      if (u.username === 'admin') {
-        return { ...u, name: adminName.trim() };
-      }
-      if (u.username === 'kaseer') {
-        return { ...u, name: cashierName.trim() };
-      }
-      return u;
-    });
-    setUsers(updatedUsers);
-    localStorage.setItem('pos_users', JSON.stringify(updatedUsers));
-    localStorage.setItem('pos_setup_wizard_completed', 'true');
-    setShowSetupWizard(false);
-
-    // Sync active session if logged in
-    if (currentUser) {
-      if (currentUser.username === 'admin') {
-        setCurrentUser(prev => prev ? { ...prev, name: adminName.trim() } : null);
-      } else if (currentUser.username === 'kaseer') {
-        setCurrentUser(prev => prev ? { ...prev, name: cashierName.trim() } : null);
-      }
-    }
-
-    showToast('success', lang === 'ar' ? '🎉 تم حفظ وتعيين بيانات المدير والكاشير بنجاح!' : '🎉 Admin & cashier details saved successfully!');
-  };
-
-  const lastActivityRef = useRef<number>(Date.now());
-
-  useEffect(() => {
-    if (!currentUser || isScreenLocked || autoLockMinutes <= 0) return;
-
-    const handleActivity = () => {
-      lastActivityRef.current = Date.now();
-    };
-
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('keydown', handleActivity);
-    window.addEventListener('mousedown', handleActivity);
-    window.addEventListener('touchstart', handleActivity);
-    window.addEventListener('scroll', handleActivity);
-
-    const interval = setInterval(() => {
-      const inactiveMs = Date.now() - lastActivityRef.current;
-      if (inactiveMs >= autoLockMinutes * 60 * 1000) {
-        setIsScreenLocked(true);
-        localStorage.setItem('pos_screen_locked', 'true');
-        setLockPasscode('');
-        setLockError('');
-        showToast('warning', lang === 'ar' ? '🔒 تم قفل الشاشة تلقائياً بسبب الخمول' : '🔒 Screen locked automatically due to inactivity');
-      }
-    }, 5000); // Check every 5 seconds
-
-    return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('mousedown', handleActivity);
-      window.removeEventListener('touchstart', handleActivity);
-      window.removeEventListener('scroll', handleActivity);
-      clearInterval(interval);
-    };
-  }, [currentUser, isScreenLocked, autoLockMinutes, lang]);
-
   // --- ACCOUNT PASSWORDS ---
   // admin / kaseer keep their password in dedicated keys (set by the setup wizard); other accounts on the user record
-  const getStoredPassword = (user: UserType) =>
-    user.username === 'admin' ? adminPasscode : user.username === 'kaseer' ? cashierPasscode : user.password;
-
-  const setAccountPassword = async (username: string, plain: string) => {
-    const hashed = await hashPassword(plain);
-    if (username === 'admin') {
-      storage.setItem('pos_admin_passcode', hashed);
-      setAdminPasscode(hashed);
-    } else if (username === 'kaseer') {
-      storage.setItem('pos_cashier_passcode', hashed);
-      setCashierPasscode(hashed);
-    }
-    // Other accounts keep the hash on their user record; for admin/kaseer drop any old copy there
-    const isBuiltIn = username === 'admin' || username === 'kaseer';
-    setUsers(prev => {
-      const updated = prev.map(u => (u.username !== username ? u : { ...u, password: isBuiltIn ? undefined : hashed }));
-      storage.setJSON('pos_users', updated);
-      return updated;
-    });
-  };
 
   /** Checks a password and upgrades a legacy plaintext one to a hash on success. */
-  const checkUserPassword = async (user: UserType, input: string) => {
-    const stored = getStoredPassword(user);
-    const ok = await verifyPassword(input, stored);
-    if (ok && needsRehash(stored)) await setAccountPassword(user.username, input);
-    return ok;
-  };
-
-  const handleUnlock = async () => {
-    setLockError('');
-    if (!currentUser) return;
-
-    // Each account unlocks with its own password
-    const isCorrect = await checkUserPassword(currentUser, lockPasscode);
-
-    if (isCorrect) {
-      setIsScreenLocked(false);
-      localStorage.setItem('pos_screen_locked', 'false');
-      setLockPasscode('');
-      showToast('success', lang === 'ar' ? '🔓 أهلاً بك من جديد، تم إلغاء قفل الشاشة' : '🔓 Welcome back, screen unlocked');
-    } else {
-      setIsLockShaking(true);
-      setLockError(lang === 'ar' ? 'رمز المرور غير صحيح!' : 'Incorrect passcode!');
-      setTimeout(() => setIsLockShaking(false), 1000); // 1s match for visual shake animation
-    }
-  };
-
-  // Handle keys typed while the screen is locked
-  useEffect(() => {
-    if (!isScreenLocked || !currentUser) return;
-
-    const handleWindowKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleUnlock();
-      } else if (e.key === 'Backspace') {
-        e.preventDefault();
-        setLockPasscode(prev => prev.slice(0, -1));
-      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // any printable character, so passwords with symbols or Arabic letters can unlock
-        e.preventDefault();
-        setLockPasscode(prev => prev + e.key);
-      }
-    };
-
-    window.addEventListener('keydown', handleWindowKeyDown);
-    return () => window.removeEventListener('keydown', handleWindowKeyDown);
-  }, [isScreenLocked, currentUser, lockPasscode, lang]);
 
   // Warehouse & Shop separate stock counts and reports states
   const [stockAuditReportLoc, setStockAuditReportLoc] = useState<'shop' | 'warehouse' | 'combined'>('shop');
@@ -922,22 +344,6 @@ export default function App() {
     });
   }, [categories, invoices, products]);
 
-  // Handle theme transitions on root document element
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('pos_theme', theme);
-  }, [theme]);
-
-  // Handle saving posLayoutMode state
-  useEffect(() => {
-    localStorage.setItem('pos_layout_mode', posLayoutMode);
-  }, [posLayoutMode]);
-
   // Click outside to close customer dropdown
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -950,137 +356,6 @@ export default function App() {
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, []);
-
-  // Load from local storage or seed
-  useEffect(() => {
-    // 1. Settings
-    const storedSettings = localStorage.getItem('pos_settings');
-    let activeSettings = DEFAULT_SETTINGS;
-    if (storedSettings) {
-      activeSettings = JSON.parse(storedSettings);
-      setSettings(activeSettings);
-    } else {
-      localStorage.setItem('pos_settings', JSON.stringify(DEFAULT_SETTINGS));
-    }
-
-    // 1.5 categories
-    const storedCategories = localStorage.getItem('pos_categories');
-    if (storedCategories) {
-      setCategories(JSON.parse(storedCategories));
-    } else {
-      localStorage.setItem('pos_categories', JSON.stringify(DEFAULT_CATEGORIES));
-    }
-
-    // 2. Products
-    const storedProducts = localStorage.getItem('pos_products');
-    let activeProds: Product[] = [];
-    if (storedProducts) {
-      activeProds = JSON.parse(storedProducts);
-      setProducts(activeProds);
-    } else {
-      activeProds = getSeededProducts(SYS_DATE);
-      localStorage.setItem('pos_products', JSON.stringify(activeProds));
-      setProducts(activeProds);
-    }
-
-    // 3. Invoices
-    const storedInvoices = localStorage.getItem('pos_invoices');
-    if (storedInvoices) {
-      setInvoices(JSON.parse(storedInvoices));
-    } else {
-      const seedInvs = getSeededInvoices(SYS_DATE);
-      localStorage.setItem('pos_invoices', JSON.stringify(seedInvs));
-      setInvoices(seedInvs);
-    }
-
-    // 4. Users
-    const storedUsers = localStorage.getItem('pos_users');
-    let loadedUsers = DEFAULT_USERS;
-    if (storedUsers) {
-      loadedUsers = JSON.parse(storedUsers);
-    }
-    const savedAdminName = localStorage.getItem('pos_admin_real_name');
-    const savedCashierName = localStorage.getItem('pos_cashier_real_name');
-    let needsUpdate = false;
-    loadedUsers = loadedUsers.map(u => {
-      if (u.username === 'admin' && savedAdminName && u.name !== savedAdminName) {
-        needsUpdate = true;
-        return { ...u, name: savedAdminName };
-      }
-      if (u.username === 'kaseer' && savedCashierName && u.name !== savedCashierName) {
-        needsUpdate = true;
-        return { ...u, name: savedCashierName };
-      }
-      return u;
-    });
-    setUsers(loadedUsers);
-    if (!storedUsers || needsUpdate) {
-      localStorage.setItem('pos_users', JSON.stringify(loadedUsers));
-    }
-
-    // 5. Customers
-    const storedCustomers = localStorage.getItem('pos_customers');
-    if (storedCustomers) {
-      setCustomers(JSON.parse(storedCustomers));
-    } else {
-      localStorage.setItem('pos_customers', JSON.stringify(DEFAULT_CUSTOMERS));
-      setCustomers(DEFAULT_CUSTOMERS);
-    }
-
-    // 5.5 Suppliers
-    const storedSuppliers = localStorage.getItem('pos_suppliers');
-    if (storedSuppliers) {
-      setSuppliers(JSON.parse(storedSuppliers));
-    } else {
-      localStorage.setItem('pos_suppliers', JSON.stringify(DEFAULT_SUPPLIERS));
-      setSuppliers(DEFAULT_SUPPLIERS);
-    }
-
-    // 6. Returns
-    const storedReturns = localStorage.getItem('pos_returns');
-    if (storedReturns) {
-      setReturns(JSON.parse(storedReturns));
-    } else {
-      localStorage.setItem('pos_returns', JSON.stringify([]));
-      setReturns([]);
-    }
-
-    // 7. Waste
-    const storedWaste = localStorage.getItem('pos_waste');
-    if (storedWaste) {
-      setWaste(JSON.parse(storedWaste));
-    } else {
-      localStorage.setItem('pos_waste', JSON.stringify([]));
-      setWaste([]);
-    }
-
-    // 8. Promotions
-    const storedPromotions = localStorage.getItem('pos_promotions');
-    if (storedPromotions) {
-      setPromotions(JSON.parse(storedPromotions));
-    } else {
-      localStorage.setItem('pos_promotions', JSON.stringify(DEFAULT_PROMOTIONS));
-      setPromotions(DEFAULT_PROMOTIONS);
-    }
-
-    // 9. Expenses
-    const storedExpenses = localStorage.getItem('pos_expenses');
-    if (storedExpenses) {
-      setExpenses(JSON.parse(storedExpenses));
-    } else {
-      localStorage.setItem('pos_expenses', JSON.stringify(DEFAULT_EXPENSES));
-      setExpenses(DEFAULT_EXPENSES);
-    }
-
-    // 10. Purchase Invoices
-    const storedPurchases = localStorage.getItem('pos_purchases');
-    if (storedPurchases) {
-      setPurchaseInvoices(JSON.parse(storedPurchases));
-    } else {
-      localStorage.setItem('pos_purchases', JSON.stringify([]));
-      setPurchaseInvoices([]);
-    }
   }, []);
 
   // Compute expired status on items
@@ -1131,29 +406,6 @@ export default function App() {
   }, [generalAlert]);
 
   // --- LOGIN HANDLER ---
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
-
-    const matched = users.find(u => u.username === loginUsername);
-    if (!matched) {
-      setLoginError('اسم المستخدم غير موجود بالنظام!');
-      return;
-    }
-
-    if (!getStoredPassword(matched)) {
-      setLoginError('لم يتم تعيين كلمة مرور لهذا الحساب بعد. اطلب من المدير تعيينها من شاشة المستخدمين والصلاحيات.');
-      return;
-    }
-    const isValidPass = await checkUserPassword(matched, loginPassword);
-
-    if (isValidPass) {
-      setCurrentUser(matched);
-      showToast('success', `مرحباً بك مجدداً د. ${matched.name}! تم الدخول بنجاح.`);
-    } else {
-      setLoginError('كلمة المرور غير صحيحة!');
-    }
-  };
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -1169,6 +421,61 @@ export default function App() {
   const showToast = (type: 'success' | 'error' | 'warning', message: string) => {
     setGeneralAlert({ type, message });
   };
+
+  const accounts = useAccounts({ lang, users, setUsers, currentUser, setCurrentUser, loginUsername, loginPassword, setLoginError, showToast });
+  const {
+    isScreenLocked,
+    setIsScreenLocked,
+    lockPasscode,
+    setLockPasscode,
+    lockError,
+    setLockError,
+    isLockShaking,
+    adminPasscode,
+    adminRealName,
+    setAdminRealName,
+    cashierRealName,
+    setCashierRealName,
+    showSetupWizard,
+    setShowSetupWizard,
+    adminVerificationAction,
+    adminVerificationOpen,
+    setAdminVerificationOpen,
+    adminVerificationPasswordInput,
+    setAdminVerificationPasswordInput,
+    adminVerificationError,
+    setAdminVerificationError,
+    adminVerificationTitle,
+    executeWithAdminAuth,
+    saveWizardData,
+    setAccountPassword,
+    handleUnlock,
+    handleLogin,
+  } = accounts;
+
+  const printSpooler = usePrintSpooler({ lang, settings, setShowInvoiceReceipt, showToast });
+  const {
+    activePrintJobs,
+    setActivePrintJobs,
+    addPrintJob,
+  } = printSpooler;
+
+  const excelImport = useExcelImport({ SYS_DATE, syncWriteToCloud, lang, products, setProducts, categories, setCategories, showToast });
+  const {
+    showImportExcelModal,
+    setShowImportExcelModal,
+    importStatus,
+    setImportStatus,
+    importError,
+    setImportError,
+    parsedProducts,
+    setParsedProducts,
+    updateExistingOnMatch,
+    setUpdateExistingOnMatch,
+    downloadExcelTemplate,
+    handleExcelImport,
+    confirmExcelImport,
+  } = excelImport;
 
   // Direct POS hardware (raw USB / serial receipt printing, cash drawer)
   // Licence (verified offline, refreshed against the licence server when online)
@@ -1210,25 +517,16 @@ export default function App() {
 
   // Physical keyboard listener for virtual numpads (Touch payment & touch numpad modals)
 
-  const handleAddNewCategory = (name: string, emoji: string = '📦') => {
-    if (!name.trim()) return;
-    const cleanName = name.trim();
-    // Check if category already exists with the same name
-    const exists = categories.some(c => c.name.toLowerCase() === cleanName.toLowerCase());
-    if (exists) {
-      showToast('warning', lang === 'ar' ? 'هذه الفئة موجودة بالفعل!' : 'This category already exists!');
-      return;
-    }
-    const newCat: Category = {
-      id: `cat-${Date.now()}`,
-      name: cleanName,
-      emoji: emoji || '📦'
-    };
-    const updated = [...categories, newCat];
-    setCategories(updated);
-    localStorage.setItem('pos_categories', JSON.stringify(updated));
-    showToast('success', lang === 'ar' ? `تمت إضافة فئات جديدة [${cleanName}] بنجاح!` : `Category [${cleanName}] added successfully!`);
-  };
+  const storeActions = useStoreActions({ SYS_DATE, syncWriteToCloud, lang, products, setProducts, categories, setCategories, waste, setWaste, promotions, setPromotions, setExpenses, showToast, executeWithAdminAuth });
+  const {
+    handleAddNewCategory,
+    handleProductsChange,
+    deleteProduct,
+    handleExpensesChange,
+    handlePromotionsChange,
+    handleAddStagnantPromotion,
+    handleQuickWasteFromExpiry,
+  } = storeActions;
 
   const handleQuickAddCustomerSubmit = () => {
     if (!quickAddCustomerName.trim()) {
@@ -1268,11 +566,6 @@ export default function App() {
   };
 
   // Persist the products list locally and mirror the single changed product to the cloud
-  const handleProductsChange = (updated: Product[], changed: Product) => {
-    setProducts(updated);
-    storage.setJSON('pos_products', updated);
-    syncWriteToCloud('products', changed.id, changed);
-  };
 
   const openImportExcelModal = () => {
     setImportStatus('idle');
@@ -1286,271 +579,11 @@ export default function App() {
     setBarcodeLabelCopies(1);
   };
 
-  const deleteProduct = (id: string, name: string) => {
-    executeWithAdminAuth(lang === 'ar' ? `حذف الصنف: ${name}` : `Delete Product: ${name}`, () => {
-      if (window.confirm(lang === 'ar' ? `حذف منتج: هل أنت متأكد من حذف المنتج "${name}" كلياً من قاعدة بيانات المحل؟` : `Delete product: Are you sure you want to delete "${name}"?`)) {
-        const updated = products.filter(p => p.id !== id);
-        setProducts(updated);
-        localStorage.setItem('pos_products', JSON.stringify(updated));
-        showToast('success', lang === 'ar' ? `تم إسقاط وحذف الصنف [${name}] من مخازنك.` : `Product [${name}] deleted.`);
-        if (auth.currentUser) {
-          syncWriteToCloud('products', id, null, true);
-        }
-      }
-    });
-  };
-
-  const handleCancelWholeInvoice = (inv: Invoice) => {
-    executeWithAdminAuth(lang === 'ar' ? `إلغاء وتصفير الفاتورة #${inv.invoiceNumber}` : `Cancel Invoice #${inv.invoiceNumber}`, () => {
-      const confirmMsg = lang === 'ar' 
-        ? '⚠️ هل أنت متأكد من رغبتك في إلغاء وتصفير هذه الفاتورة بالكامل وإرجاع كافة محتوياتها إلى المخزن؟ سيتم إرجاع كافة البضائع المباعة لجرود المحل وخصم الديون المترتبة.' 
-        : 'Are you sure you want to cancel this entire invoice and return all sold items to inventory stock?';
-      
-      if (!window.confirm(confirmMsg)) return;
-
-      // 1. Loop through products and restore stock
-      const updatedProducts = [...products];
-      inv.items.forEach(item => {
-        const returnedAmount = item.quantity - (item.returnedQty || 0);
-        if (returnedAmount > 0) {
-          const idx = updatedProducts.findIndex(p => p.id === item.productId);
-          if (idx !== -1) {
-            updatedProducts[idx] = {
-              ...updatedProducts[idx],
-              quantity: updatedProducts[idx].quantity + returnedAmount
-            };
-          }
-        }
-      });
-
-      // 2. Handle customer debt adjustment if it was dynamic debt
-      const totalToReduceUSD = inv.items.reduce((sum, item) => {
-        const returnedAmount = item.quantity - (item.returnedQty || 0);
-        return sum + (item.priceUSD * returnedAmount);
-      }, 0);
-
-      const updatedCustomers = [...customers];
-      if (inv.customerId && totalToReduceUSD > 0 && inv.paymentMethod === 'debt') {
-        const cIdx = updatedCustomers.findIndex(c => c.id === inv.customerId);
-        if (cIdx !== -1) {
-          const adjustedCredit = Math.max(0, updatedCustomers[cIdx].creditBalance - totalToReduceUSD);
-          updatedCustomers[cIdx] = {
-            ...updatedCustomers[cIdx],
-            creditBalance: adjustedCredit
-          };
-        }
-      }
-
-      // 3. Update modern Invoice object state
-      const updatedInvoiceItems = inv.items.map(item => ({
-        ...item,
-        returnedQty: item.quantity
-      }));
-
-      const updatedInvoice: Invoice = {
-        ...inv,
-        items: updatedInvoiceItems,
-        hasReturn: true,
-        totalUSD: 0,
-        totalLBP: 0,
-        subtotalUSD: 0,
-        discountUSD: 0
-      };
-
-      const updatedInvoices = invoices.map(i => i.id === inv.id ? updatedInvoice : i);
-
-      // 4. Create nice return log records so it populates return statistics in reports
-      const newReturnsList = [...returns];
-      inv.items.forEach(item => {
-        const returnedAmount = item.quantity - (item.returnedQty || 0);
-        if (returnedAmount > 0) {
-          const newReturn: ReturnRecord = {
-            id: `ret-${Date.now()}-${item.productId}`,
-            invoiceId: inv.id,
-            invoiceNumber: inv.invoiceNumber,
-            date: SYS_DATE,
-            productId: item.productId,
-            productName: item.productName,
-            qty: returnedAmount,
-            quantity: returnedAmount,
-            action: inv.paymentMethod === 'debt' ? 'credit' : 'cash',
-            refundAmountUSD: item.priceUSD * returnedAmount,
-            reason: 'cancelled_invoice',
-            refundMethod: inv.paymentMethod === 'debt' ? 'credit' : 'cash',
-            customerId: inv.customerId
-          };
-          newReturnsList.unshift(newReturn);
-        }
-      });
-
-      // 5. Save all local and cloud state modifications
-      setProducts(updatedProducts);
-      localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
-
-      setCustomers(updatedCustomers);
-      localStorage.setItem('pos_customers', JSON.stringify(updatedCustomers));
-
-      setInvoices(updatedInvoices);
-      localStorage.setItem('pos_invoices', JSON.stringify(updatedInvoices));
-
-      setReturns(newReturnsList);
-      localStorage.setItem('pos_returns', JSON.stringify(newReturnsList));
-
-      setShowInvoiceReceipt(updatedInvoice);
-
-      // Write to firebase cloud if online
-      if (auth.currentUser) {
-        syncWriteToCloud('invoices', updatedInvoice.id, updatedInvoice);
-        updatedProducts.forEach(prod => {
-          const originalProd = products.find(p => p.id === prod.id);
-          if (originalProd && originalProd.quantity !== prod.quantity) {
-            syncWriteToCloud('products', prod.id, prod);
-          }
-        });
-        if (inv.customerId) {
-          const c = updatedCustomers.find(cust => cust.id === inv.customerId);
-          if (c) syncWriteToCloud('customers', c.id, c);
-        }
-        // Write returns to cloud
-        inv.items.forEach(item => {
-          const returnedAmount = item.quantity - (item.returnedQty || 0);
-          if (returnedAmount > 0) {
-            const idStr = `ret-${Date.now()}-${item.productId}`;
-            const newRetRec = newReturnsList.find(r => r.id === idStr);
-            if (newRetRec) syncWriteToCloud('returns', idStr, newRetRec);
-          }
-        });
-      }
-
-      showToast('success', lang === 'ar' ? '✅ تم إلغاء الفاتورة بالكامل، وتصفير مبالغها، وإرجاع كافة البضائع للمخزن بنجاح!' : 'Invoice cancelled successfully. Stocks restored.');
-    });
-  };
-
-  const handleReturnSingleItem = (inv: Invoice, productId: string, qtyToReturn: number) => {
-    if (qtyToReturn <= 0) {
-      showToast('error', lang === 'ar' ? 'الكمية المدخلة للإرجاع غير صالحة!' : 'Invalid quantity to return');
-      return;
-    }
-
-    const itemIdx = inv.items.findIndex(itm => itm.productId === productId);
-    if (itemIdx === -1) return;
-
-    const item = inv.items[itemIdx];
-    const maxReturnable = item.quantity - (item.returnedQty || 0);
-
-    if (qtyToReturn > maxReturnable) {
-      showToast('error', lang === 'ar' ? `خطأ: الكمية المحددة للارتجاع أكبر من المتبقي المتوفر بالفاتورة (${maxReturnable})` : `Cannot return more than purchased`);
-      return;
-    }
-
-    const itemPrice = item.priceUSD;
-    const valueOfReturnedItemsUSD = itemPrice * qtyToReturn;
-
-    const confirmMsg = lang === 'ar'
-      ? `هل أنت متأكد من رغبتك في إرجاع عدد (${qtyToReturn}) من صنف "${item.productName}" إلى الرفوف والمخزن؟`
-      : `Are you sure you want to return ${qtyToReturn} of "${item.productName}" to inventory stock?`;
-
-    if (!window.confirm(confirmMsg)) return;
-
-    // 1. Revert product quantity in inventory list
-    const updatedProducts = products.map(p => {
-      if (p.id === productId) {
-        return {
-          ...p,
-          quantity: p.quantity + qtyToReturn
-        };
-      }
-      return p;
-    });
-
-    // 2. Adjust customer debt if credit payment and client exists
-    const updatedCustomers = [...customers];
-    if (inv.customerId && inv.paymentMethod === 'debt') {
-      const cIdx = updatedCustomers.findIndex(c => c.id === inv.customerId);
-      if (cIdx !== -1) {
-        const adjustedCredit = Math.max(0, updatedCustomers[cIdx].creditBalance - valueOfReturnedItemsUSD);
-        updatedCustomers[cIdx] = {
-          ...updatedCustomers[cIdx],
-          creditBalance: adjustedCredit
-        };
-      }
-    }
-
-    // 3. Create Return Record
-    const newReturn: ReturnRecord = {
-      id: `ret-${Date.now()}-${productId}`,
-      invoiceId: inv.id,
-      invoiceNumber: inv.invoiceNumber,
-      date: SYS_DATE,
-      productId: productId,
-      productName: item.productName,
-      qty: qtyToReturn,
-      quantity: qtyToReturn,
-      action: inv.paymentMethod === 'debt' ? 'credit' : 'cash',
-      refundAmountUSD: valueOfReturnedItemsUSD,
-      reason: 'partial_item_return',
-      refundMethod: inv.paymentMethod === 'debt' ? 'credit' : 'cash',
-      customerId: inv.customerId
-    };
-
-    const newReturnsList = [newReturn, ...returns];
-
-    // 4. Update the Invoice Items to record returnedQty and adjust invoice pricing totals
-    const updatedInvoiceItems = inv.items.map((itm, i) => {
-      if (i === itemIdx) {
-        return {
-          ...itm,
-          returnedQty: (itm.returnedQty || 0) + qtyToReturn
-        };
-      }
-      return itm;
-    });
-
-    // Compute updated subtotal and total based on actual unreturned parts
-    const currentSubtotal = Math.max(0, inv.subtotalUSD - valueOfReturnedItemsUSD);
-    const finalTotalUSD = Math.max(0, currentSubtotal - inv.discountUSD);
-    const finalTotalLBP = finalTotalUSD * inv.exchangeRate;
-
-    const updatedInvoice: Invoice = {
-      ...inv,
-      items: updatedInvoiceItems,
-      hasReturn: true,
-      subtotalUSD: currentSubtotal,
-      totalUSD: finalTotalUSD,
-      totalLBP: finalTotalLBP
-    };
-
-    const updatedInvoices = invoices.map(i => i.id === inv.id ? updatedInvoice : i);
-
-    // 5. Set States and Local Storage
-    setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
-
-    setCustomers(updatedCustomers);
-    localStorage.setItem('pos_customers', JSON.stringify(updatedCustomers));
-
-    setInvoices(updatedInvoices);
-    localStorage.setItem('pos_invoices', JSON.stringify(updatedInvoices));
-
-    setReturns(newReturnsList);
-    localStorage.setItem('pos_returns', JSON.stringify(newReturnsList));
-
-    setShowInvoiceReceipt(updatedInvoice);
-
-    // Write to Cloud Sync
-    if (auth.currentUser) {
-      syncWriteToCloud('invoices', updatedInvoice.id, updatedInvoice);
-      const targetProd = updatedProducts.find(p => p.id === productId);
-      if (targetProd) syncWriteToCloud('products', productId, targetProd);
-      if (inv.customerId) {
-        const c = updatedCustomers.find(cust => cust.id === inv.customerId);
-        if (c) syncWriteToCloud('customers', c.id, c);
-      }
-      syncWriteToCloud('returns', newReturn.id, newReturn);
-    }
-
-    showToast('success', lang === 'ar' ? `✅ تم بنجاح إرجاع عدد ${qtyToReturn} من الصنف، وتحديث جرود المخازن والمالية!` : 'Returned item successfully.');
-  };
+  const invoiceActions = useInvoiceActions({ SYS_DATE, syncWriteToCloud, lang, products, setProducts, invoices, setInvoices, customers, setCustomers, returns, setReturns, setShowInvoiceReceipt, showToast, executeWithAdminAuth });
+  const {
+    handleCancelWholeInvoice,
+    handleReturnSingleItem,
+  } = invoiceActions;
 
   // Keep the built-in admin / kaseer login credentials in sync when edited from the users tab
   const handleDefaultAccountUpdated = (username: 'admin' | 'kaseer', name: string, newPassword: string | null) => {
@@ -1565,207 +598,16 @@ export default function App() {
     }
   };
 
-  const handleExpensesChange = (updated: ExpenseRecord[]) => {
-    setExpenses(updated);
-    storage.setJSON('pos_expenses', updated);
-  };
-
-  // Persist the promotions list locally and mirror the single changed record to the cloud
-  const handlePromotionsChange = (updated: Promotion[], change: PromotionChange) => {
-    setPromotions(updated);
-    storage.setJSON('pos_promotions', updated);
-    syncWriteToCloud('promotions', change.id, change.data, change.data === null);
-  };
-
-  const handleAddStagnantPromotion = (productId: string, val: number, discountType: 'percentage' | 'fixed', durationDays: number): boolean => {
-    if (val <= 0) {
-      showToast('error', lang === 'ar' ? 'قيمة الخصم يجب أن تكون أكبر من صفر!' : 'Discount value must be greater than zero!');
-      return false;
-    }
-    
-    const now = new Date();
-    const startDateStr = toISODate(now);
-    
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + durationDays);
-    const endDateStr = toISODate(endDate);
-    
-    const newPromo: Promotion = {
-      id: `promo-${Date.now()}`,
-      type: 'percentage',
-      value: val,
-      discountType: discountType,
-      productId: productId,
-      daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-      startDate: startDateStr,
-      endDate: endDateStr,
-      active: true
-    };
-    
-    handlePromotionsChange([newPromo, ...promotions], { id: newPromo.id, data: newPromo });
-    
-    const targetProdName = products.find(p => p.id === productId)?.name || '';
-    showToast('success', lang === 'ar' 
-      ? `تم تفعيل عرض تخفيض ترويجي سريع لـ [${targetProdName}] بخصم ${val}${discountType === 'percentage' ? '%' : '$'} لمدة ${durationDays} يوماً!` 
-      : `Activated a fast promo discount of ${val}${discountType === 'percentage' ? '%' : '$'} on [${targetProdName}] for ${durationDays} days!`);
-
-    return true;
-  };
-
-  const handleQuickWasteFromExpiry = (prodId: string, qtyToWaste: number, reason: 'expired' | 'damaged_on_shelf') => {
-    const prod = products.find(p => p.id === prodId);
-    if (!prod) return;
-    if (qtyToWaste <= 0) {
-      showToast('error', 'الرجاء إدخال كمية صحيحة أكبر من صفر!');
-      return;
-    }
-    if (qtyToWaste > prod.quantity) {
-      showToast('error', 'الكمية المدخلة تجاوزت الكمية المتوفرة بالمخزن الطبيعي!');
-      return;
-    }
-
-    const cost = prod.costPriceUSD !== undefined && prod.costPriceUSD !== null
-      ? prod.costPriceUSD 
-      : (prod.priceWholesale !== undefined && prod.priceWholesale !== null
-        ? prod.priceWholesale 
-        : prod.priceUSD * 0.75);
-
-    const newWasteRecord: WasteRecord = {
-      id: `waste-${Date.now()}`,
-      productId: prodId,
-      productName: prod.name,
-      qty: qtyToWaste,
-      quantity: qtyToWaste,
-      type: reason === 'expired' ? 'expired' : 'damage',
-      reason: reason,
-      cost: cost,
-      estimatedLossUSD: Number((qtyToWaste * cost).toFixed(2)),
-      compensationStatus: 'loss',
-      date: SYS_DATE,
-      note: 'إتلاف تلقائي وقيد مباشر من تقرير انتهاء الصلاحيات'
-    };
-
-    // Update product quantity
-    const updatedProducts = products.map(p => {
-      if (p.id === prodId) {
-        return {
-          ...p,
-          quantity: Math.max(0, p.quantity - qtyToWaste)
-        };
-      }
-      return p;
-    });
-    setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
-
-    // Update waste list
-    const updatedWaste = [newWasteRecord, ...waste];
-    setWaste(updatedWaste);
-    localStorage.setItem('pos_waste', JSON.stringify(updatedWaste));
-
-    showToast('success', `تم تسجيل إتلاف (${qtyToWaste} قطع) من [${prod.name}] كـ ${reason === 'expired' ? 'منتهي الصلاحية' : 'تالف رفوف'} وتنزيل الكمية من المخازن.`);
-  };
-
   // --- UPDATE SYSTEM GENERAL SETTINGS ---
-  const handleUpdateGeneralSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('pos_settings', JSON.stringify(settings));
-    showToast('success', 'تم حفظ وتعميم إعدادات المحل وسعر الصرف الجديد بنجاح!');
-  };
 
-  // --- RECALCULATE PRODUCTS PRICES BY DEFAULT VALUE MARGIN PERCENT ---
-  const handleRecalculatePricesWithMargin = () => {
-    const margin = settings.defaultMarginPercent !== undefined ? settings.defaultMarginPercent : 15;
-    let count = 0;
-    const updatedProducts = products.map(p => {
-      const cost = p.costPriceUSD;
-      if (cost !== undefined && cost !== null && cost > 0) {
-        count++;
-        const newPriceUSD = parseFloat((cost * (1 + margin / 100)).toFixed(2));
-        const newPriceWholesale = parseFloat((newPriceUSD * 0.9).toFixed(2));
-        return {
-          ...p,
-          priceUSD: newPriceUSD,
-          priceWholesale: newPriceWholesale
-        };
-      }
-      return p;
-    });
-
-    if (count === 0) {
-      showToast('warning', lang === 'ar' 
-        ? '⚠️ لم يتم العثور على أي أصناف تحتوي على سعر تكلفة أكبر من صفر لتعديل أسعارها!' 
-        : '⚠️ No products with a cost price greater than zero found to update!');
-      return;
-    }
-
-    setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
-    showToast('success', lang === 'ar'
-      ? `✅ تم بنجاح تحديث أسعار الصرف والمبيع لـ (${count}) صنف حالي بناءً على الهامش الافتراضي (${margin}%).`
-      : `✅ Successfully recalculated selling prices for (${count}) items using (${margin}%) default profit margin.`);
-  };
-
-  // --- DATABASE MAINTENANCE & SYSTEM RESET ---
-  const handleWipeSalesInvoicesOnly = () => {
-    executeWithAdminAuth(lang === 'ar' ? 'تصفير مبيعات وأرباح المتجر الفعلية' : 'Wipe Live Sales Invoices Only', () => {
-      if (confirm(lang === 'ar' ? '⚠️ هل أنت متأكد تماماً من رغبتك في تصفير وحذف جميع فواتير المبيعات والأرباح والسجلات المالية؟ لا يمكن التراجع عن هذه الخطوة!' : 'Are you sure you want to clear all sales invoices and financial records? This action cannot be undone!')) {
-        setInvoices([]);
-        localStorage.setItem('pos_invoices', JSON.stringify([]));
-        showToast('success', lang === 'ar' ? '🧹 تم تصفير جميع فواتير المبيعات بنجاح. مخزون السلع بقي كما هو.' : 'All sales invoices cleared successfully.');
-      }
-    });
-  };
-
-  const handleWipeProductsAndCategoriesOnly = () => {
-    executeWithAdminAuth(lang === 'ar' ? 'تصفير وحذف مخزن وسلع المتجر الفعلية' : 'Wipe Live Products & Categories Only', () => {
-      if (confirm(lang === 'ar' ? '⚠️ هل أنت متأكد من رغبتك في حذف جميع المنتجات والمخزون الحالي؟ سيتم مسح الأصناف المسجلة بالكامل.' : 'Are you sure you want to clear all products and inventory items?')) {
-        setProducts([]);
-        localStorage.setItem('pos_products', JSON.stringify([]));
-        showToast('success', lang === 'ar' ? '🧹 تم حذف قائمة المنتجات والمخزون بالكامل بنجاح.' : 'Completed clearing products and inventory configuration.');
-      }
-    });
-  };
-
-  const handleWipeEntireSystemData = () => {
-    executeWithAdminAuth(lang === 'ar' ? 'تصفير وتدمير قاعدة بيانات النظام بالكامل' : 'Wipe System Database Entirely', () => {
-      const confirm1 = confirm(lang === 'ar' 
-        ? '🚨 تحذير شديد الأهمية: أنت على وشك حذف وتصفير البرنامج بالكامل من كافة البيانات التجريبية (المنتجات، المبيعات، الزبائن، الإتلاف، المشتريات، المصاريف). للبدء بنسخة نظيفة وخالية من الـ demo data. هل أنت متأكد؟'
-        : '🚨 WARNING: You are about to wipe ALL transaction and inventory database info (Products, Invoices, Customers, Purchases, Expenses) to start fresh. Are you sure?');
-      
-      if (confirm1) {
-        const confirm2 = confirm(lang === 'ar'
-          ? '⚠️ للتأكيد النهائي: هل ترغب بحذف كل شيء والبدء بنظام فارغ تماماً؟ (سيتم الحفاظ فقط على اسم المحل وإعدادات لوحة تسجيل الدخول والمدراء)'
-          : 'Final Confirmation: Wipe everything? (Shop configuration and user logins will be preserved)');
-          
-        if (confirm2) {
-          setProducts([]);
-          setInvoices([]);
-          setCustomers([]);
-          setSuppliers([]);
-          setReturns([]);
-          setWaste([]);
-          setPromotions([]);
-          setExpenses([]);
-          setPurchaseInvoices([]);
-          
-          localStorage.setItem('pos_products', JSON.stringify([]));
-          localStorage.setItem('pos_invoices', JSON.stringify([]));
-          localStorage.setItem('pos_customers', JSON.stringify([]));
-          localStorage.setItem('pos_suppliers', JSON.stringify([]));
-          localStorage.setItem('pos_returns', JSON.stringify([]));
-          localStorage.setItem('pos_waste', JSON.stringify([]));
-          localStorage.setItem('pos_promotions', JSON.stringify([]));
-          localStorage.setItem('pos_expenses', JSON.stringify([]));
-          localStorage.setItem('pos_purchases', JSON.stringify([]));
-          
-          showToast('success', lang === 'ar' 
-            ? '🎉 تم تصفير البرنامج بالكامل من البيانات التجريبية والبدء بصفحة نظيفة بنجاح!' 
-            : 'Successfully wiped demo data and initialized completely clean database!');
-        }
-      }
-    });
-  };
+  const dataMaintenance = useDataMaintenance({ lang, products, setProducts, settings, setInvoices, setCustomers, setSuppliers, setReturns, setWaste, setPromotions, setExpenses, setPurchaseInvoices, showToast, executeWithAdminAuth });
+  const {
+    handleUpdateGeneralSettings,
+    handleRecalculatePricesWithMargin,
+    handleWipeSalesInvoicesOnly,
+    handleWipeProductsAndCategoriesOnly,
+    handleWipeEntireSystemData,
+  } = dataMaintenance;
 
   // --- COMPUTE STATISTICS FOR GRAPH & REPORT ---
   const totalSalesUSD = invoices.reduce((sum, inv) => sum + inv.totalUSD, 0);
