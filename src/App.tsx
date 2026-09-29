@@ -129,6 +129,7 @@ import { hashPassword, verifyPassword, needsRehash } from './lib/password';
 import { PurchasesTab } from './features/purchases/PurchasesTab';
 import { WarehouseTab } from './features/warehouse/WarehouseTab';
 import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
+import { CloudBackupBanner } from './components/CloudBackupBanner';
 import { auth, shopDoc } from './firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
@@ -779,6 +780,13 @@ export default function App() {
         handleLogout={handleLogout}
         showToast={showToast}
         license={licenseState}
+      />
+
+      <CloudBackupBanner
+        lang={lang}
+        SYS_DATE={SYS_DATE}
+        isAdmin={currentUser.role === 'admin'}
+        openCloudSync={() => setActiveTab('firebase_sync')}
       />
 
       {/* --- PRIMARY LAYOUT (SIDEBAR RIGHT / CONTENT LEFT) --- */}

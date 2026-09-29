@@ -1,9 +1,10 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
-  /** Base URL of super-app-backend, e.g. https://xxx.up.railway.app */
+  /** Licence server (super-app-backend/worker), e.g. https://pos-licensing.<account>.workers.dev */
   readonly VITE_LICENSE_SERVER_URL?: string;
-  /** Licence signing public key (base64 SPKI), from `npm run generate-license-keys` in the backend. */
+  /** Licence signing public key (base64 SPKI), shown on the licence server's /admin page. */
   readonly VITE_LICENSE_PUBLIC_KEY?: string;
   /** "true" to use the local Firebase emulators (auth :9099, firestore :8080). */
   readonly VITE_FIREBASE_EMULATOR?: string;

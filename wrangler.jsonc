@@ -1,0 +1,10 @@
+// Web version of the POS, served as static files by Cloudflare Workers (free plan).
+// Cloudflare dashboard: Build command "npm run build:web", Deploy command "npx wrangler deploy".
+{
+  "name": "pos-app",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
