@@ -10,13 +10,10 @@ interface PosModernScreenProps {
   /** Cart, sessions and checkout state from usePosRegister. */
   register: PosRegister;
   SYS_DATE: string;
-  syncWriteToCloud: (collectionName: string, docId: string, data: any, isDelete?: boolean) => Promise<void>;
   lang: "ar" | "en";
   products: Product[];
   categories: Category[];
   settings: SystemSettings;
-  customers: Customer[];
-  setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
   promotions: Promotion[];
   isBarcodeKeyboardOpen: boolean;
   setIsBarcodeKeyboardOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -25,13 +22,6 @@ interface PosModernScreenProps {
   setTheme: React.Dispatch<React.SetStateAction<"light" | "dark">>;
   setPosLayoutMode: React.Dispatch<React.SetStateAction<"modern" | "terminal">>;
   setExpiryWarningModal: React.Dispatch<React.SetStateAction<Product>>;
-  setShowQuickAddCustomerModal: React.Dispatch<React.SetStateAction<boolean>>;
-  setQuickAddCustomerName: React.Dispatch<React.SetStateAction<string>>;
-  setQuickAddCustomerPhone: React.Dispatch<React.SetStateAction<string>>;
-  setQuickAddCustomerType: React.Dispatch<React.SetStateAction<"retail" | "wholesale">>;
-  setQuickAddCustomerDebtLimit: React.Dispatch<React.SetStateAction<string>>;
-  showCustomerDropdown: boolean;
-  setShowCustomerDropdown: React.Dispatch<React.SetStateAction<boolean>>;
   sortedCategoriesBySales: Category[];
   processedProducts: { isExpired: boolean; isNearExpiry: boolean; lastSoldDate: string; daysSinceLastSale: number; isStagnant: boolean; id: string; name: string; barcode: string; barcodes?: string[]; category: string; priceUSD: number; priceLBP?: number; quantity: number; warehouseQuantity?: number; expiryDate: string; sku?: string; priceWholesale?: number; minWholesaleQty?: number; costPriceUSD?: number; image?: string; isWeighed?: boolean; plu?: string; }[];
   showToast: (type: "success" | "error" | "warning", message: string) => void;
@@ -43,13 +33,10 @@ interface PosModernScreenProps {
 export function PosModernScreen({
   register,
   SYS_DATE,
-  syncWriteToCloud,
   lang,
   products,
   categories,
   settings,
-  customers,
-  setCustomers,
   promotions,
   isBarcodeKeyboardOpen,
   setIsBarcodeKeyboardOpen,
@@ -58,13 +45,6 @@ export function PosModernScreen({
   setTheme,
   setPosLayoutMode,
   setExpiryWarningModal,
-  setShowQuickAddCustomerModal,
-  setQuickAddCustomerName,
-  setQuickAddCustomerPhone,
-  setQuickAddCustomerType,
-  setQuickAddCustomerDebtLimit,
-  showCustomerDropdown,
-  setShowCustomerDropdown,
   sortedCategoriesBySales,
   processedProducts,
   showToast,
@@ -91,7 +71,6 @@ export function PosModernScreen({
     posSaleType,
     setPosSaleType,
     selectedCustomerId,
-    setSelectedCustomerId,
     sessions,
     activeSessionId,
     editingSessionId,
@@ -124,7 +103,6 @@ export function PosModernScreen({
     const saved = localStorage.getItem('pos_categories_per_page');
     return saved ? parseInt(saved, 10) : 10;
   });
-  const [customerSearchQuery, setCustomerSearchQuery] = useState<string>('');
 
   return (
     <div className={`flex-1 h-full min-h-0 flex flex-col ${lang === 'ar' ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-4 overflow-hidden`} id="tab-pos-register">
@@ -277,188 +255,6 @@ export function PosModernScreen({
             </div>
           </div>
 
-          {/* --- CUSTOMER SELECTOR FOR LOYALTY & DEBT --- */}
-          <div className="space-y-1 hidden">
-            <div className="flex justify-between items-center mb-0.5">
-              <label className="block text-[11px] font-bold text-slate-500 text-right">
-                👤 {lang === 'ar' ? 'اسم الزبون لربط الولاء والديون:' : 'Link Customer Account:'}
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuickAddCustomerName('');
-                  setQuickAddCustomerPhone('');
-                  setQuickAddCustomerType('retail');
-                  setQuickAddCustomerDebtLimit('1000');
-                  setShowQuickAddCustomerModal(true);
-                }}
-                className="text-[10.5px] font-black text-[#1D9E75] hover:text-[#158060] flex items-center gap-0.5 cursor-pointer hover:underline"
-                title={lang === 'ar' ? 'تسجيل زبون سريع بدون مغادرة شاشة البيع' : 'Quick register customer without leaving checkout'}
-              >
-                ➕ {lang === 'ar' ? 'إضافة زبون سريع' : 'Quick Register'}
-              </button>
-            </div>
-            <div className="relative font-sans" id="searchable-customer-container">
-              {/* Search / Select wrapper */}
-              <div className="flex gap-1">
-                {selectedCustomerId ? (
-                  // If customer is selected, show a clearable pill or badge
-                  <div className="w-full bg-emerald-50 border border-emerald-150 rounded-lg py-1 px-2 text-xs flex justify-between items-center text-right font-bold text-emerald-850">
-                    <span className="flex items-center gap-1">
-                      <span>👤 {customers.find(c => c.id === selectedCustomerId)?.name}</span>
-                      <span className="text-[9.5px] text-emerald-600 font-black mr-1.5 ml-1.5 bg-emerald-100/60 px-1.5 py-0.5 rounded-md">
-                        {customers.find(c => c.id === selectedCustomerId)?.type === 'wholesale' ? (lang === 'ar' ? 'جملة' : 'Whls') : (lang === 'ar' ? 'مفرق' : 'Rtl')}
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedCustomerId('');
-                        setCustomerSearchQuery('');
-                        showToast('success', lang === 'ar' ? '🧹 تم إلغاء ربط حساب الزبون (تحول لزبون كاش مجهول)' : 'Customer unlinked (reset to cash checkout)');
-                      }}
-                      className="text-slate-400 hover:text-rose-600 font-extrabold cursor-pointer bg-white hover:bg-rose-50 w-5 h-5 rounded-md flex items-center justify-center transition border border-slate-200 hover:border-rose-250 text-[10px]"
-                      title={lang === 'ar' ? 'إلغاء الربط' : 'Clear Link'}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  // If no customer is selected, show search input
-                  <div className="w-full relative">
-                    <input
-                      type="text"
-                      value={customerSearchQuery}
-                      onChange={e => {
-                        setCustomerSearchQuery(e.target.value);
-                        setShowCustomerDropdown(true);
-                      }}
-                      onFocus={() => setShowCustomerDropdown(true)}
-                      placeholder={lang === 'ar' ? '🔍 ابحث باسم الزبون أو الهاتف أو اكتب اسم جديد للتسجيل...' : '🔍 Search customer name/phone or write to add...'}
-                      className="w-full bg-white border border-slate-200 rounded-lg py-1.5 pr-8 pl-2 text-xs focus:ring-1 focus:ring-[#1D9E75] focus:border-[#1D9E75] focus:outline-none text-right font-medium placeholder-slate-400"
-                    />
-                    {customerSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setCustomerSearchQuery('')}
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-605 text-[10px] bg-slate-100 hover:bg-slate-200 w-4 h-4 rounded-full flex items-center justify-center cursor-pointer font-sans"
-                      >
-                        ✕
-                      </button>
-                    )}
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs">👤</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Dropdown search suggestions */}
-              {!selectedCustomerId && showCustomerDropdown && (
-                <div className="absolute z-40 right-0 left-0 mt-1 max-h-56 bg-white border border-slate-200 rounded-xl shadow-xl overflow-y-auto divide-y divide-slate-100 scrollbar-thin text-right">
-                  <div className="bg-slate-50/70 p-2 flex justify-between items-center text-[10px] text-slate-400 font-bold border-b border-slate-100 flex-row-reverse">
-                    <span>{lang === 'ar' ? '🔍 نتائج البحث وقائمة الزبائن' : 'Search Results & Customers'}</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomerDropdown(false)}
-                      className="text-slate-450 hover:text-slate-705 bg-slate-200/55 hover:bg-slate-200/80 px-1.5 rounded text-[9.5px] cursor-pointer font-extrabold"
-                    >
-                      {lang === 'ar' ? 'إغلاق ✕' : 'Close ✕'}
-                    </button>
-                  </div>
-
-                  {/* Matching registered customers */}
-                  {(() => {
-                    const query = customerSearchQuery.trim().toLowerCase();
-                    const matches = customers.filter(c => 
-                      c.name.toLowerCase().includes(query) || 
-                      (c.phone && c.phone.includes(query))
-                    );
-
-                    return (
-                      <>
-                        {matches.map(cust => (
-                          <button
-                            key={cust.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCustomerId(cust.id);
-                              setCustomerSearchQuery('');
-                              setShowCustomerDropdown(false);
-                              showToast('success', lang === 'ar' ? `تم ربط حساب الزبون [${cust.name}] بالمعاملة` : `Customer [${cust.name}] session linked`);
-                            }}
-                            className="w-full text-right hover:bg-[#1D9E75]/5 py-2 px-3 block text-xs transition cursor-pointer text-slate-700"
-                          >
-                            <div className="flex justify-between items-center flex-row-reverse">
-                              <span className="font-bold text-slate-800">{cust.name}</span>
-                              <span className="text-[10px] text-slate-450 font-mono">
-                                {cust.phone && cust.phone !== 'N/A' && `📞 ${cust.phone} | `}
-                                {cust.type === 'wholesale' ? (lang === 'ar' ? 'جملة' : 'Whls') : (lang === 'ar' ? 'مفرق' : 'Rtl')}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
-
-                        {matches.length === 0 && (
-                          <div className="py-3 px-4 text-center text-slate-400 text-[11px] font-medium leading-relaxed">
-                            {lang === 'ar' ? '❌ لا يوجد زبائن مسجلين يطابقون بحثك.' : '❌ No matching customers found.'}
-                          </div>
-                        )}
-
-                        {/* Inline creation option if query is written and is not an exact match */}
-                        {query.length > 0 && !customers.some(c => c.name.toLowerCase() === query) && (
-                          <div className="p-2 bg-emerald-50/40 border-t border-emerald-100">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                // Auto register inline
-                                const newCust: Customer = {
-                                  id: `cust-${Date.now()}`,
-                                  name: customerSearchQuery.trim(),
-                                  phone: 'N/A',
-                                  type: 'retail',
-                                  loyaltyPoints: 0,
-                                  creditBalance: 0,
-                                  debtLimit: 1000
-                                };
-                                const updated = [...customers, newCust];
-                                setCustomers(updated);
-                                localStorage.setItem('pos_customers', JSON.stringify(updated));
-                                syncWriteToCloud('customers', newCust.id, newCust);
-
-                                setSelectedCustomerId(newCust.id);
-                                setCustomerSearchQuery('');
-                                setShowCustomerDropdown(false);
-                                showToast('success', lang === 'ar' 
-                                  ? `🆕 تم تسجيل الزبون الجديد [${newCust.name}] وربطه بالفاتورة على الفور!` 
-                                  : `🆕 Registered and selected Customer: ${newCust.name}!`);
-                              }}
-                              className="w-full bg-[#1D9E75] hover:bg-emerald-600 text-white font-extrabold py-2 px-3 rounded-lg text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 flex-row-reverse"
-                            >
-                              <span>➕ {lang === 'ar' ? `تسجيل [${customerSearchQuery}] كزبون جديد فوراً` : `Register [${customerSearchQuery}] as new customer`}</span>
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
-
-            {selectedCustomerId && (() => {
-              const cust = customers.find(c => c.id === selectedCustomerId);
-              if (!cust) return null;
-              return (
-                <div className="bg-white border border-slate-200/80 p-2 rounded-lg text-[10px] text-slate-500 flex justify-between items-center flex-row-reverse mt-1">
-                  <div>
-                    🌟 <span className="font-bold text-slate-700">{cust.loyaltyPoints}</span> {lang === 'ar' ? 'نقطة' : 'pts'}
-                  </div>
-                  <div>
-                    🔴 {lang === 'ar' ? 'الدين الحالي:' : 'Debt:'} <span className="font-extrabold text-red-600 font-mono">{cust.creditBalance.toFixed(2)} $</span>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
         </div>
 
         {/* Cart Items list */}

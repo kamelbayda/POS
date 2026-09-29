@@ -110,7 +110,6 @@ import { ImportExcelModal } from './modals/ImportExcelModal';
 import { InvoiceReceiptModal } from './modals/InvoiceReceiptModal';
 import { ExpiryWarningModal } from './modals/ExpiryWarningModal';
 import { AddCategoryModal } from './modals/AddCategoryModal';
-import { QuickAddCustomerModal } from './modals/QuickAddCustomerModal';
 import { PurchaseContactModal } from './modals/PurchaseContactModal';
 import { ScaleSimulatorModal } from './modals/ScaleSimulatorModal';
 import { NumpadModal } from './modals/NumpadModal';
@@ -297,14 +296,8 @@ export default function App() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState<boolean>(false);
   
   // --- QUICK REGISTER CUSTOMER STATES ---
-  const [showQuickAddCustomerModal, setShowQuickAddCustomerModal] = useState<boolean>(false);
-  const [quickAddCustomerName, setQuickAddCustomerName] = useState<string>('');
-  const [quickAddCustomerPhone, setQuickAddCustomerPhone] = useState<string>('');
-  const [quickAddCustomerType, setQuickAddCustomerType] = useState<'retail' | 'wholesale'>('retail');
-  const [quickAddCustomerDebtLimit, setQuickAddCustomerDebtLimit] = useState<string>('1000');
 
   // --- SEAMLESS CUSTOMER SEARCH & SELECT ---
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState<boolean>(false);
   const [showPurchaseContactModal, setShowPurchaseContactModal] = useState<boolean>(false);
 
   // --- CONTACT / PURCHASE FORM STATES ---
@@ -343,20 +336,6 @@ export default function App() {
       return a.name.localeCompare(b.name, 'ar');
     });
   }, [categories, invoices, products]);
-
-  // Click outside to close customer dropdown
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      const container = document.getElementById('searchable-customer-container');
-      if (container && !container.contains(e.target as Node)) {
-        setShowCustomerDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, []);
 
   // Compute expired status on items
   const processedProducts = products.map(p => {
@@ -528,42 +507,6 @@ export default function App() {
     handleQuickWasteFromExpiry,
   } = storeActions;
 
-  const handleQuickAddCustomerSubmit = () => {
-    if (!quickAddCustomerName.trim()) {
-      showToast('warning', lang === 'ar' ? 'الرجاء كتابة اسم الزبون أولاً!' : 'Please enter customer name!');
-      return;
-    }
-
-    const nLimit = parseFloat(quickAddCustomerDebtLimit) || 1000;
-    const newCust: Customer = {
-      id: `cust-${Date.now()}`,
-      name: quickAddCustomerName.trim(),
-      phone: quickAddCustomerPhone.trim() || 'N/A',
-      type: quickAddCustomerType,
-      loyaltyPoints: 0,
-      creditBalance: 0,
-      debtLimit: nLimit
-    };
-
-    const updated = [...customers, newCust];
-    setCustomers(updated);
-    localStorage.setItem('pos_customers', JSON.stringify(updated));
-    
-    // Sync with cloud database
-    syncWriteToCloud('customers', newCust.id, newCust);
-
-    // Auto-select this newly registered customer
-    setSelectedCustomerId(newCust.id);
-
-    showToast('success', lang === 'ar' ? `تم تسجيل الزبون [${newCust.name}] بنجاح وربطه بالفاتورة!` : `Customer [${newCust.name}] registered and selected!`);
-    
-    // Reset states
-    setQuickAddCustomerName('');
-    setQuickAddCustomerPhone('');
-    setQuickAddCustomerType('retail');
-    setQuickAddCustomerDebtLimit('1000');
-    setShowQuickAddCustomerModal(false);
-  };
 
   // Persist the products list locally and mirror the single changed product to the cloud
 
@@ -895,13 +838,10 @@ export default function App() {
             <PosModernScreen
               register={posRegister}
               SYS_DATE={SYS_DATE}
-              syncWriteToCloud={syncWriteToCloud}
               lang={lang}
               products={products}
               categories={categories}
               settings={settings}
-              customers={customers}
-              setCustomers={setCustomers}
               promotions={promotions}
               isBarcodeKeyboardOpen={isBarcodeKeyboardOpen}
               setIsBarcodeKeyboardOpen={setIsBarcodeKeyboardOpen}
@@ -910,13 +850,6 @@ export default function App() {
               setTheme={setTheme}
               setPosLayoutMode={setPosLayoutMode}
               setExpiryWarningModal={setExpiryWarningModal}
-              setShowQuickAddCustomerModal={setShowQuickAddCustomerModal}
-              setQuickAddCustomerName={setQuickAddCustomerName}
-              setQuickAddCustomerPhone={setQuickAddCustomerPhone}
-              setQuickAddCustomerType={setQuickAddCustomerType}
-              setQuickAddCustomerDebtLimit={setQuickAddCustomerDebtLimit}
-              showCustomerDropdown={showCustomerDropdown}
-              setShowCustomerDropdown={setShowCustomerDropdown}
               sortedCategoriesBySales={sortedCategoriesBySales}
               processedProducts={processedProducts}
               showToast={showToast}
@@ -1301,21 +1234,6 @@ export default function App() {
       )}
 
       {/* --- MODAL 4: QUICK REGISTER NEW CUSTOMER FROM CART --- */}
-      {showQuickAddCustomerModal && (
-        <QuickAddCustomerModal
-          lang={lang}
-          setShowQuickAddCustomerModal={setShowQuickAddCustomerModal}
-          quickAddCustomerName={quickAddCustomerName}
-          setQuickAddCustomerName={setQuickAddCustomerName}
-          quickAddCustomerPhone={quickAddCustomerPhone}
-          setQuickAddCustomerPhone={setQuickAddCustomerPhone}
-          quickAddCustomerType={quickAddCustomerType}
-          setQuickAddCustomerType={setQuickAddCustomerType}
-          quickAddCustomerDebtLimit={quickAddCustomerDebtLimit}
-          setQuickAddCustomerDebtLimit={setQuickAddCustomerDebtLimit}
-          handleQuickAddCustomerSubmit={handleQuickAddCustomerSubmit}
-        />
-      )}
 
       {/* --- MODAL 5: PURCHASE & ACTIVATION CONTACT FORM MODAL --- */}
       {showPurchaseContactModal && (
