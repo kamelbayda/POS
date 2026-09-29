@@ -42,6 +42,25 @@
 
 ---
 
+## 🌐 نسخة الويب (Web App)
+نفس البرنامج بيشتغل من المتصفح (Chrome أو Edge)، وبينزل على الكمبيوتر متل برنامج عادي (PWA)، وبيشتغل بلا إنترنت بعد أول فتحة.
+
+**النشر على Cloudflare (ببلاش، مرة وحدة):**
+1. **Workers & Pages ← Create application ← Import a repository ←** `kamelbayda/POS`.
+2. **Project name:** `pos-app` (لازم يطابق `name` بـ `wrangler.jsonc`).
+3. **Build command:** `npm run build:web` — **Deploy command:** `npx wrangler deploy` — **Path:** فاضي (جذر الريبو).
+   بـ **Advanced settings ← Build variables** زيد `ELECTRON_SKIP_BINARY_DOWNLOAD` = `1` (الويب ما بيحتاج Electron، وهيك الـ build أسرع).
+4. **Deploy.** الرابط بيطلع متل `https://pos-app.<اسم-حسابك>.workers.dev`.
+5. بـ **Settings ← Builds ← Previews Base** طفّي **Builds for Preview branches**.
+6. **Firebase ← Authentication ← Settings ← Authorized domains ← Add domain:** حط رابط البرنامج (بلا `https://`)، حتى يشتغل الدخول بحساب Google.
+
+كل merge على `main` بينشر نسخة جديدة، والبرنامج عند الزبون بيتحدّث لحالو بأول فتحة بعدها.
+
+**عند الزبون:** بيفتح الرابط بـ Chrome أو Edge ← أيقونة **تثبيت** بشريط العنوان.
+- الطباعة المباشرة وجارور المصاري (WebUSB / Web Serial) بيشتغلوا بـ Chrome و Edge عالكمبيوتر فقط، مش على iPad أو Safari.
+- البيانات محفوظة بالمتصفح. البرنامج بيطلب من المتصفح يحفظها دايماً، وبيذكّر المدير يشغّل المزامنة السحابية كنسخة احتياطية.
+- إذا الزبون مسح بيانات المتصفح أو غيّر الكمبيوتر، بيلزم **نقل لجهاز جديد** للمفتاح من صفحة `/admin`.
+
 ## 📁 هيكلية المشروع (Project Structure)
 - `src/App.tsx`: بيربط الـ hooks بالشاشات والنوافذ، وبيحدّد شو بينعرض (الدخول، القفل، أو النظام).
 - `src/features/`: كل تاب بمجلد لحاله:
