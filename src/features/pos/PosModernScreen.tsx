@@ -5,6 +5,7 @@ import { Customer, Product, Category, CartItem, SystemSettings, Promotion, CartS
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import { getGridColsStyle, getCardStyle } from './posGrid';
 import React, { useState } from 'react';
+import * as storage from '../../lib/storage';
 
 interface PosModernScreenProps {
   /** Cart, sessions and checkout state from usePosRegister. */
@@ -100,7 +101,7 @@ export function PosModernScreen({
   const [showLowStockPOSPanel, setShowLowStockPOSPanel] = useStoredState<boolean>('pos_show_low_stock_panel', true);
   const [categoryPage, setCategoryPage] = useState<number>(0);
   const [categoriesPerPage, setCategoriesPerPage] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_categories_per_page');
+    const saved = storage.getItem('pos_categories_per_page');
     return saved ? parseInt(saved, 10) : 10;
   });
 
@@ -933,7 +934,7 @@ export function PosModernScreen({
                       onChange={e => {
                         const newval = parseInt(e.target.value, 10);
                         setCategoriesPerPage(newval);
-                        localStorage.setItem('pos_categories_per_page', newval.toString());
+                        storage.setItem('pos_categories_per_page', newval.toString());
                         setCategoryPage(0); // reset page to 0 on change
                         showToast('success', lang === 'ar' ? `📋 عدد الأقسام الحالي بالصفحة: ${newval}` : `📋 Page limit updated to ${newval}`);
                       }}

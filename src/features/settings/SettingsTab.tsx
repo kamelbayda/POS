@@ -1171,7 +1171,7 @@ export function SettingsTab({
               }];
               const updatedSettings = { ...settings, printersList: updatedList };
               setSettings(updatedSettings);
-              storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+              storage.setJSON('pos_settings', updatedSettings);
               
               setNewPrinterName('');
               setNewPrinterAddress('LPT1');
@@ -1187,7 +1187,7 @@ export function SettingsTab({
                       const val = e.target.checked;
                       const updatedSettings = { ...settings, directSilentPrint: val };
                       setSettings(updatedSettings);
-                      storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                      storage.setJSON('pos_settings', updatedSettings);
                       showToast('success', val 
                         ? '⚡ تم تفعيل ميزة الطباعة الصامتة المباشرة (تخطي حوار المتصفح)' 
                         : '🌐 تم الرجوع لنمط حوار المتصفح اليدوي عند الطباعة'
@@ -1281,7 +1281,7 @@ export function SettingsTab({
                           const updated = (settings.printersList || []).filter((item: any) => item.id !== pr.id);
                           const updatedSettings = { ...settings, printersList: updated };
                           setSettings(updatedSettings);
-                          storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                          storage.setJSON('pos_settings', updatedSettings);
                           showToast('success', '🧹 تم إزالة تعريف الطابعة بنجاح.');
                         }}
                         className="text-red-650 hover:text-red-750 font-bold cursor-pointer underline px-1.5 py-0.5 rounded"
@@ -1377,7 +1377,7 @@ export function SettingsTab({
                       const val = e.target.checked;
                       const updatedSettings = { ...settings, cashDrawerEnabled: val };
                       setSettings(updatedSettings);
-                      storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                      storage.setJSON('pos_settings', updatedSettings);
                       showToast('success', val 
                         ? '✔️ تم تفعيل فتح درج الكاش تلقائياً عند طباعة الفاتورة' 
                         : '🔒 تم تعطيل الفتح التلقائي لدرج النقد'
@@ -1408,7 +1408,7 @@ export function SettingsTab({
                     const val = e.target.value;
                     const updatedSettings = { ...settings, cashDrawerCodes: val };
                     setSettings(updatedSettings);
-                    storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                    storage.setJSON('pos_settings', updatedSettings);
                   }}
                   placeholder="27,112,0,148,49"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-center font-bold tracking-wider font-mono focus:ring-1 focus:ring-amber-500"
@@ -1419,7 +1419,7 @@ export function SettingsTab({
                     onClick={() => {
                       const updatedSettings = { ...settings, cashDrawerCodes: '27,112,0,148,49' };
                       setSettings(updatedSettings);
-                      storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                      storage.setJSON('pos_settings', updatedSettings);
                       showToast('success', '⚡ تم تعيين كود Aronium الافتراضي: 27,112,0,148,49');
                     }}
                     className="text-[9px] bg-slate-100 hover:bg-slate-200 border border-slate-150 text-slate-600 px-1.5 py-0.5 rounded cursor-pointer font-mono"
@@ -1431,7 +1431,7 @@ export function SettingsTab({
                     onClick={() => {
                       const updatedSettings = { ...settings, cashDrawerCodes: '27,112,0,25,250' };
                       setSettings(updatedSettings);
-                      storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                      storage.setJSON('pos_settings', updatedSettings);
                       showToast('success', '⚡ تم تعيين كود Epson القياسي: 27,112,0,25,250');
                     }}
                     className="text-[9px] bg-slate-100 hover:bg-slate-200 border border-slate-150 text-slate-600 px-1.5 py-0.5 rounded cursor-pointer font-mono"
@@ -1482,7 +1482,7 @@ export function SettingsTab({
                         };
                         const updatedSettings = { ...settings, printerAssignments: updatedAssignments };
                         setSettings(updatedSettings);
-                        storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                        storage.setJSON('pos_settings', updatedSettings);
                       }}
                       className="sr-only peer"
                     />
@@ -1505,7 +1505,7 @@ export function SettingsTab({
                       };
                       const updatedSettings = { ...settings, printerAssignments: updatedAssignments };
                       setSettings(updatedSettings);
-                      storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                      storage.setJSON('pos_settings', updatedSettings);
                     }}
                     className="flex-1 bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-right cursor-pointer opacity-100 disabled:opacity-50"
                   >
@@ -1532,7 +1532,7 @@ export function SettingsTab({
                         };
                         const updatedSettings = { ...settings, printerAssignments: updatedAssignments };
                         setSettings(updatedSettings);
-                        storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                        storage.setJSON('pos_settings', updatedSettings);
                       }}
                       className="sr-only peer"
                     />
@@ -1555,7 +1555,7 @@ export function SettingsTab({
                       };
                       const updatedSettings = { ...settings, printerAssignments: updatedAssignments };
                       setSettings(updatedSettings);
-                      storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                      storage.setJSON('pos_settings', updatedSettings);
                     }}
                     className="flex-1 bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-right cursor-pointer"
                   >
@@ -1582,7 +1582,7 @@ export function SettingsTab({
                         };
                         const updatedSettings = { ...settings, printerAssignments: updatedAssignments };
                         setSettings(updatedSettings);
-                        storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                        storage.setJSON('pos_settings', updatedSettings);
                       }}
                       className="sr-only peer"
                     />
@@ -1605,7 +1605,7 @@ export function SettingsTab({
                       };
                       const updatedSettings = { ...settings, printerAssignments: updatedAssignments };
                       setSettings(updatedSettings);
-                      storage.setItem('pos_settings', JSON.stringify(updatedSettings));
+                      storage.setJSON('pos_settings', updatedSettings);
                     }}
                     className="flex-1 bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-right cursor-pointer"
                   >

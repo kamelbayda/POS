@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { Customer } from '../types';
 import React from 'react';
+import * as storage from '../lib/storage';
 
 interface CustomerPickerModalProps {
   syncWriteToCloud: (collectionName: string, docId: string, data: any, isDelete?: boolean) => Promise<void>;
@@ -110,7 +111,7 @@ export function CustomerPickerModal({
                 };
                 const updated = [newCust, ...customers];
                 setCustomers(updated);
-                localStorage.setItem('pos_customers', JSON.stringify(updated));
+                storage.setJSON('pos_customers', updated);
                 if (typeof syncWriteToCloud === 'function') {
                   syncWriteToCloud('customers', newCust.id, newCust);
                 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Award, Calendar, Check, DollarSign, FileText, Plus, Trash, Users, X } from 'lucide-react';
 import { Customer, ReturnRecord, WasteRecord, Product, Invoice, Supplier, SystemSettings } from '../../types';
+import * as storage from '../../lib/storage';
 
 interface CustomersTabProps {
   customers: Customer[];
@@ -62,7 +63,7 @@ export function CustomersTab({ customers, setCustomers, suppliers, setSuppliers,
 
     const updated = [...customers, newCustomer];
     setCustomers(updated);
-    localStorage.setItem('pos_customers', JSON.stringify(updated));
+    storage.setJSON('pos_customers', updated);
 
     // Clear form
     setName('');
@@ -102,7 +103,7 @@ export function CustomersTab({ customers, setCustomers, suppliers, setSuppliers,
     });
 
     setCustomers(updated);
-    localStorage.setItem('pos_customers', JSON.stringify(updated));
+    storage.setJSON('pos_customers', updated);
 
     showToast('success', lang === 'ar' 
       ? `تم الدفع بنجاح! تم خصم ${payVal.toFixed(2)}$ من حساب العميل [${targetCustomer.name}].`
@@ -138,7 +139,7 @@ export function CustomersTab({ customers, setCustomers, suppliers, setSuppliers,
     });
 
     setCustomers(updated);
-    localStorage.setItem('pos_customers', JSON.stringify(updated));
+    storage.setJSON('pos_customers', updated);
 
     showToast('success', lang === 'ar' 
       ? `تم استبدال ${convertedPoints} نقطة بخصم آجل بقيمة ${valueToRedeemInDollars.toFixed(2)}$ لحساب العميل! ⭐`
@@ -151,7 +152,7 @@ export function CustomersTab({ customers, setCustomers, suppliers, setSuppliers,
     if (confirm(lang === 'ar' ? `هل أنت متأكد من حذف حساب الزبون [${cName}]؟` : `Are you sure you want to delete [${cName}]?`)) {
       const updated = customers.filter(c => c.id !== id);
       setCustomers(updated);
-      localStorage.setItem('pos_customers', JSON.stringify(updated));
+      storage.setJSON('pos_customers', updated);
       showToast('success', lang === 'ar' ? 'تم حذف حساب الزبون بنجاح.' : 'Customer account removed.');
     }
   };
@@ -174,7 +175,7 @@ export function CustomersTab({ customers, setCustomers, suppliers, setSuppliers,
 
     const updated = [...suppliers, newSupplier];
     setSuppliers(updated);
-    localStorage.setItem('pos_suppliers', JSON.stringify(updated));
+    storage.setJSON('pos_suppliers', updated);
 
     // Clear form
     setSuppName('');
@@ -209,7 +210,7 @@ export function CustomersTab({ customers, setCustomers, suppliers, setSuppliers,
     });
 
     setSuppliers(updated);
-    localStorage.setItem('pos_suppliers', JSON.stringify(updated));
+    storage.setJSON('pos_suppliers', updated);
 
     showToast('success', lang === 'ar'
       ? `تم الدفع بنجاح! تم سداد مبلغ ${payVal.toFixed(2)}$ لحساب المورد [${targetSupplier.name}].`
@@ -224,7 +225,7 @@ export function CustomersTab({ customers, setCustomers, suppliers, setSuppliers,
     if (confirm(lang === 'ar' ? `هل أنت متأكد من حذف حساب المورد [${sName}]؟` : `Are you sure you want to delete [${sName}]?`)) {
       const updated = suppliers.filter(s => s.id !== id);
       setSuppliers(updated);
-      localStorage.setItem('pos_suppliers', JSON.stringify(updated));
+      storage.setJSON('pos_suppliers', updated);
       showToast('success', lang === 'ar' ? 'تم حذف حساب المورد بنجاح.' : 'Supplier account removed.');
     }
   };

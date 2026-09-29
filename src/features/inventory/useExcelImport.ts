@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Product, Category } from '../../types';
 import * as XLSX from 'xlsx';
 import { auth } from '../../firebase';
+import * as storage from '../../lib/storage';
 
 export interface UseExcelImportDeps {
   SYS_DATE: string;
@@ -271,12 +272,12 @@ export function useExcelImport({
     });
 
     setProducts(finalProdsToSave);
-    localStorage.setItem('pos_products', JSON.stringify(finalProdsToSave));
+    storage.setJSON('pos_products', finalProdsToSave);
 
     if (catsToCreate.length > 0) {
       const updatedCats = [...categories, ...catsToCreate];
       setCategories(updatedCats);
-      localStorage.setItem('pos_categories', JSON.stringify(updatedCats));
+      storage.setJSON('pos_categories', updatedCats);
     }
 
     if (auth.currentUser) {

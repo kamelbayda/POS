@@ -56,7 +56,7 @@ export function useStoreActions({
     };
     const updated = [...categories, newCat];
     setCategories(updated);
-    localStorage.setItem('pos_categories', JSON.stringify(updated));
+    storage.setJSON('pos_categories', updated);
     showToast('success', lang === 'ar' ? `تمت إضافة فئات جديدة [${cleanName}] بنجاح!` : `Category [${cleanName}] added successfully!`);
   };
 
@@ -72,7 +72,7 @@ export function useStoreActions({
       if (window.confirm(lang === 'ar' ? `حذف منتج: هل أنت متأكد من حذف المنتج "${name}" كلياً من قاعدة بيانات المحل؟` : `Delete product: Are you sure you want to delete "${name}"?`)) {
         const updated = products.filter(p => p.id !== id);
         setProducts(updated);
-        localStorage.setItem('pos_products', JSON.stringify(updated));
+        storage.setJSON('pos_products', updated);
         showToast('success', lang === 'ar' ? `تم إسقاط وحذف الصنف [${name}] من مخازنك.` : `Product [${name}] deleted.`);
         if (auth.currentUser) {
           syncWriteToCloud('products', id, null, true);
@@ -172,12 +172,12 @@ export function useStoreActions({
       return p;
     });
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
 
     // Update waste list
     const updatedWaste = [newWasteRecord, ...waste];
     setWaste(updatedWaste);
-    localStorage.setItem('pos_waste', JSON.stringify(updatedWaste));
+    storage.setJSON('pos_waste', updatedWaste);
 
     showToast('success', `تم تسجيل إتلاف (${qtyToWaste} قطع) من [${prod.name}] كـ ${reason === 'expired' ? 'منتهي الصلاحية' : 'تالف رفوف'} وتنزيل الكمية من المخازن.`);
   };

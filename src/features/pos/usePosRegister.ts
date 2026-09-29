@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CartItem, CartSession, Product, Invoice, User, SystemSettings, Promotion, Customer } from '../../types';
 import { auth } from '../../firebase';
+import * as storage from '../../lib/storage';
 
 export interface UsePosRegisterDeps {
   SYS_DATE: string;
@@ -118,7 +119,7 @@ export function usePosRegister({
   // --- MULTI-SESSION / BILL SUSPENSION STATES ---
   const [sessions, setSessions] = useState<CartSession[]>(() => {
     try {
-      const saved = localStorage.getItem('pos_cart_sessions');
+      const saved = storage.getItem('pos_cart_sessions');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -146,7 +147,7 @@ export function usePosRegister({
   });
 
   const [activeSessionId, setActiveSessionId] = useState<string>(() => {
-    return localStorage.getItem('pos_active_session_id') || 'session-default';
+    return storage.getItem('pos_active_session_id') || 'session-default';
   });
 
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -155,12 +156,12 @@ export function usePosRegister({
 
   // Sync sessions list to localStorage on change
   useEffect(() => {
-    localStorage.setItem('pos_cart_sessions', JSON.stringify(sessions));
+    storage.setJSON('pos_cart_sessions', sessions);
   }, [sessions]);
 
   // Sync activeSessionId to localStorage on change
   useEffect(() => {
-    localStorage.setItem('pos_active_session_id', activeSessionId);
+    storage.setItem('pos_active_session_id', activeSessionId);
   }, [activeSessionId]);
 
   // Synchronize dynamic active fields of currently active cart inputs to the active session item
@@ -785,7 +786,7 @@ export function usePosRegister({
         return c;
       });
       setCustomers(updatedCustomers);
-      localStorage.setItem('pos_customers', JSON.stringify(updatedCustomers));
+      storage.setJSON('pos_customers', updatedCustomers);
       
       // Update customer on Firebase Cloud if online/logged-in
       if (auth.currentUser) {
@@ -802,11 +803,11 @@ export function usePosRegister({
     }
 
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
 
     const updatedInvoices = [newInvoice, ...invoices];
     setInvoices(updatedInvoices);
-    localStorage.setItem('pos_invoices', JSON.stringify(updatedInvoices));
+    storage.setJSON('pos_invoices', updatedInvoices);
 
     // Firebase Cloud Sync write-through
     if (auth.currentUser) {

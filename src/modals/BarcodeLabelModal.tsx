@@ -5,6 +5,7 @@ import { generateBarcodePattern } from '../lib/barcode';
 import { Product, SystemSettings } from '../types';
 import React from 'react';
 import { useStoredState } from '../lib/storage';
+import * as storage from '../lib/storage';
 
 interface BarcodeLabelModalProps {
   products: Product[];
@@ -200,7 +201,7 @@ export function BarcodeLabelModal({
                     return p;
                   });
                   setProducts(updatedProds);
-                  localStorage.setItem('pos_products', JSON.stringify(updatedProds));
+                  storage.setJSON('pos_products', updatedProds);
 
                   setBarcodeLabelProduct({
                     ...barcodeLabelProduct,

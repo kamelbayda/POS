@@ -28,7 +28,7 @@ export function useAccounts({
 }: UseAccountsDeps) {
   // --- SCREEN LOCK STATES ---
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(() => {
-    return localStorage.getItem('pos_screen_locked') === 'true';
+    return storage.getItem('pos_screen_locked') === 'true';
   });
 
   const [lockPasscode, setLockPasscode] = useState<string>('');
@@ -38,25 +38,25 @@ export function useAccounts({
   const [isLockShaking, setIsLockShaking] = useState<boolean>(false);
 
   const [autoLockMinutes, setAutoLockMinutes] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_auto_lock_minutes');
+    const saved = storage.getItem('pos_auto_lock_minutes');
     return saved ? parseInt(saved) : 5; // default is 5 mins, 0 means disabled
   });
 
   // Setup wizard states for custom admin/cashier customization after purchase
   const [adminPasscode, setAdminPasscode] = useState<string>(() => {
-    return localStorage.getItem('pos_admin_passcode') || 'admin123';
+    return storage.getItem('pos_admin_passcode') || 'admin123';
   });
 
   const [cashierPasscode, setCashierPasscode] = useState<string>(() => {
-    return localStorage.getItem('pos_cashier_passcode') || '1234';
+    return storage.getItem('pos_cashier_passcode') || '1234';
   });
 
   const [adminRealName, setAdminRealName] = useState<string>(() => {
-    return localStorage.getItem('pos_admin_real_name') || 'المدير المسؤول';
+    return storage.getItem('pos_admin_real_name') || 'المدير المسؤول';
   });
 
   const [cashierRealName, setCashierRealName] = useState<string>(() => {
-    return localStorage.getItem('pos_cashier_real_name') || 'كاشير الورديات';
+    return storage.getItem('pos_cashier_real_name') || 'كاشير الورديات';
   });
 
   // Open the owner setup wizard on start if a licence was activated but the wizard was never finished
@@ -84,8 +84,8 @@ export function useAccounts({
   };
 
   const saveWizardData = async (adminName: string, adminPass: string, cashierName: string, cashierPass: string) => {
-    localStorage.setItem('pos_admin_real_name', adminName.trim());
-    localStorage.setItem('pos_cashier_real_name', cashierName.trim());
+    storage.setItem('pos_admin_real_name', adminName.trim());
+    storage.setItem('pos_cashier_real_name', cashierName.trim());
     setAdminRealName(adminName.trim());
     setCashierRealName(cashierName.trim());
     await setAccountPassword('admin', adminPass.trim());
@@ -102,8 +102,8 @@ export function useAccounts({
       return u;
     });
     setUsers(updatedUsers);
-    localStorage.setItem('pos_users', JSON.stringify(updatedUsers));
-    localStorage.setItem('pos_setup_wizard_completed', 'true');
+    storage.setJSON('pos_users', updatedUsers);
+    storage.setItem('pos_setup_wizard_completed', 'true');
     setShowSetupWizard(false);
 
     // Sync active session if logged in
@@ -137,7 +137,7 @@ export function useAccounts({
       const inactiveMs = Date.now() - lastActivityRef.current;
       if (inactiveMs >= autoLockMinutes * 60 * 1000) {
         setIsScreenLocked(true);
-        localStorage.setItem('pos_screen_locked', 'true');
+        storage.setItem('pos_screen_locked', 'true');
         setLockPasscode('');
         setLockError('');
         showToast('warning', lang === 'ar' ? '🔒 تم قفل الشاشة تلقائياً بسبب الخمول' : '🔒 Screen locked automatically due to inactivity');
@@ -194,7 +194,7 @@ export function useAccounts({
 
     if (isCorrect) {
       setIsScreenLocked(false);
-      localStorage.setItem('pos_screen_locked', 'false');
+      storage.setItem('pos_screen_locked', 'false');
       setLockPasscode('');
       showToast('success', lang === 'ar' ? '🔓 أهلاً بك من جديد، تم إلغاء قفل الشاشة' : '🔓 Welcome back, screen unlocked');
     } else {

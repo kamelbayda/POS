@@ -2,6 +2,7 @@ import type { LicenseState } from '../hooks/useLicense';
 import { ShoppingCart, Globe, Sun, Moon, Maximize, Monitor, Lock, Clock, MessageCircle, Unlock } from 'lucide-react';
 import { Invoice, User, SystemSettings } from '../types';
 import React, { useState } from 'react';
+import * as storage from '../lib/storage';
 
 interface AppHeaderProps {
   SYS_DATE: string;
@@ -304,7 +305,7 @@ export function AppHeader({
           <button
             onClick={() => {
               setIsScreenLocked(true);
-              localStorage.setItem('pos_screen_locked', 'true');
+              storage.setItem('pos_screen_locked', 'true');
               setLockPasscode('');
               setLockError('');
               showToast('success', lang === 'ar' ? '🔒 تم تأمين شاشة النظام بنجاح' : '🔒 System terminal locked successfully');

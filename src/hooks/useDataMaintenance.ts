@@ -1,5 +1,6 @@
 import React from 'react';
 import { Product, Invoice, SystemSettings, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseInvoice, Supplier } from '../types';
+import * as storage from '../lib/storage';
 
 export interface UseDataMaintenanceDeps {
   lang: "ar" | "en";
@@ -37,7 +38,7 @@ export function useDataMaintenance({
   // --- UPDATE SYSTEM GENERAL SETTINGS ---
   const handleUpdateGeneralSettings = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('pos_settings', JSON.stringify(settings));
+    storage.setJSON('pos_settings', settings);
     showToast('success', 'تم حفظ وتعميم إعدادات المحل وسعر الصرف الجديد بنجاح!');
   };
 
@@ -68,7 +69,7 @@ export function useDataMaintenance({
     }
 
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
     showToast('success', lang === 'ar'
       ? `✅ تم بنجاح تحديث أسعار الصرف والمبيع لـ (${count}) صنف حالي بناءً على الهامش الافتراضي (${margin}%).`
       : `✅ Successfully recalculated selling prices for (${count}) items using (${margin}%) default profit margin.`);
@@ -79,7 +80,7 @@ export function useDataMaintenance({
     executeWithAdminAuth(lang === 'ar' ? 'تصفير مبيعات وأرباح المتجر الفعلية' : 'Wipe Live Sales Invoices Only', () => {
       if (confirm(lang === 'ar' ? '⚠️ هل أنت متأكد تماماً من رغبتك في تصفير وحذف جميع فواتير المبيعات والأرباح والسجلات المالية؟ لا يمكن التراجع عن هذه الخطوة!' : 'Are you sure you want to clear all sales invoices and financial records? This action cannot be undone!')) {
         setInvoices([]);
-        localStorage.setItem('pos_invoices', JSON.stringify([]));
+        storage.setJSON('pos_invoices', []);
         showToast('success', lang === 'ar' ? '🧹 تم تصفير جميع فواتير المبيعات بنجاح. مخزون السلع بقي كما هو.' : 'All sales invoices cleared successfully.');
       }
     });
@@ -89,7 +90,7 @@ export function useDataMaintenance({
     executeWithAdminAuth(lang === 'ar' ? 'تصفير وحذف مخزن وسلع المتجر الفعلية' : 'Wipe Live Products & Categories Only', () => {
       if (confirm(lang === 'ar' ? '⚠️ هل أنت متأكد من رغبتك في حذف جميع المنتجات والمخزون الحالي؟ سيتم مسح الأصناف المسجلة بالكامل.' : 'Are you sure you want to clear all products and inventory items?')) {
         setProducts([]);
-        localStorage.setItem('pos_products', JSON.stringify([]));
+        storage.setJSON('pos_products', []);
         showToast('success', lang === 'ar' ? '🧹 تم حذف قائمة المنتجات والمخزون بالكامل بنجاح.' : 'Completed clearing products and inventory configuration.');
       }
     });
@@ -117,15 +118,15 @@ export function useDataMaintenance({
           setExpenses([]);
           setPurchaseInvoices([]);
           
-          localStorage.setItem('pos_products', JSON.stringify([]));
-          localStorage.setItem('pos_invoices', JSON.stringify([]));
-          localStorage.setItem('pos_customers', JSON.stringify([]));
-          localStorage.setItem('pos_suppliers', JSON.stringify([]));
-          localStorage.setItem('pos_returns', JSON.stringify([]));
-          localStorage.setItem('pos_waste', JSON.stringify([]));
-          localStorage.setItem('pos_promotions', JSON.stringify([]));
-          localStorage.setItem('pos_expenses', JSON.stringify([]));
-          localStorage.setItem('pos_purchases', JSON.stringify([]));
+          storage.setJSON('pos_products', []);
+          storage.setJSON('pos_invoices', []);
+          storage.setJSON('pos_customers', []);
+          storage.setJSON('pos_suppliers', []);
+          storage.setJSON('pos_returns', []);
+          storage.setJSON('pos_waste', []);
+          storage.setJSON('pos_promotions', []);
+          storage.setJSON('pos_expenses', []);
+          storage.setJSON('pos_purchases', []);
           
           showToast('success', lang === 'ar' 
             ? '🎉 تم تصفير البرنامج بالكامل من البيانات التجريبية والبدء بصفحة نظيفة بنجاح!' 

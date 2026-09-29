@@ -156,13 +156,13 @@ export default function App() {
 
   // --- BILINGUAL & MULTI-PLATFORM DEVICE STATES ---
   const [lang, setLang] = useState<'ar' | 'en'>(() => {
-    return (localStorage.getItem('pos_language') as 'ar' | 'en') || 'ar';
+    return (storage.getItem('pos_language') as 'ar' | 'en') || 'ar';
   });
 
   const handleToggleLang = () => {
     const nextLang = lang === 'ar' ? 'en' : 'ar';
     setLang(nextLang);
-    localStorage.setItem('pos_language', nextLang);
+    storage.setItem('pos_language', nextLang);
     showToast('success', nextLang === 'ar' ? 'تم تحويل لغة الواجهة إلى العربية 🇱🇧' : 'Interface language switched to English 🇺🇸');
   };
 

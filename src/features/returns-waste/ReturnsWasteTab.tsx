@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Printer, RefreshCw, Trash, Undo2, X } from 'lucide-react';
 import { Customer, ReturnRecord, WasteRecord, Product, Invoice, Supplier, SystemSettings } from '../../types';
+import * as storage from '../../lib/storage';
 
 interface ReturnsWasteTabProps {
   products: Product[];
@@ -41,7 +42,7 @@ export function ReturnsWasteTab({
 
   const [settings] = useState<SystemSettings>(() => {
     try {
-      const raw = localStorage.getItem('pos_settings');
+      const raw = storage.getItem('pos_settings');
       if (raw) return JSON.parse(raw);
     } catch (e) {}
     return {
@@ -109,7 +110,7 @@ export function ReturnsWasteTab({
       return p;
     });
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
 
     // 2. Adjust Customer credit if refundType is 'credit' and customer is linked
     if (refundType === 'credit' && selectedInvoice.customerId) {
@@ -124,7 +125,7 @@ export function ReturnsWasteTab({
         return c;
       });
       setCustomers(updatedCusts);
-      localStorage.setItem('pos_customers', JSON.stringify(updatedCusts));
+      storage.setJSON('pos_customers', updatedCusts);
       showToast('success', lang === 'ar' ? `تم خصم قيمة المرتجع ${totalRefundValue.toFixed(2)}$ من مديونية حساب العميل.` : `Reduced client's debt!`);
     }
 
@@ -147,7 +148,7 @@ export function ReturnsWasteTab({
 
     const updatedReturns = [newReturn, ...returns];
     setReturns(updatedReturns);
-    localStorage.setItem('pos_returns', JSON.stringify(updatedReturns));
+    storage.setJSON('pos_returns', updatedReturns);
     setActivePrintReturn(newReturn); // Auto triggering printable return receipt!
 
     // Reset return item
@@ -180,7 +181,7 @@ export function ReturnsWasteTab({
       return p;
     });
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
 
     // 2. Add Spoil Waste record
     const costValueUSD = targetProduct.priceUSD * quantityToLoss;
@@ -200,7 +201,7 @@ export function ReturnsWasteTab({
 
     const updatedWasteList = [newWaste, ...waste];
     setWaste(updatedWasteList);
-    localStorage.setItem('pos_waste', JSON.stringify(updatedWasteList));
+    storage.setJSON('pos_waste', updatedWasteList);
     setActivePrintWaste(newWaste); // Auto triggering printable waste receipt voucher!
 
     // Reset waste states

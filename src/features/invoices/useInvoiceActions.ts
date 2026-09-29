@@ -1,6 +1,7 @@
 import { Invoice, ReturnRecord, Product, Customer } from '../../types';
 import { auth } from '../../firebase';
 import React from 'react';
+import * as storage from '../../lib/storage';
 
 export interface UseInvoiceActionsDeps {
   SYS_DATE: string;
@@ -120,16 +121,16 @@ export function useInvoiceActions({
 
       // 5. Save all local and cloud state modifications
       setProducts(updatedProducts);
-      localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+      storage.setJSON('pos_products', updatedProducts);
 
       setCustomers(updatedCustomers);
-      localStorage.setItem('pos_customers', JSON.stringify(updatedCustomers));
+      storage.setJSON('pos_customers', updatedCustomers);
 
       setInvoices(updatedInvoices);
-      localStorage.setItem('pos_invoices', JSON.stringify(updatedInvoices));
+      storage.setJSON('pos_invoices', updatedInvoices);
 
       setReturns(newReturnsList);
-      localStorage.setItem('pos_returns', JSON.stringify(newReturnsList));
+      storage.setJSON('pos_returns', newReturnsList);
 
       setShowInvoiceReceipt(updatedInvoice);
 
@@ -259,16 +260,16 @@ export function useInvoiceActions({
 
     // 5. Set States and Local Storage
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
 
     setCustomers(updatedCustomers);
-    localStorage.setItem('pos_customers', JSON.stringify(updatedCustomers));
+    storage.setJSON('pos_customers', updatedCustomers);
 
     setInvoices(updatedInvoices);
-    localStorage.setItem('pos_invoices', JSON.stringify(updatedInvoices));
+    storage.setJSON('pos_invoices', updatedInvoices);
 
     setReturns(newReturnsList);
-    localStorage.setItem('pos_returns', JSON.stringify(newReturnsList));
+    storage.setJSON('pos_returns', newReturnsList);
 
     setShowInvoiceReceipt(updatedInvoice);
 

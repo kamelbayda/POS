@@ -54,6 +54,7 @@ import {
   PurchaseInvoice, 
   SystemSettings 
 } from '../../types';
+import * as storage from '../../lib/storage';
 
 interface FirebaseSyncTabProps {
   lang: 'ar' | 'en';
@@ -167,8 +168,8 @@ export function FirebaseSyncTab({
   // Firebase Auth session
   useEffect(() => {
     // Older versions kept a fake "signed in" record in localStorage without a real Firebase session
-    if (localStorage.getItem('custom_logged_user')) {
-      localStorage.removeItem('custom_logged_user');
+    if (storage.getItem('custom_logged_user')) {
+      storage.removeItem('custom_logged_user');
       showToast('warning', isAr
         ? 'تم تحديث نظام المزامنة السحابية لحماية بياناتك. يرجى إنشاء حساب أو تسجيل الدخول من جديد، ثم رفع بياناتك.'
         : 'Cloud sync was upgraded to protect your data. Please sign in (or create an account) again, then upload your data.');
@@ -395,7 +396,7 @@ export function FirebaseSyncTab({
       catSnap.forEach(d => catList.push(d.data() as Category));
       if (catList.length > 0) {
         setCategories(catList);
-        localStorage.setItem('pos_categories', JSON.stringify(catList));
+        storage.setJSON('pos_categories', catList);
       }
 
       // 2. Products
@@ -405,7 +406,7 @@ export function FirebaseSyncTab({
       prodSnap.forEach(d => prodList.push(d.data() as Product));
       if (prodList.length > 0) {
         setProducts(prodList);
-        localStorage.setItem('pos_products', JSON.stringify(prodList));
+        storage.setJSON('pos_products', prodList);
       }
 
       // 3. Invoices
@@ -415,7 +416,7 @@ export function FirebaseSyncTab({
       invSnap.forEach(d => invList.push(d.data() as Invoice));
       if (invList.length > 0) {
         setInvoices(invList);
-        localStorage.setItem('pos_invoices', JSON.stringify(invList));
+        storage.setJSON('pos_invoices', invList);
       }
 
       // 4. Customers
@@ -425,7 +426,7 @@ export function FirebaseSyncTab({
       custSnap.forEach(d => custList.push(d.data() as Customer));
       if (custList.length > 0) {
         setCustomers(custList);
-        localStorage.setItem('pos_customers', JSON.stringify(custList));
+        storage.setJSON('pos_customers', custList);
       }
 
       // 5. Suppliers
@@ -435,7 +436,7 @@ export function FirebaseSyncTab({
       supSnap.forEach(d => supList.push(d.data() as Supplier));
       if (supList.length > 0) {
         setSuppliers(supList);
-        localStorage.setItem('pos_suppliers', JSON.stringify(supList));
+        storage.setJSON('pos_suppliers', supList);
       }
 
       // 6. Expenses
@@ -445,7 +446,7 @@ export function FirebaseSyncTab({
       expSnap.forEach(d => expList.push(d.data() as ExpenseRecord));
       if (expList.length > 0) {
         setExpenses(expList);
-        localStorage.setItem('pos_expenses', JSON.stringify(expList));
+        storage.setJSON('pos_expenses', expList);
       }
 
       // 7. Purchase Invoices
@@ -455,7 +456,7 @@ export function FirebaseSyncTab({
       purSnap.forEach(d => purList.push(d.data() as PurchaseInvoice));
       if (purList.length > 0) {
         setPurchaseInvoices(purList);
-        localStorage.setItem('pos_purchases', JSON.stringify(purList));
+        storage.setJSON('pos_purchases', purList);
       }
 
       showToast('success', isAr 

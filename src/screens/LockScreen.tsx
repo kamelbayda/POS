@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Lock, X } from 'lucide-react';
 import { Invoice, User } from '../types';
 import React from 'react';
+import * as storage from '../lib/storage';
 
 interface LockScreenProps {
   SYS_DATE: string;
@@ -248,7 +249,7 @@ export function LockScreen({
                 type="button"
                 onClick={() => {
                   setIsScreenLocked(false);
-                  localStorage.setItem('pos_screen_locked', 'false');
+                  storage.setItem('pos_screen_locked', 'false');
                   handleLogout();
                 }}
                 className="bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 text-slate-350 hover:text-rose-400 font-bold py-3.5 px-3 rounded-xl transition duration-150 active:scale-[0.98] cursor-pointer text-xs flex items-center justify-center gap-1"
