@@ -1,8 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Each shop's data lives under shops/{uid}, where uid is the Firebase Auth
+    // user that signed in from the POS "cloud sync" screen. Only that user can
+    // read or write it.
+    match /shops/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Connectivity probe used by the app (firebase.ts testConnection)
+    match /test_connection/{docId} {
+      allow read: if true;
+    }
+
+    // Everything else (including the old shared collections and the old
+    // users_credentials collection) is closed.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

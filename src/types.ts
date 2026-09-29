@@ -99,23 +99,20 @@ export interface User {
 }
 
 export interface PrinterConfig {
+  id: string;
   name: string;
-  type: string; // 'thermal' (Receipt/Barcodes) or 'laser' (A4 bills/reports)
-  connection: string; // 'USB' or 'Network/IP'
-  address: string; // e.g. 'COM3', '192.168.1.100'
+  connectionType: 'USB' | 'Network' | 'Serial' | 'Bluetooth';
+  paperWidth: '58mm' | '80mm' | 'A4' | 'A5';
+  address: string; // e.g. 'USB001', '192.168.1.100'
 }
 
 export interface PrinterAssignments {
   receiptEnabled: boolean;
-  receiptPrinter: string;
-  creditEnabled: boolean;
-  creditPrinter: string;
-  closeShiftEnabled: boolean;
-  closeShiftPrinter: string;
+  receiptPrinterId: string; // customer receipts
   kitchenEnabled: boolean;
-  kitchenPrinter: string;
-  serviceEnabled: boolean;
-  servicePrinter: string;
+  kitchenPrinterId: string; // kitchen / order tickets
+  targetPrinterId: string; // A4 reports and invoices
+  logEnabled?: boolean;
 }
 
 export interface SystemSettings {
@@ -260,3 +257,27 @@ export interface WarehouseTransfer {
   note?: string;
 }
 
+
+/** A product with the derived expiry / sales-activity flags computed in App.tsx. */
+export interface ProcessedProduct extends Product {
+  isExpired: boolean;
+  isNearExpiry: boolean;
+  lastSoldDate: string | null;
+  daysSinceLastSale: number | null;
+  isStagnant: boolean;
+}
+
+/** A parked/secondary cart ("invoice tab") on the POS screen. */
+export interface CartSession {
+  id: string;
+  label: string;
+  cart: CartItem[];
+  discountInput: string;
+  paidUSDInput: string;
+  paidLBPInput: string;
+  paymentMethod: 'cash' | 'card' | 'transfer' | 'debt';
+  posSaleType: 'retail' | 'wholesale';
+  selectedCustomerId: string;
+  voidedCartItemIds?: string[];
+  noteInput?: string;
+}

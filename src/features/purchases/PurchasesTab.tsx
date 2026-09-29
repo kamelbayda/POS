@@ -24,8 +24,9 @@ import {
   Cpu,
   Upload
 } from 'lucide-react';
-import { Product, PurchaseInvoice, PurchaseItem, Category } from '../types';
-import { handleMathBlur, handleMathKeyDown } from '../mathEvaluator';
+import { Product, PurchaseInvoice, PurchaseItem, Category } from '../../types';
+import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
+import * as storage from '../../lib/storage';
 
 interface PurchasesTabProps {
   products: Product[];
@@ -115,7 +116,7 @@ export function PurchasesTab({
     const newCat = { id: cleanId, name, emoji: '🏷️' };
     const updated = [...categories, newCat];
     setCategories(updated);
-    localStorage.setItem('pos_categories', JSON.stringify(updated));
+    storage.setJSON('pos_categories', updated);
     setNewProdCategory(name); // select it automatically
     setInlineCategoryName('');
     setShowInlineCategoryInput(false);
@@ -234,7 +235,7 @@ export function PurchasesTab({
     // Append to master products list
     const updatedProductsList = [...products, newProd];
     setProducts(updatedProductsList);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProductsList));
+    storage.setJSON('pos_products', updatedProductsList);
 
     // Automatically put into the draft invoice items
     setDraftItems(prev => [
@@ -383,12 +384,12 @@ export function PurchasesTab({
 
     // Save master products
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
 
     // 3. Save purchase invoice to purchase ledger
     const updatedLedger = [newPurchaseInvoice, ...purchaseInvoices];
     setPurchaseInvoices(updatedLedger);
-    localStorage.setItem('pos_purchases', JSON.stringify(updatedLedger));
+    storage.setJSON('pos_purchases', updatedLedger);
 
     // Clear draft state
     setSupplierName('');
@@ -437,7 +438,7 @@ export function PurchasesTab({
         }
 
         // Read dynamic profit margin from system settings
-        const storedSettings = localStorage.getItem('pos_settings');
+        const storedSettings = storage.getItem('pos_settings');
         const defaultMargin = storedSettings ? JSON.parse(storedSettings).defaultMarginPercent || 15 : 15;
 
         // Map scanned items list to draftItems
@@ -856,7 +857,7 @@ export function PurchasesTab({
                           value={newProdCost}
                           onChange={e => setNewProdCost(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdCost)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdCost)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdCost)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
                           placeholder="0.00"
                         />
@@ -871,7 +872,7 @@ export function PurchasesTab({
                           value={newProdSellRetail}
                           onChange={e => setNewProdSellRetail(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdSellRetail)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdSellRetail)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdSellRetail)}
                           className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono font-bold text-indigo-700"
                           placeholder="0.00"
                         />
@@ -885,7 +886,7 @@ export function PurchasesTab({
                           value={newProdSellWholesale}
                           onChange={e => setNewProdSellWholesale(e.target.value)}
                           onBlur={e => handleMathBlur(e.target.value, setNewProdSellWholesale)}
-                          onKeyDown={e => handleMathKeyDown(e, e.target.value, setNewProdSellWholesale)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdSellWholesale)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
                           placeholder="أو يترك تلقائي"
                         />

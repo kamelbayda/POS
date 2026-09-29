@@ -22,8 +22,10 @@ import {
   auth, 
   googleProvider, 
   toggleNetwork, 
-  testConnection 
-} from '../firebase';
+  testConnection,
+  shopCollection,
+  shopDoc,
+} from '../../firebase';
 import { 
   signInWithPopup, 
   signInAnonymously, 
@@ -32,16 +34,12 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
-  confirmPasswordReset,
   User as FirebaseUser
 } from 'firebase/auth';
 import { 
-  collection, 
   getDocs, 
-  setDoc, 
-  doc, 
   writeBatch,
-  getDoc
+  DocumentReference,
 } from 'firebase/firestore';
 import { 
   Product, 
@@ -55,7 +53,8 @@ import {
   ExpenseRecord, 
   PurchaseInvoice, 
   SystemSettings 
-} from '../types';
+} from '../../types';
+import * as storage from '../../lib/storage';
 
 interface FirebaseSyncTabProps {
   lang: 'ar' | 'en';
@@ -84,11 +83,33 @@ interface FirebaseSyncTabProps {
   setSettings: (s: SystemSettings) => void;
 }
 
-async function sha256(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+// Firebase Auth error codes -> user-facing messages
+const AUTH_ERRORS: Record<string, { ar: string; en: string }> = {
+  'auth/invalid-credential': { ar: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.', en: 'Wrong email or password.' },
+  'auth/wrong-password': { ar: 'كلمة المرور غير صحيحة.', en: 'Wrong password.' },
+  'auth/user-not-found': { ar: 'لا يوجد حساب بهذا البريد. اختر "إنشاء حساب".', en: 'No account with this email. Choose "Create account".' },
+  'auth/email-already-in-use': { ar: 'هذا البريد مسجّل مسبقاً. سجّل الدخول بدلاً من ذلك.', en: 'This email is already registered. Sign in instead.' },
+  'auth/weak-password': { ar: 'كلمة المرور ضعيفة (6 أحرف على الأقل).', en: 'Password is too weak (min 6 characters).' },
+  'auth/invalid-email': { ar: 'البريد الإلكتروني غير صالح.', en: 'Invalid email address.' },
+  'auth/too-many-requests': { ar: 'محاولات كثيرة. حاول بعد قليل.', en: 'Too many attempts. Try again later.' },
+  'auth/network-request-failed': { ar: 'لا يوجد اتصال بالإنترنت.', en: 'No internet connection.' },
+  'auth/operation-not-allowed': { ar: 'طريقة الدخول هذه غير مفعّلة في مشروع Firebase.', en: 'This sign-in method is not enabled in the Firebase project.' },
+};
+const authErrorMessage = (err: any, isAr: boolean) => {
+  const m = AUTH_ERRORS[err?.code];
+  return m ? (isAr ? m.ar : m.en) : (err?.message || String(err));
+};
+
+// Collections mirrored to the cloud (under shops/{uid}/...)
+const SYNCED_COLLECTIONS = ['products', 'categories', 'invoices', 'customers', 'suppliers', 'expenses', 'purchaseInvoices'] as const;
+
+/** Writes documents in batches (Firestore allows up to 500 operations per batch). */
+async function batchWrite(entries: Array<[DocumentReference, object]>) {
+  for (let i = 0; i < entries.length; i += 400) {
+    const batch = writeBatch(db);
+    entries.slice(i, i + 400).forEach(([ref, data]) => batch.set(ref, data));
+    await batch.commit();
+  }
 }
 
 export function FirebaseSyncTab({
@@ -143,41 +164,22 @@ export function FirebaseSyncTab({
   const [passwordVal, setPasswordVal] = useState<string>('');
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const [emailLoading, setEmailLoading] = useState<boolean>(false);
-  const [showManualReset, setShowManualReset] = useState<boolean>(false);
-  const [resetCodeInput, setResetCodeInput] = useState<string>('');
-  const [newPasswordVal, setNewPasswordVal] = useState<string>('');
-  const [securityWordVal, setSecurityWordVal] = useState<string>('');
 
-  // Check auth user state changes
+  // Firebase Auth session
   useEffect(() => {
-    const localSess = localStorage.getItem('custom_logged_user');
-    if (localSess) {
-      try {
-        const parsed = JSON.parse(localSess);
-        setFbUser(parsed);
-        fetchCloudCounts();
-        return;
-      } catch (e) {
-        console.warn("Error reading custom session", e);
-      }
+    // Older versions kept a fake "signed in" record in localStorage without a real Firebase session
+    if (storage.getItem('custom_logged_user')) {
+      storage.removeItem('custom_logged_user');
+      showToast('warning', isAr
+        ? 'تم تحديث نظام المزامنة السحابية لحماية بياناتك. يرجى إنشاء حساب أو تسجيل الدخول من جديد، ثم رفع بياناتك.'
+        : 'Cloud sync was upgraded to protect your data. Please sign in (or create an account) again, then upload your data.');
     }
-
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setFbUser({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL
-        } as any);
-        fetchCloudCounts();
-      } else {
-        if (!localStorage.getItem('custom_logged_user')) {
-          setFbUser(null);
-        }
-      }
+      setFbUser(user);
+      if (user) fetchCloudCounts();
     });
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check initial connection status
@@ -244,181 +246,46 @@ export function FirebaseSyncTab({
     }
   };
 
-  // Email & Password Auth Handler with custom Firestore security backup
+  // Email & password sign-in / registration (Firebase Auth)
   const handleEmailAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailVal.trim() || !passwordVal.trim()) {
+    const email = emailVal.trim().toLowerCase();
+    if (!email || !passwordVal) {
       showToast('error', isAr ? 'يرجى ملء جميع الحقول المطلوبة!' : 'Please fill all fields!');
       return;
     }
-    if (passwordVal.length < 6) {
-      showToast('error', isAr ? 'كلمة المرور يجب أن لا تقل عن 6 أحرف!' : 'Password must be at least 6 characters!');
-      return;
-    }
-    if (isRegistering && !securityWordVal.trim()) {
-      showToast('error', isAr ? 'الرجاء تحديد كلمة سر الاستعادة الاحتياطية!' : 'Please specify a secret recovery word!');
-      return;
-    }
-    
     setEmailLoading(true);
-    const lowercaseEmail = emailVal.trim().toLowerCase();
-    
     try {
-      const userDocRef = doc(db, 'users_credentials', lowercaseEmail);
-      const userSnap = await getDoc(userDocRef);
-
       if (isRegistering) {
-        if (userSnap.exists()) {
-          throw new Error(isAr 
-            ? 'هذا البريد الإلكتروني مسجل مسبقاً بنظام الكواشب! يرجى اختيار بريد آخر أو تسجيل الدخول.' 
-            : 'This email account is already registered! Please sign in.'
-          );
-        }
-
-        const passHash = await sha256(passwordVal.trim());
-        const wordHash = await sha256(securityWordVal.trim().toLowerCase());
-
-        const mockUserPayload = {
-          email: lowercaseEmail,
-          passHash,
-          wordHash,
-          displayName: lowercaseEmail.split('@')[0],
-          createdAt: new Date().toISOString()
-        };
-
-        await setDoc(userDocRef, mockUserPayload);
-
-        const mockUser = {
-          uid: 'custom_user_' + lowercaseEmail.replace(/[^a-zA-Z0-9]/g, '_'),
-          email: lowercaseEmail,
-          displayName: lowercaseEmail.split('@')[0],
-          isCustom: true
-        };
-
-        localStorage.setItem('custom_logged_user', JSON.stringify(mockUser));
-        setFbUser(mockUser as any);
-        
-        showToast('success', isAr
-          ? '🎉 تم إنشاء حسابك السحابي المتكامل بنجاح وتفعيل المزامنة!'
-          : '🎉 Live cloud backup account created & synchronized successfully!'
-        );
-        
-        setShowEmailAuth(false);
-        setEmailVal('');
-        setPasswordVal('');
-        setSecurityWordVal('');
-        fetchCloudCounts();
+        await createUserWithEmailAndPassword(auth, email, passwordVal);
+        showToast('success', isAr ? '🎉 تم إنشاء حسابك السحابي بنجاح! يمكنك الآن رفع بياناتك.' : '🎉 Cloud account created! You can now upload your data.');
       } else {
-        // Sign In
-        if (!userSnap.exists()) {
-          throw new Error(isAr 
-            ? 'هذا الحساب غير مسجل حالياً. يرجى تفعيل خيار "إنشاء حساب" بالأسفل للتسجيل لأول مرة.' 
-            : 'No account registered with this email. Toggle "Create account" below.'
-          );
-        }
-
-        const userData = userSnap.data();
-        const enteredPassHash = await sha256(passwordVal.trim());
-
-        if (userData.passHash !== enteredPassHash) {
-          throw new Error(isAr ? 'كلمة المرور غير صحيحة! يرجى التحقق وإعادة الإدخال.' : 'Incorrect password! Please check and retry.');
-        }
-
-        const mockUser = {
-          uid: 'custom_user_' + lowercaseEmail.replace(/[^a-zA-Z0-9]/g, '_'),
-          email: lowercaseEmail,
-          displayName: lowercaseEmail.split('@')[0],
-          isCustom: true
-        };
-
-        localStorage.setItem('custom_logged_user', JSON.stringify(mockUser));
-        setFbUser(mockUser as any);
-        
-        showToast('success', isAr
-          ? '👋 تم تسجيل دخولك بنجاح للغيمة السحابية! جاري موازنة المخزن والعمليات.'
-          : '👋 Firebase cloud login successful!'
-        );
-        
-        setShowEmailAuth(false);
-        setEmailVal('');
-        setPasswordVal('');
-        setSecurityWordVal('');
-        fetchCloudCounts();
+        await signInWithEmailAndPassword(auth, email, passwordVal);
+        showToast('success', isAr ? '👋 تم تسجيل الدخول للمزامنة السحابية بنجاح.' : '👋 Signed in to cloud sync.');
       }
+      setShowEmailAuth(false);
+      setPasswordVal('');
     } catch (err: any) {
       console.error(err);
-      showToast('error', err?.message || err);
+      showToast('error', authErrorMessage(err, isAr));
     } finally {
       setEmailLoading(false);
     }
   };
 
-  // Send password reset trigger
+  // Password reset email (sent by Firebase)
   const handleResetPassword = async () => {
-    setShowManualReset(true);
-    setShowEmailAuth(false);
-    setResetCodeInput('');
-    setNewPasswordVal('');
-  };
-
-  // Submit password reset using recovery word
-  const handleManualResetSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailVal.trim()) {
-      showToast('error', isAr ? 'يرجى كتابة البريد الإلكتروني المسجل أولاً في خانة البريد!' : 'Please enter your registered email in the field first!');
+    const email = emailVal.trim().toLowerCase();
+    if (!email) {
+      showToast('error', isAr ? 'اكتب بريدك الإلكتروني أولاً في خانة البريد.' : 'Enter your email address first.');
       return;
     }
-    if (!resetCodeInput.trim() || !newPasswordVal.trim()) {
-      showToast('error', isAr ? 'الرجاء إدخال الكلمة السرية الاحتياطية وكلمة المرور الجديدة أولاً!' : 'Please enter the recovery word and new password first!');
-      return;
-    }
-    if (newPasswordVal.trim().length < 6) {
-      showToast('error', isAr ? 'كلمة المرور يجب أن لا تقل عن 6 خانات!' : 'Password must be at least 6 characters!');
-      return;
-    }
-
     setEmailLoading(true);
-    const lowercaseEmail = emailVal.trim().toLowerCase();
-
     try {
-      const userDocRef = doc(db, 'users_credentials', lowercaseEmail);
-      const userSnap = await getDoc(userDocRef);
-
-      if (!userSnap.exists()) {
-        throw new Error(isAr 
-          ? 'لم يعثر النظام على حساب مسجل بهذا الإيميل!' 
-          : 'Registered account context not found!'
-        );
-      }
-
-      const userData = userSnap.data();
-      const enteredWordHash = await sha256(resetCodeInput.trim().toLowerCase());
-
-      if (userData.wordHash !== enteredWordHash) {
-        throw new Error(isAr 
-          ? '❌ الكلمة السرية للاستعادة غير صحيحة! يرجى إدخال الكلمة الصحيحة المعطاة عند إنشاء الحساب.' 
-          : '❌ Incorrect recovery word! Secure check failed.'
-        );
-      }
-
-      const newPassHash = await sha256(newPasswordVal.trim());
-      await setDoc(userDocRef, {
-        ...userData,
-        passHash: newPassHash
-      });
-
-      showToast('success', isAr 
-        ? '✅ تمت إعادة تعيين كلمة المرور بنجاح! يمكنك الان تسجيل الدخول بها.' 
-        : '✅ Password changed successfully! You may now sign in using the new passcode.'
-      );
-
-      setShowManualReset(false);
-      setShowEmailAuth(true);
-      setResetCodeInput('');
-      setNewPasswordVal('');
+      await sendPasswordResetEmail(auth, email);
+      showToast('success', isAr ? '📧 أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك.' : '📧 Password reset link sent to your email.');
     } catch (err: any) {
-      console.error("Manual reset error:", err);
-      showToast('error', err?.message || err);
+      showToast('error', authErrorMessage(err, isAr));
     } finally {
       setEmailLoading(false);
     }
@@ -444,7 +311,6 @@ export function FirebaseSyncTab({
   // Logout
   const handleLogout = async () => {
     try {
-      localStorage.removeItem('custom_logged_user');
       await signOut(auth);
       setFbUser(null);
       showToast('warning', isAr ? 'تم تسجيل الخروج وفصل الخادم السحابي 👋' : 'Disconnected from Firebase Cloud 👋');
@@ -453,15 +319,13 @@ export function FirebaseSyncTab({
     }
   };
 
-  // Query Cloud Firestore to fetch documents count
+  // Count this shop's documents in the cloud
   const fetchCloudCounts = async () => {
     if (!auth.currentUser) return;
     try {
-      const cols = ['products', 'categories', 'invoices', 'customers', 'suppliers', 'expenses', 'purchaseInvoices'];
       const counts: any = {};
-      
-      for (const col of cols) {
-        const snap = await getDocs(collection(db, col));
+      for (const col of SYNCED_COLLECTIONS) {
+        const snap = await getDocs(shopCollection(col));
         counts[col === 'purchaseInvoices' ? 'purchases' : col] = snap.size;
       }
       setCloudCounts(counts);
@@ -479,51 +343,21 @@ export function FirebaseSyncTab({
 
     setSyncing(true);
     try {
-      // 1. Categories
-      setSyncProgress(isAr ? 'جاري رفع الفئات والأصناف...' : 'Uploading categories...');
-      for (const cat of categories) {
-        await setDoc(doc(db, 'categories', cat.id), cat);
+      const tables: Array<[string, Array<{ id: string }>, string]> = [
+        ['categories', categories, isAr ? 'جاري رفع الفئات...' : 'Uploading categories...'],
+        ['products', products, isAr ? 'جاري رفع المنتجات...' : 'Uploading products...'],
+        ['invoices', invoices, isAr ? 'جاري رفع فواتير المبيعات...' : 'Uploading sales invoices...'],
+        ['customers', customers, isAr ? 'جاري رفع قاعدة بيانات الزبائن...' : 'Uploading customers...'],
+        ['suppliers', suppliers, isAr ? 'جاري رفع بيانات الموردين...' : 'Uploading suppliers...'],
+        ['expenses', expenses, isAr ? 'جاري رفع المصاريف والتشغيل...' : 'Uploading expenses...'],
+        ['purchaseInvoices', purchaseInvoices, isAr ? 'جاري رفع فواتير المشتريات...' : 'Uploading procurement invoices...'],
+      ];
+      for (const [col, rows, label] of tables) {
+        setSyncProgress(label);
+        await batchWrite(rows.map(row => [shopDoc(col, row.id), row]));
       }
-
-      // 2. Products
-      setSyncProgress(isAr ? 'جاري رفع المنتجات...' : 'Uploading products...');
-      for (const prod of products) {
-        await setDoc(doc(db, 'products', prod.id), prod);
-      }
-
-      // 3. Invoices
-      setSyncProgress(isAr ? 'جاري رفع فواتير المبيعات...' : 'Uploading sales invoices...');
-      for (const inv of invoices) {
-        await setDoc(doc(db, 'invoices', inv.id), inv);
-      }
-
-      // 4. Customers
-      setSyncProgress(isAr ? 'جاري رفع قاعدة بيانات الزبائن...' : 'Uploading customers...');
-      for (const cust of customers) {
-        await setDoc(doc(db, 'customers', cust.id), cust);
-      }
-
-      // 5. Suppliers
-      setSyncProgress(isAr ? 'جاري رفع بيانات الموردين...' : 'Uploading suppliers...');
-      for (const sup of suppliers) {
-        await setDoc(doc(db, 'suppliers', sup.id), sup);
-      }
-
-      // 6. Expenses
-      setSyncProgress(isAr ? 'جاري رفع المصاريف والتشغيل...' : 'Uploading expenses...');
-      for (const exp of expenses) {
-        await setDoc(doc(db, 'expenses', exp.id), exp);
-      }
-
-      // 7. Purchase Invoices
-      setSyncProgress(isAr ? 'جاري رفع فواتير المشتريات...' : 'Uploading procurement invoices...');
-      for (const pur of purchaseInvoices) {
-        await setDoc(doc(db, 'purchaseInvoices', pur.id), pur);
-      }
-
-      // 8. Settings
-      setSyncProgress(isAr ? 'جاري رفع إعدادات الصرف...' : 'Uploading store settings...');
-      await setDoc(doc(db, 'settings', 'global_config'), settings);
+      setSyncProgress(isAr ? 'جاري رفع إعدادات المحل...' : 'Uploading store settings...');
+      await batchWrite([[shopDoc('settings', 'global_config'), settings]]);
 
       showToast('success', isAr 
         ? '🚀 تم ترحيل ورفع كافة البيانات المحلية إلى خادم Firebase بنجاح!' 
@@ -557,72 +391,72 @@ export function FirebaseSyncTab({
     try {
       // 1. Categories
       setSyncProgress(isAr ? 'جاري سحب الفئات...' : 'Pulling categories...');
-      const catSnap = await getDocs(collection(db, 'categories'));
+      const catSnap = await getDocs(shopCollection('categories'));
       const catList: Category[] = [];
       catSnap.forEach(d => catList.push(d.data() as Category));
       if (catList.length > 0) {
         setCategories(catList);
-        localStorage.setItem('pos_categories', JSON.stringify(catList));
+        storage.setJSON('pos_categories', catList);
       }
 
       // 2. Products
       setSyncProgress(isAr ? 'جاري سحب المنتجات...' : 'Pulling products...');
-      const prodSnap = await getDocs(collection(db, 'products'));
+      const prodSnap = await getDocs(shopCollection('products'));
       const prodList: Product[] = [];
       prodSnap.forEach(d => prodList.push(d.data() as Product));
       if (prodList.length > 0) {
         setProducts(prodList);
-        localStorage.setItem('pos_products', JSON.stringify(prodList));
+        storage.setJSON('pos_products', prodList);
       }
 
       // 3. Invoices
       setSyncProgress(isAr ? 'جاري سحب المبيعات...' : 'Pulling invoices...');
-      const invSnap = await getDocs(collection(db, 'invoices'));
+      const invSnap = await getDocs(shopCollection('invoices'));
       const invList: Invoice[] = [];
       invSnap.forEach(d => invList.push(d.data() as Invoice));
       if (invList.length > 0) {
         setInvoices(invList);
-        localStorage.setItem('pos_invoices', JSON.stringify(invList));
+        storage.setJSON('pos_invoices', invList);
       }
 
       // 4. Customers
       setSyncProgress(isAr ? 'جاري سحب العملاء والزبائن...' : 'Pulling customers...');
-      const custSnap = await getDocs(collection(db, 'customers'));
+      const custSnap = await getDocs(shopCollection('customers'));
       const custList: Customer[] = [];
       custSnap.forEach(d => custList.push(d.data() as Customer));
       if (custList.length > 0) {
         setCustomers(custList);
-        localStorage.setItem('pos_customers', JSON.stringify(custList));
+        storage.setJSON('pos_customers', custList);
       }
 
       // 5. Suppliers
       setSyncProgress(isAr ? 'جاري سحب الموردين...' : 'Pulling suppliers...');
-      const supSnap = await getDocs(collection(db, 'suppliers'));
+      const supSnap = await getDocs(shopCollection('suppliers'));
       const supList: Supplier[] = [];
       supSnap.forEach(d => supList.push(d.data() as Supplier));
       if (supList.length > 0) {
         setSuppliers(supList);
-        localStorage.setItem('pos_suppliers', JSON.stringify(supList));
+        storage.setJSON('pos_suppliers', supList);
       }
 
       // 6. Expenses
       setSyncProgress(isAr ? 'جاري سحب المصاريف...' : 'Pulling expenses...');
-      const expSnap = await getDocs(collection(db, 'expenses'));
+      const expSnap = await getDocs(shopCollection('expenses'));
       const expList: ExpenseRecord[] = [];
       expSnap.forEach(d => expList.push(d.data() as ExpenseRecord));
       if (expList.length > 0) {
         setExpenses(expList);
-        localStorage.setItem('pos_expenses', JSON.stringify(expList));
+        storage.setJSON('pos_expenses', expList);
       }
 
       // 7. Purchase Invoices
       setSyncProgress(isAr ? 'جاري سحب فواتير المشتريات...' : 'Pulling purchase logs...');
-      const purSnap = await getDocs(collection(db, 'purchaseInvoices'));
+      const purSnap = await getDocs(shopCollection('purchaseInvoices'));
       const purList: PurchaseInvoice[] = [];
       purSnap.forEach(d => purList.push(d.data() as PurchaseInvoice));
       if (purList.length > 0) {
         setPurchaseInvoices(purList);
-        localStorage.setItem('pos_purchases', JSON.stringify(purList));
+        storage.setJSON('pos_purchases', purList);
       }
 
       showToast('success', isAr 
@@ -768,70 +602,6 @@ export function FirebaseSyncTab({
                 <LogOut className="w-3.5 h-3.5" />
                 <span>{isAr ? 'فصل الخادم السحابي 👋' : 'Disconnect Cloud Session 👋'}</span>
               </button>
-            ) : showManualReset ? (
-              <form onSubmit={handleManualResetSubmit} className="space-y-3 bg-indigo-50 p-4 rounded-xl border border-indigo-200">
-                <div className="text-right text-[11px] font-black text-indigo-950 mb-1">
-                  {isAr 
-                    ? '🔧 حل مشكلة الرابط وتغيير كلمة المرور مسبقاً:' 
-                    : '🔧 Manual validation & set new password:'}
-                </div>
-                <p className="text-right text-[10px] text-slate-600 leading-normal">
-                  {isAr 
-                    ? 'إذا ظهرت لك رسالة خطأ (Page mode is invalid) عند فتح الرابط، قم بنسخ الرابط بالكامل من الإيميل أو نسخ كود (oobCode) وضعه هنا لتغيير كلمة المرور فوراً وبسهولة من داخل المتصفح!' 
-                    : 'If you get link error, copy the link or oobCode from details and paste here directly:'}
-                </p>
-                <div>
-                  <textarea
-                    required
-                    value={resetCodeInput}
-                    onChange={(e) => setResetCodeInput(e.target.value)}
-                    placeholder={isAr ? 'الصق الرابط بالكامل من الإيميل أو رمز الـ oobCode' : 'Paste full link or oobCode here'}
-                    rows={2}
-                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-right"
-                  />
-                </div>
-                <div>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    value={newPasswordVal}
-                    onChange={(e) => setNewPasswordVal(e.target.value)}
-                    placeholder={isAr ? 'كلمة المرور الجديدة (6 أحرف على الأقل)' : 'New password (min 6 chars)'}
-                    className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-right"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowManualReset(false);
-                      setShowEmailAuth(true);
-                      setResetCodeInput('');
-                      setNewPasswordVal('');
-                    }}
-                    className="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 py-1.5 rounded-lg text-xs font-black transition cursor-pointer"
-                  >
-                    {isAr ? 'رجوع' : 'Back'}
-                  </button>
-                  
-                  <button
-                    type="submit"
-                    disabled={emailLoading}
-                    className="w-2/3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-black hover:opacity-90 py-1.5 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    {emailLoading ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <KeyRound className="w-3.5 h-3.5" />
-                    )}
-                    <span>
-                      {isAr ? 'حفظ كلمة المرور الجديدة' : 'Set New Password'}
-                    </span>
-                  </button>
-                </div>
-              </form>
             ) : showEmailAuth ? (
               <form onSubmit={handleEmailAuthSubmit} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div className="text-right text-[11px] font-black text-slate-700 mb-1">
@@ -872,16 +642,6 @@ export function FirebaseSyncTab({
                       className="text-[10px] text-rose-600 hover:text-rose-750 hover:underline font-bold transition cursor-pointer text-right"
                     >
                       {isAr ? 'نسيت كلمة المرور؟ إعادة تعيينها عبر البريد 📧' : 'Forgot password? Reset via Email 📧'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowManualReset(true);
-                        setShowEmailAuth(false);
-                      }}
-                      className="text-[10px] text-indigo-700 hover:text-indigo-850 hover:underline font-bold transition cursor-pointer text-right"
-                    >
-                      {isAr ? 'عندي كود/رابط التحقق وأريد تعيين كلمة المرور مباشرة 🛠️' : 'I have reset code/link, set password directly 🛠️'}
                     </button>
                   </div>
                 )}

@@ -4,6 +4,7 @@
  */
 
 import { Product, Category, SystemSettings, User, Invoice, Customer, Promotion, ExpenseRecord, Supplier } from './types';
+import { toISODate, parseISODate } from './lib/date';
 
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'dairy', name: 'ألبان وأجبان', emoji: '🥛' },
@@ -28,21 +29,16 @@ export const DEFAULT_SETTINGS: SystemSettings = {
   receiptMarginLeft: 4,
   posGridSize: 'auto',
   printersList: [
-    { name: 'XP-80 POS Thermal', type: 'thermal', connection: 'USB', address: 'USB001' },
-    { name: 'HP LaserJet 400 M402', type: 'laser', connection: 'Network/IP', address: '192.168.1.50' },
-    { name: 'POS-80 Kitchen Printer', type: 'thermal', connection: 'USB', address: 'USB002' }
+    { id: 'p-default-receipt', name: 'XP-80 POS Thermal', connectionType: 'USB', paperWidth: '80mm', address: 'USB001' },
+    { id: 'p-default-laser', name: 'HP LaserJet 400 M402', connectionType: 'Network', paperWidth: 'A4', address: '192.168.1.50' },
+    { id: 'p-default-kitchen', name: 'POS-80 Kitchen Printer', connectionType: 'USB', paperWidth: '80mm', address: 'USB002' }
   ],
   printerAssignments: {
     receiptEnabled: true,
-    receiptPrinter: 'XP-80 POS Thermal',
-    creditEnabled: false,
-    creditPrinter: 'XP-80 POS Thermal',
-    closeShiftEnabled: true,
-    closeShiftPrinter: 'HP LaserJet 400 M402',
+    receiptPrinterId: 'p-default-receipt',
     kitchenEnabled: false,
-    kitchenPrinter: 'POS-80 Kitchen Printer',
-    serviceEnabled: false,
-    servicePrinter: 'XP-80 POS Thermal'
+    kitchenPrinterId: 'p-default-kitchen',
+    targetPrinterId: 'p-default-laser'
   },
   directSilentPrint: true,
   cashDrawerCodes: '27,112,0,148,49',
@@ -99,19 +95,19 @@ export const DEFAULT_EXPENSES: ExpenseRecord[] = [
 ];
 
 export const getSeededProducts = (currentDateStr: string): Product[] => {
-  const current = new Date(currentDateStr);
+  const current = parseISODate(currentDateStr);
   
   // Format helpers
   const addDays = (d: Date, days: number): string => {
     const copy = new Date(d);
     copy.setDate(copy.getDate() + days);
-    return copy.toISOString().split('T')[0];
+    return toISODate(copy);
   };
 
   const subDays = (d: Date, days: number): string => {
     const copy = new Date(d);
     copy.setDate(copy.getDate() - days);
-    return copy.toISOString().split('T')[0];
+    return toISODate(copy);
   };
 
   return [
@@ -263,11 +259,11 @@ export const getSeededProducts = (currentDateStr: string): Product[] => {
 };
 
 export const getSeededInvoices = (currentDateStr: string): Invoice[] => {
-  const current = new Date(currentDateStr);
+  const current = parseISODate(currentDateStr);
   const formatDate = (offset: number) => {
     const d = new Date(current);
     d.setDate(d.getDate() - offset);
-    return d.toISOString().split('T')[0];
+    return toISODate(d);
   };
 
   return [

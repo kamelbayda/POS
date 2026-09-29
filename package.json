@@ -1,11 +1,10 @@
 {
-  "name": "react-example",
+  "name": "kamel-pos",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "tauri": "tauri",
     "dev": "tsx server.ts",
     "vite-dev": "vite",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
@@ -15,10 +14,11 @@
     "lint": "tsc --noEmit",
     "electron": "electron .",
     "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "test:rules": "firebase emulators:exec --only firestore \"node --test tests/firestore-rules.test.mjs\"",
+    "emulators": "firebase emulators:start --only auth,firestore"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
@@ -32,17 +32,20 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
     "concurrently": "^10.0.1",
     "electron": "^42.3.0",
     "electron-builder": "^26.8.1",
     "esbuild": "^0.25.0",
+    "firebase-tools": "^15.32.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.3",
     "wait-on": "^9.0.10"
   },
   "build": {

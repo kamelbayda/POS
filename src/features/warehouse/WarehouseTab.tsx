@@ -22,7 +22,8 @@ import {
   Archive,
   ArrowRightLeft
 } from 'lucide-react';
-import { Product, WarehouseTransfer, Category } from '../types';
+import { Product, WarehouseTransfer, Category } from '../../types';
+import * as storage from '../../lib/storage';
 
 interface WarehouseTabProps {
   products: Product[];
@@ -101,7 +102,7 @@ export function WarehouseTab({
 
   // Load transfers from localStorage
   useEffect(() => {
-    const storedTransfers = localStorage.getItem('pos_warehouse_transfers');
+    const storedTransfers = storage.getItem('pos_warehouse_transfers');
     if (storedTransfers) {
       try {
         setTransfers(JSON.parse(storedTransfers));
@@ -119,7 +120,7 @@ export function WarehouseTab({
   // Save transfers helper
   const saveTransfers = (updatedList: WarehouseTransfer[]) => {
     setTransfers(updatedList);
-    localStorage.setItem('pos_warehouse_transfers', JSON.stringify(updatedList));
+    storage.setJSON('pos_warehouse_transfers', updatedList);
   };
 
   // Perform transfer action
@@ -173,7 +174,7 @@ export function WarehouseTab({
     });
 
     setProducts(updatedProducts);
-    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    storage.setJSON('pos_products', updatedProducts);
 
     // Save transfer log
     const updatedTransfers = [newTransfer, ...transfers];
