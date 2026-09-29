@@ -638,8 +638,9 @@ export default function App() {
       {/* Global CSS Style tag for dynamic font and button scale */}
       <style>{`
         html {
-          font-size: ${globalFontScale * 100}% !important;
-          zoom: ${globalZoomScale} !important;
+          /* Display size scales the rem-based layout via the root font size. CSS zoom on <html>
+             shrank viewport units too and left an empty strip on the side and bottom. */
+          font-size: ${globalFontScale * globalZoomScale * 100}% !important;
           width: 100% !important;
           height: 100% !important;
           ${activeTab === 'pos' ? 'overflow: hidden !important;' : ''}
