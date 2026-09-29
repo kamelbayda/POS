@@ -216,10 +216,10 @@ export function PosTerminalScreen({
       </div>
 
       {/* Main Subdivided Content Workspace */}
-      <div className={`flex-1 flex flex-col ${lang === 'ar' ? 'lg:flex-row-reverse' : 'lg:flex-row'} overflow-hidden w-full min-h-0`} id="terminal-body-wrapper">
+      <div className={`flex-1 flex flex-col ${lang === 'ar' ? 'md:flex-row-reverse' : 'md:flex-row'} overflow-y-auto md:overflow-hidden w-full min-h-0`} id="terminal-body-wrapper">
 
         {/* LEFT DIVISION: Cart list, void indicators, Totals Summary (Proportional responsive width) */}
-        <div className={`w-full lg:w-[32%] lg:min-w-[400px] lg:max-w-[480px] flex flex-col h-full min-h-0 text-right shrink-0 ${theme === 'dark' ? 'bg-[#141416]' : 'bg-white shadow-md'} ${lang === 'ar' ? (theme === 'dark' ? 'border-l border-[#242426]' : 'border-l border-slate-200') : (theme === 'dark' ? 'border-r border-[#242426]' : 'border-r border-slate-200')}`}>
+        <div className={`w-full md:w-[42%] md:min-w-[300px] lg:w-[32%] lg:min-w-[400px] lg:max-w-[480px] flex flex-col h-[88vh] md:h-full min-h-0 text-right shrink-0 order-2 md:order-none ${theme === 'dark' ? 'bg-[#141416]' : 'bg-white shadow-md'} ${lang === 'ar' ? (theme === 'dark' ? 'border-l border-[#242426]' : 'border-l border-slate-200') : (theme === 'dark' ? 'border-r border-[#242426]' : 'border-r border-slate-200')}`}>
 
           {/* Cart Header tool controls */}
           <div className={`p-3 flex items-center justify-between gap-2 shrink-0 border-b ${theme === 'dark' ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-slate-50 border-slate-200'}`}>
@@ -642,7 +642,7 @@ export function PosTerminalScreen({
         </div>
 
         {/* RIGHT DIVISION: Product search, fast categories quick-actions, and product square-cards grid (Width: 60% - 62%) */}
-        <div className={`flex-grow flex-1 h-full flex flex-col p-3 overflow-hidden text-right font-sans transition-colors duration-150 max-w-none w-full ${theme === 'dark' ? 'bg-[#111112] text-stone-100' : 'bg-slate-100 text-slate-800'}`} style={{ flexGrow: 1 }}>
+        <div className={`flex-grow flex-1 basis-auto md:basis-0 h-[75vh] md:h-full shrink-0 md:shrink flex flex-col p-3 overflow-hidden text-right font-sans transition-colors duration-150 max-w-none w-full ${theme === 'dark' ? 'bg-[#111112] text-stone-100' : 'bg-slate-100 text-slate-800'}`} style={{ flexGrow: 1 }}>
 
           {/* Category filters, Search input, virtual keyboard layout */}
           <div className={`flex flex-col sm:flex-row items-center gap-2 p-2 rounded-xl border justify-between shrink-0 mb-3 select-none flex-row-reverse transition-colors duration-150 ${theme === 'dark' ? 'bg-[#1C1C1E] border-stone-850' : 'bg-white border-slate-250 shadow-xs'}`}>
