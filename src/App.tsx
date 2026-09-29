@@ -122,7 +122,7 @@ import { hashPassword, verifyPassword, needsRehash } from './lib/password';
 import { PurchasesTab } from './features/purchases/PurchasesTab';
 import { WarehouseTab } from './features/warehouse/WarehouseTab';
 import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
-import { db, auth } from './firebase';
+import { auth, shopDoc } from './firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 
@@ -138,7 +138,7 @@ export default function App() {
   const syncWriteToCloud = async (collectionName: string, docId: string, data: any, isDelete: boolean = false) => {
     if (!auth.currentUser) return;
     try {
-      const docRef = doc(db, collectionName, docId);
+      const docRef = shopDoc(collectionName, docId);
       if (isDelete) {
         await deleteDoc(docRef);
       } else {

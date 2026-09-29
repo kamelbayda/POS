@@ -1,10 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
-  signInWithPopup, 
   GoogleAuthProvider, 
-  signOut,
-  signInAnonymously
+  connectAuthEmulator,
 } from 'firebase/auth';
 import { 
   initializeFirestore, 
@@ -13,7 +11,9 @@ import {
   enableNetwork,
   disableNetwork,
   doc,
-  getDocFromServer
+  collection,
+  getDocFromServer,
+  connectFirestoreEmulator,
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -22,6 +22,9 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore with Offline Persistence enabled for concurrent Offline/Online operations
 export const db = initializeFirestore(app, {
+  // Records often carry optional fields set to undefined (e.g. an invoice without a customer);
+  // Firestore rejects those unless told to drop them
+  ignoreUndefinedProperties: true,
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
@@ -30,6 +33,24 @@ export const db = initializeFirestore(app, {
 // Initialize Authentication
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Local development against the Firebase emulators (firebase emulators:start)
+if (import.meta.env.VITE_FIREBASE_EMULATOR === 'true') {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+}
+
+/**
+ * Every shop's cloud data lives under shops/{uid}/..., where uid is the signed-in
+ * Firebase Auth user. firestore.rules only lets that user read or write there.
+ */
+function currentShopId(): string {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Not signed in to cloud sync');
+  return uid;
+}
+export const shopCollection = (name: string) => collection(db, 'shops', currentShopId(), name);
+export const shopDoc = (name: string, id: string) => doc(db, 'shops', currentShopId(), name, id);
 
 // Firestore error profiling as requested by system rules
 export enum OperationType {

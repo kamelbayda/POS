@@ -5,4 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_LICENSE_SERVER_URL?: string;
   /** Licence signing public key (base64 SPKI), from `npm run generate-license-keys` in the backend. */
   readonly VITE_LICENSE_PUBLIC_KEY?: string;
+  /** "true" to use the local Firebase emulators (auth :9099, firestore :8080). */
+  readonly VITE_FIREBASE_EMULATOR?: string;
 }
