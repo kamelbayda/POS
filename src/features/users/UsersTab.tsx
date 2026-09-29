@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Users, Edit, Trash2 } from 'lucide-react';
 import { User } from '../../types';
 import * as storage from '../../lib/storage';
+import { hashPassword } from '../../lib/password';
 
 type Role = User['role'];
 const PASSWORD_MASK = '••••••••';
@@ -38,7 +39,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
     setNewUserRole('cashier');
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     const username = newUserUsername.trim().toLowerCase();
     const name = newUserFullname.trim();
@@ -48,6 +49,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
       showToast('error', 'الرجاء كتابة تفاصيل حساب الموظف بالكامل.');
       return;
     }
+    const hashedPassword = newPassword ? await hashPassword(newPassword) : undefined;
 
     if (editingUser) {
       const exists = users.some(u => u.username === username && u.id !== editingUser.id);
@@ -63,7 +65,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
       const updated = users.map(u => {
         if (u.id !== editingUser.id) return u;
         const updatedUser: User = { ...u, username, name, role: newUserRole };
-        if (newPassword) updatedUser.password = newPassword;
+        if (newPassword) updatedUser.password = hashedPassword;
         return updatedUser;
       });
 
@@ -87,7 +89,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
       }
 
       const newUser: User = { id: `usr-${Date.now()}`, username, name, role: newUserRole };
-      if (newPassword) newUser.password = newPassword;
+      if (newPassword) newUser.password = hashedPassword;
 
       saveUsers([...users, newUser]);
       showToast('success', `تم تسجيل الموظف الجديد [${name}] بنجاح بالنظام.`);
@@ -99,7 +101,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
     setEditingUser(user);
     setNewUserUsername(user.username);
     setNewUserFullname(user.name);
-    setNewUserPassword(user.password || PASSWORD_MASK);
+    setNewUserPassword(PASSWORD_MASK); // never show the stored password (it is a hash)
     setNewUserRole(user.role);
     document.getElementById('reg-user-form')?.scrollIntoView({ behavior: 'smooth' });
   };

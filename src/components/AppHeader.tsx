@@ -1,3 +1,4 @@
+import type { LicenseState } from '../hooks/useLicense';
 import { ShoppingCart, Globe, Sun, Moon, Maximize, Monitor, Lock, Clock, MessageCircle, Unlock } from 'lucide-react';
 import { Invoice, User, SystemSettings } from '../types';
 import React, { useState } from 'react';
@@ -25,11 +26,10 @@ interface AppHeaderProps {
   setIsScreenLocked: React.Dispatch<React.SetStateAction<boolean>>;
   setLockPasscode: React.Dispatch<React.SetStateAction<string>>;
   setLockError: React.Dispatch<React.SetStateAction<string>>;
-  isActivated: boolean;
+  license: LicenseState;
   setShowPurchaseContactModal: React.Dispatch<React.SetStateAction<boolean>>;
   handleLogout: () => void;
   showToast: (type: "success" | "error" | "warning", message: string) => void;
-  daysLeft: number;
 }
 
 export function AppHeader({
@@ -55,11 +55,10 @@ export function AppHeader({
   setIsScreenLocked,
   setLockPasscode,
   setLockError,
-  isActivated,
+  license,
   setShowPurchaseContactModal,
   handleLogout,
   showToast,
-  daysLeft,
 }: AppHeaderProps) {
   const [showSizeControlPopover, setShowSizeControlPopover] = useState<boolean>(false);
 
@@ -327,7 +326,7 @@ export function AppHeader({
       </div>
 
       {/* TRIAL & ACTIVATION MANAGEMENT BANNERS MERGED IN HEADER */}
-      {!isActivated && (
+      {!license.isActivated && (
         <div className="bg-amber-500/10 border-t border-b border-amber-500/20 px-4 sm:px-6 lg:px-4 py-2 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-amber-850 font-semibold no-print">
           <div className="flex items-center gap-2 flex-row-reverse text-right">
             <Clock className="w-4 h-4 text-amber-600 animate-pulse shrink-0" />
@@ -372,14 +371,35 @@ export function AppHeader({
         </div>
       )}
 
-      {isActivated && localStorage.getItem('pos_activation_key') && (
+      {license.inGracePeriod && (
+        <div className="bg-amber-500/10 border-t border-b border-amber-500/20 px-4 sm:px-6 lg:px-4 py-1.5 flex justify-between items-center text-[11px] text-amber-800 font-bold no-print flex-row-reverse gap-3">
+          <span>
+            {lang === 'ar'
+              ? `⚠️ تم تحديث نظام التفعيل. يرجى إدخال كود تفعيل جديد خلال ${license.graceDaysLeft} يوم للاستمرار بدون انقطاع.`
+              : `⚠️ Activation system updated. Please enter a new activation key within ${license.graceDaysLeft} days.`}
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowPurchaseContactModal(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] py-1 px-3 rounded-lg transition duration-150 cursor-pointer shrink-0"
+          >
+            {lang === 'ar' ? 'طلب كود جديد 💬' : 'Request new key 💬'}
+          </button>
+        </div>
+      )}
+
+      {license.isLicensed && (
         <div className="bg-emerald-500/5 border-t border-slate-100 px-4 sm:px-6 lg:px-4 py-1.5 flex justify-between items-center text-[11px] text-[#1D9E75] font-bold no-print flex-row-reverse">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <span>
-              {lang === 'ar' ? 'الاشتراك السنوي نشط وفعال لـ: ' : 'Annual Subscription active for: '} 
+              {license.daysRemaining === null
+                ? (lang === 'ar' ? 'ترخيص مدى الحياة نشط لـ: ' : 'Lifetime licence active for: ')
+                : (lang === 'ar' ? 'الاشتراك السنوي نشط وفعال لـ: ' : 'Annual Subscription active for: ')}
               <span className="text-slate-900 font-extrabold ml-1">{settings.shopName}</span>
-              <span className="text-[#1D9E75] font-black mr-2">({lang === 'ar' ? `المتبقي: ${daysLeft} يوم` : `Remaining: ${daysLeft} days`})</span>
+              {license.daysRemaining !== null && (
+                <span className="text-[#1D9E75] font-black mr-2">({lang === 'ar' ? `المتبقي: ${license.daysRemaining} يوم` : `Remaining: ${license.daysRemaining} days`})</span>
+              )}
             </span>
           </span>
         </div>

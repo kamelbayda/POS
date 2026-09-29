@@ -5,7 +5,8 @@ import React from 'react';
 interface AdminVerificationModalProps {
   lang: "ar" | "en";
   theme: "light" | "dark";
-  adminPasscode: string;
+  /** Resolves true when the input matches the admin account password. */
+  verifyAdminPassword: (input: string) => Promise<boolean>;
   adminVerificationAction: () => void;
   setAdminVerificationOpen: React.Dispatch<React.SetStateAction<boolean>>;
   adminVerificationPasswordInput: string;
@@ -18,7 +19,7 @@ interface AdminVerificationModalProps {
 export function AdminVerificationModal({
   lang,
   theme,
-  adminPasscode,
+  verifyAdminPassword,
   adminVerificationAction,
   setAdminVerificationOpen,
   adminVerificationPasswordInput,
@@ -51,11 +52,9 @@ export function AdminVerificationModal({
         </div>
 
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            const matchedPass = adminVerificationPasswordInput === adminPasscode || 
-                                adminVerificationPasswordInput === '112233' || 
-                                adminVerificationPasswordInput === 'admin123';
+            const matchedPass = await verifyAdminPassword(adminVerificationPasswordInput);
             if (matchedPass) {
               setAdminVerificationOpen(false);
               if (adminVerificationAction) {

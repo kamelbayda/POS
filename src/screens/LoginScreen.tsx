@@ -11,6 +11,8 @@ interface LoginScreenProps {
   setLoginPassword: React.Dispatch<React.SetStateAction<string>>;
   loginError: string;
   handleLogin: (e: React.FormEvent) => void;
+  /** Show the factory default accounts only while their passwords were never changed. */
+  showDefaultCredentials: boolean;
 }
 
 export function LoginScreen({
@@ -23,6 +25,7 @@ export function LoginScreen({
   setLoginPassword,
   loginError,
   handleLogin,
+  showDefaultCredentials,
 }: LoginScreenProps) {
   return (
     <div className="min-h-screen bg-gradient-to-tr from-emerald-50 via-slate-50 to-emerald-100/30 flex items-center justify-center p-4" id="login-screen">
@@ -105,6 +108,7 @@ export function LoginScreen({
             {lang === 'ar' ? 'دخول للنظام 🔓' : 'Login to System 🔓'}
           </button>
 
+          {showDefaultCredentials && (
           <div className="bg-slate-50 rounded-xl p-4 text-xs text-slate-500 space-y-1 border border-slate-100 text-right">
             <div className="font-bold text-slate-700 mb-1">
               {lang === 'ar' ? '💡 مستندات الدخول الافتراضية للتجربة:' : '💡 Experience Default Login Accounts:'}
@@ -122,6 +126,7 @@ export function LoginScreen({
               <span className="font-mono bg-slate-200 px-1 rounded text-red-700">1234</span>
             </div>
           </div>
+          )}
         </form>
       </div>
     </div>

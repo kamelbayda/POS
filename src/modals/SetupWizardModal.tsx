@@ -3,8 +3,6 @@ import { ShieldAlert } from 'lucide-react';
 
 interface SetupWizardModalProps {
   lang: "ar" | "en";
-  adminPasscode: string;
-  cashierPasscode: string;
   adminRealName: string;
   cashierRealName: string;
   saveWizardData: (adminName: string, adminPass: string, cashierName: string, cashierPass: string) => void;
@@ -13,8 +11,6 @@ interface SetupWizardModalProps {
 
 export function SetupWizardModal({
   lang,
-  adminPasscode,
-  cashierPasscode,
   adminRealName,
   cashierRealName,
   saveWizardData,
@@ -88,7 +84,7 @@ export function SetupWizardModal({
                 <input 
                   name="wAdminPass"
                   type="text"
-                  defaultValue={adminPasscode === 'admin123' ? '' : adminPasscode}
+                  defaultValue=""
                   required
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-center ltr:font-mono font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
                   placeholder={lang === 'ar' ? 'أدخل باسكود جديد مميز' : 'e.g. 556677'}
@@ -120,7 +116,7 @@ export function SetupWizardModal({
                 <input 
                   name="wCashierPass"
                   type="text"
-                  defaultValue={cashierPasscode === '1234' ? '' : cashierPasscode}
+                  defaultValue=""
                   required
                   className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-center ltr:font-mono font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   placeholder={lang === 'ar' ? 'أدخل باسكود المبيعات' : 'e.g. 1212'}

@@ -1,3 +1,4 @@
+import type { LicenseState } from '../../hooks/useLicense';
 import React, { useState } from 'react';
 import { Archive, Briefcase, Copy, Database, ExternalLink, Key, KeyRound, Printer, Receipt, Save, Settings, Trash2, TrendingUp } from 'lucide-react';
 import { Invoice, PrinterConfig, SystemSettings } from '../../types';
@@ -39,16 +40,8 @@ interface SettingsTabProps {
     setActivePrintJobs: Setter<PrintJob[]>;
     addPrintJob: (printerName: string, jobName: string, content: string) => void;
   };
-  activation: {
-    activationKey: string;
-    setActivationKey: Setter<string>;
-    isActivated: boolean;
-    subscriptionDaysRemaining: number;
-    activationErrorMsg: string;
-    setActivationErrorMsg: Setter<string>;
-    applyActivation: (key: string) => void;
-    openSetupWizard: () => void;
-  };
+  license: LicenseState;
+  openSetupWizard: () => void;
   /** Shared with the "contact to activate" dialog. */
   contactForm: {
     contactName: string; setContactName: Setter<string>;
@@ -75,14 +68,15 @@ export function SettingsTab({
   displayScale,
   printerHardware,
   spooler,
-  activation,
+  license,
+  openSetupWizard,
   contactForm,
   dataWipe,
 }: SettingsTabProps) {
   const { globalFontScale, setGlobalFontScale, globalButtonScale, setGlobalButtonScale, globalZoomScale, setGlobalZoomScale } = displayScale;
   const { hardwarePrinterType, setHardwarePrinterType, usbDeviceName, serialPortInfo, baudRate, setBaudRate, connectUSBPrinter, connectSerialPrinter, openCashDrawer, printInvoiceToRawHardware } = printerHardware;
   const { activePrintJobs, setActivePrintJobs, addPrintJob } = spooler;
-  const { activationKey, setActivationKey, isActivated, subscriptionDaysRemaining, activationErrorMsg, setActivationErrorMsg, applyActivation, openSetupWizard } = activation;
+  const { isActivated, activationErrorMsg, setActivationErrorMsg, applyActivation, isActivating } = license;
   const { contactName, setContactName, contactPhone, setContactPhone, contactEmail, setContactEmail, contactShop, setContactShop, contactMessage, setContactMessage } = contactForm;
   const { onWipeSales, onWipeProducts, onWipeAll } = dataWipe;
 
@@ -1747,9 +1741,6 @@ export function SettingsTab({
         <KeyRound className="w-5 h-5 text-[#1D9E75]" />
       </h3>
 
-      {(() => {
-        const isDeveloper = ['KAMEL-BAYDAA-2026', 'K@MEL-@L@@-882022', 'DEV-9988-7766-XX', 'POS-PREMIUM-2026-ACTIVE'].includes(activationKey);
-        return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-row-reverse w-full">
             
             {/* Column 1: Verification, Status & Key Input */}
@@ -1758,51 +1749,38 @@ export function SettingsTab({
                 {lang === 'ar' ? 'حالة الترخيص الحالية:' : 'Current License Status:'}
               </span>
               
-              {isActivated ? (
+              {license.isLicensed ? (
                 <div className="space-y-3">
-                  {isDeveloper ? (
-                    <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl space-y-2 text-right">
-                      <span className="text-rose-800 text-xs font-black block text-center">
-                        {lang === 'ar' ? 'نمط الموزع والمطور معتمد!' : 'Authorized Distributor & Developer Mode!'}
-                      </span>
-                      <p className="text-[10px] text-rose-700 font-bold leading-relaxed">
-                        {lang === 'ar' 
-                          ? 'أهلاً بك أستاذ كامل بيضاء! لقد قمت بفتح صلاحيات السيادة والموزع المعتمد.' 
-                          : 'Welcome Mr. Kamel Baydaa! You have unlocked authorized distributor rights.'}
-                      </p>
-                      <p className="text-[9.5px] text-rose-600 leading-normal font-semibold">
-                        {lang === 'ar'
-                          ? 'لإنشاء كود ترخيص لعميل جديد: اكتب اسم محل الزبون في الحقل المخصص في اللوحة المجاورة، وسيظهر له كود التفعيل الفريد الخاص به فوراً. انسخ الكود وأرسله له.'
-                          : 'To generate a license code for a target client: write their shop name in the field on the other panel, copy the resulting unique key, and send it to them.'}
-                      </p>
-                      <p className="text-[9px] text-red-650 font-black border-t border-rose-200/60 pt-1.5 text-center">
-                        {lang === 'ar' 
-                          ? '⚠️ تحذير: لا تشارك كود الموزع الخاص بك (K@mel-@l@@-882022) مع أي زبون لكي لا يتمكنوا من توليد مفاتيح تفعيل تضر بمشروعك!' 
-                          : '⚠️ Safe guidance: Never share your master owner code (K@mel-@l@@-882022) with clients, otherwise they will be able to generate keys for themselves!'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-center space-y-2 font-sans text-right">
-                      <span className="text-emerald-800 text-xs font-black block text-center">
-                        🎉 {lang === 'ar' ? 'تم تنشيط الاشتراك السنوي بنجاح!' : 'Annual Subscription Active!'}
-                      </span>
-                      <p className="text-[10px] text-emerald-600 font-bold leading-relaxed">
-                        {lang === 'ar' 
-                          ? `تم ربط وتفعيل ترخيص البرنامج بنجاح لمتجر (${settings.shopName}). الاشتراك نشط لـ 365 يوماً.` 
-                          : `System licensed successfully to (${settings.shopName}). Active for 365 days.`}
-                      </p>
+                  <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-center space-y-2 font-sans text-right">
+                    <span className="text-emerald-800 text-xs font-black block text-center">
+                      🎉 {license.daysRemaining === null
+                        ? (lang === 'ar' ? 'ترخيص مدى الحياة مفعّل!' : 'Lifetime licence active!')
+                        : license.inGracePeriod
+                          ? (lang === 'ar' ? 'فترة سماح مؤقتة (نظام التفعيل القديم)' : 'Temporary grace period (old activation)')
+                          : (lang === 'ar' ? 'تم تنشيط الاشتراك السنوي بنجاح!' : 'Annual Subscription Active!')}
+                    </span>
+                    <p className="text-[10px] text-emerald-600 font-bold leading-relaxed">
+                      {license.inGracePeriod
+                        ? (lang === 'ar'
+                          ? `تم تحديث نظام التفعيل. أدخل كود تفعيل جديد خلال ${license.graceDaysLeft} يوم للاستمرار.`
+                          : `The activation system was updated. Enter a new key within ${license.graceDaysLeft} days.`)
+                        : (lang === 'ar'
+                          ? `ترخيص البرنامج مفعّل لمتجر (${license.license?.shop || settings.shopName}) ومربوط بهذا الجهاز.`
+                          : `Licensed to (${license.license?.shop || settings.shopName}) and bound to this computer.`)}
+                    </p>
+                    {license.isLicensed && license.daysRemaining !== null && (
                       <div className="bg-emerald-600 text-white font-black text-[10px] py-1 px-2.5 rounded-lg inline-block w-full text-center">
-                        {lang === 'ar' 
-                          ? `⏳ الأيام المتبقية: ${subscriptionDaysRemaining} يوم` 
-                          : `⏳ Days remaining: ${subscriptionDaysRemaining} days`}
+                        {lang === 'ar'
+                          ? `⏳ الأيام المتبقية: ${license.daysRemaining} يوم`
+                          : `⏳ Days remaining: ${license.daysRemaining} days`}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   
                   <div className="space-y-1 text-center font-sans">
                     <span className="text-[10px] text-slate-400 font-bold block">مفتاح التفعيل الحالي:</span>
                     <span className="font-mono text-xs font-black text-slate-700 bg-slate-150 border px-3 py-1 rounded-md inline-block select-none tracking-widest text-center">
-                      {activationKey ? '•'.repeat(Math.min(22, activationKey.length)) : ''}
+                      {license.license ? `•••••-•••••-${license.license.key.slice(-5)}` : '—'}
                     </span>
                   </div>
 
@@ -1819,9 +1797,7 @@ export function SettingsTab({
                       type="button"
                       onClick={() => {
                         if (confirm(lang === 'ar' ? 'هل أنت متأكد من رغبتك في إلغاء تنشيط وحذف كود التفعيل الحالي والرجوع للنسخة التجريبية؟' : 'Are you sure you want to deactivate current license and return to trial?')) {
-                          setActivationKey('');
-                          storage.removeItem('pos_activation_key');
-                          storage.removeItem('pos_setup_wizard_completed'); // Clear completed flag
+                          license.deactivate();
                           showToast('warning', lang === 'ar' ? '⚠️ تم إلغاء تفعيل ترخيص البرنامج والرجوع للوضع التجريبي' : 'License deactivated. Returned to trial.');
                         }
                       }}
@@ -1833,6 +1809,20 @@ export function SettingsTab({
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {license.inGracePeriod && (
+                    <div className="bg-sky-50 border border-sky-200 p-3 rounded-xl text-[10.5px] text-sky-800 font-bold leading-relaxed text-right">
+                      {lang === 'ar'
+                        ? `ℹ️ تم تحديث نظام التفعيل لحماية البرنامج. البرنامج يعمل حالياً بفترة سماح (${license.graceDaysLeft} يوم متبقي). اطلب كود تفعيل جديد وأدخله هنا.`
+                        : `ℹ️ The activation system was updated. You are in a grace period (${license.graceDaysLeft} days left). Request a new key and enter it here.`}
+                    </div>
+                  )}
+                  {license.clockTampered && (
+                    <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl text-[10.5px] text-rose-700 font-bold leading-relaxed text-right">
+                      {lang === 'ar'
+                        ? '⚠️ تاريخ ووقت الجهاز غير صحيحين. صحّح التاريخ واتصل بالإنترنت لإعادة التحقق من الترخيص.'
+                        : '⚠️ The computer date/time looks wrong. Fix it and connect to the internet to re-check the licence.'}
+                    </div>
+                  )}
                   <div className="bg-amber-50 border border-amber-150 p-3.5 rounded-xl text-center space-y-1.5">
                     <span className="text-amber-800 text-xs font-black block text-center">
                       ⏳ {lang === 'ar' ? 'نمط البرنامج: نسخة تجريبية محدودة' : 'Sandbox Trial Mode'}
@@ -1865,7 +1855,7 @@ export function SettingsTab({
                     <div className="flex gap-2">
                       <input 
                         type="text"
-                        placeholder="POS-XXXX-XXXX-XX-ACT"
+                        placeholder="POS-XXXXX-XXXXX-XXXXX"
                         value={activationInputKey}
                         onChange={e => {
                           setActivationInputKey(e.target.value);
@@ -1876,9 +1866,10 @@ export function SettingsTab({
                       <button
                         type="button"
                         onClick={() => applyActivation(activationInputKey)}
-                        className="bg-[#1D9E75] hover:bg-emerald-600 text-white font-bold text-xs px-4 rounded-xl transition cursor-pointer"
+                        disabled={isActivating}
+                        className="bg-[#1D9E75] hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-wait text-white font-bold text-xs px-4 rounded-xl transition cursor-pointer"
                       >
-                        {lang === 'ar' ? 'تفعيل' : 'Activate'}
+                        {isActivating ? (lang === 'ar' ? 'جاري التفعيل...' : 'Activating...') : (lang === 'ar' ? 'تفعيل' : 'Activate')}
                       </button>
                     </div>
                     {activationErrorMsg && (
@@ -1892,8 +1883,8 @@ export function SettingsTab({
                         type="button"
                         onClick={() => {
                           const msg = lang === 'ar' 
-                            ? `السلام عليكم أستاذ كامل، أرغب في شراء تفعيل برنامج السوبرماركت - الاشتراك السنوي.\nاسم المحل المسجل في إعداداتي هو:\n*${settings.shopName || "سوبر ماركت"}*\nيرجى تزويدي بمفتاح التفعيل المتوافق مع هذا الاسم. شكراً جزيلاً!`
-                            : `Hello, I would like to purchase an annual subscription activation key for the POS system.\nRegistered Shop Name:\n*${settings.shopName || "Supermarket"}*\nPlease provide me with the matched activation key. Thank you!`;
+                            ? `السلام عليكم أستاذ كامل، أرغب في شراء تفعيل برنامج السوبرماركت - الاشتراك السنوي.\nاسم المحل:\n*${settings.shopName || "سوبر ماركت"}*\nيرجى تزويدي بكود التفعيل. شكراً جزيلاً!`
+                            : `Hello, I would like to purchase an annual subscription activation key for the POS system.\nShop name:\n*${settings.shopName || "Supermarket"}*\nPlease send me an activation key. Thank you!`;
                           navigator.clipboard.writeText(msg);
                           showToast('success', lang === 'ar' ? 'تم نسخ الرسالة بنجاح! يمكنك لصقها وإرسالها للأستاذ كامل الآن.' : 'Request message copied to clipboard!');
                         }}
@@ -1907,98 +1898,7 @@ export function SettingsTab({
               )}
             </div>
 
-            {/* Column 2: Generator (For Developer/Admin Only) or Contact/Purchase Form */}
-            {isDeveloper ? (
-              <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl flex flex-col justify-between gap-4 text-right">
-                <div>
-                  <span className="text-xs font-black text-rose-550 block uppercase tracking-wider mb-2 flex items-center gap-1.5 justify-end">
-                    <Key className="w-3.5 h-3.5" />
-                    <span>{lang === 'ar' ? 'لوحة الموزع وإنشاء المفاتيح (خاص بالمدراء):' : 'Distributor & Key Generator Panel (Admin):'}</span>
-                  </span>
-                  <p className="text-[10px] text-slate-500 leading-relaxed">
-                    {lang === 'ar' 
-                      ? 'بصفتك مديراً للنظام، يمكنك توليد رموز تفعيل مخصصة لزبائنك فوراً! يتم ربط الرمز باسم المحل لضمان الأمان وعدم سرقة التعبئة.' 
-                      : 'As system admin, you can dynamically compute license tokens based on any input shop name.'}
-                  </p>
-                </div>
-
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 text-xs space-y-2.5">
-                  <div>
-                    <label className="block text-slate-450 font-bold text-[9.5px] pb-1 text-right">
-                      🏢 {lang === 'ar' ? 'اسم المحل لربط الترخيص به:' : 'Associated License Shop Name:'}
-                    </label>
-                    <input 
-                      type="text"
-                      value={settings.shopName}
-                      readOnly
-                      className="w-full bg-slate-50 border border-slate-150 py-1.5 px-2.5 rounded-lg text-xs text-right font-black text-slate-700 focus:outline-none"
-                      title="يتم الربط تلقائياً باسم محل زبونك"
-                    />
-                  </div>
-
-                  <div className="bg--[#1D9E75]/5 border border-[#1D9E75]/15 p-2 rounded-lg text-center space-y-1 font-sans">
-                    <span className="text-[9.5px] text-slate-500 font-bold block text-center">
-                      🔑 {lang === 'ar' ? 'كود ترخيص هذا الزبون:' : 'Computed License Code:'}
-                    </span>
-                    
-                    {(() => {
-                      const cleanName = (settings.shopName || '').trim().toLowerCase().replace(/\s+/g, '');
-                      if (!cleanName) {
-                        return <span className="text-[10px] text-rose-500 font-bold">{lang === 'ar' ? 'الرجاء كتابة اسم المحل أولاً بالعامر!' : 'Please set store name first'}</span>;
-                      }
-                      
-                      // Deterministic calculation
-                      let sum = 0;
-                      for (let i = 0; i < cleanName.length; i++) {
-                        sum += cleanName.charCodeAt(i) * (i + 1);
-                      }
-                      const part1 = sum.toString(16).toUpperCase().padStart(4, '0');
-                      const part2 = (sum * 7).toString().slice(-4).padStart(4, '3');
-                      const part3 = cleanName.length.toString().padStart(2, '0');
-                      const expectedKey = `POS-${part1}-${part2}-${part3}-ACT`;
-
-                      return (
-                        <div className="space-y-1 pt-1 text-center">
-                          <span className="font-mono text-xs font-black text-[#1D9E75] block select-all bg-white px-2 py-1 rounded border border-[#1D9E75]/20">
-                            {expectedKey}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(expectedKey);
-                              showToast('success', lang === 'ar' ? '📋 تم نسخ كود التفعيل للذاكرة بنجاح! أرسله لزبونك.' : '📋 Copied activation code to clipboard!');
-                            }}
-                            className="text-[9.5px] text-[#1D9E75] hover:underline font-extrabold flex items-center gap-1 justify-center mx-auto transition duration-150"
-                          >
-                            <Copy className="w-3 h-3 text-[#1D9E75]" />
-                            <span>{lang === 'ar' ? 'نسخ كود الترخيص 📋' : 'Copy Generated Code 📋'}</span>
-                          </button>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                <div className="text-[10px] leading-relaxed text-slate-400 font-semibold border-t border-slate-100 pt-2 flex flex-col gap-1 text-right">
-                  <span>💡 {lang === 'ar' ? 'كيفية تفعيل ترخيص للزبون الجديد:' : 'How to activate customer licence:'}</span>
-                  <span className="text-[9px] text-slate-400 font-normal">
-                    {lang === 'ar' 
-                      ? '1- سجل المحل باسم الزبون (مثلا: "Supermarket Al Amin").'
-                      : '1- Change store info to client shop name.'}
-                  </span>
-                  <span className="text-[9px] text-slate-400 font-normal">
-                    {lang === 'ar' 
-                      ? '2- انسخ الكود الناتج من المولد أعلاه باللون الأخضر.'
-                      : '2- Copy green computed license token from above.'}
-                  </span>
-                  <span className="text-[9px] text-slate-400 font-normal">
-                    {lang === 'ar' 
-                      ? '3- اضغط تفعيل في خانة الترخيص والصقه وسيتم تنشيط الاشتراك السنوي على الفور ولمدة سنة كاملة!'
-                      : '3- Paste in inputs form to unlock active annual subscription for 1 year.'}
-                  </span>
-                </div>
-              </div>
-            ) : (
+            {/* Column 2: Contact / purchase form */}
               <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl space-y-3 font-sans text-right flex flex-col justify-between">
                 <div>
                   <span className="text-xs font-black text-[#1D9E75] block uppercase tracking-wider mb-1">
@@ -2114,10 +2014,7 @@ export function SettingsTab({
                   })()}
                 </div>
               </div>
-            )}
           </div>
-        );
-      })()}
     </div>
 
     {/* --- PRODUCTION SYSTEM DEEP COMPREHENSIVE WIPEOUT --- */}

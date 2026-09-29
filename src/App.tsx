@@ -117,6 +117,8 @@ import { generateBarcodePattern } from './lib/barcode';
 import { printElementViaIFrame, playReceiptPrintSound } from './lib/print';
 import { LockScreenClock } from './components/LockScreenClock';
 import { usePrinterHardware } from './hooks/usePrinterHardware';
+import { useLicense } from './hooks/useLicense';
+import { hashPassword, verifyPassword, needsRehash } from './lib/password';
 import { PurchasesTab } from './features/purchases/PurchasesTab';
 import { WarehouseTab } from './features/warehouse/WarehouseTab';
 import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
@@ -481,7 +483,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('pos');
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [loginUsername, setLoginUsername] = useState<string>('admin');
-  const [loginPassword, setLoginPassword] = useState<string>('admin123');
+  const [loginPassword, setLoginPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
   
   // --- POS CART STATES ---
@@ -712,151 +714,6 @@ export default function App() {
     return saved ? parseInt(saved) : 5; // default is 5 mins, 0 means disabled
   });
 
-  // --- LICENSING & ACTIVATION STATES & HELPERS ---
-  const [activationKey, setActivationKey] = useState<string>(() => {
-    return localStorage.getItem('pos_activation_key') || '';
-  });
-
-  const [activationTimestamp, setActivationTimestamp] = useState<number>(() => {
-    const saved = localStorage.getItem('pos_activation_timestamp');
-    if (saved) return parseInt(saved);
-    const rawKey = localStorage.getItem('pos_activation_key') || '';
-    if (rawKey) {
-      const now = Date.now();
-      localStorage.setItem('pos_activation_timestamp', now.toString());
-      return now;
-    }
-    return 0;
-  });
-
-  const [genLicenseType, setGenLicenseType] = useState<string>('year');
-
-  const validateActivationKey = (key: string, shopName: string): boolean => {
-    const k = (key || '').trim().toUpperCase();
-    if (!k) return false;
-    
-    // Master developer key
-    if (k === 'POS-PREMIUM-2026-ACTIVE' || k === 'DEV-9988-7766-XX' || k === 'KAMEL-BAYDAA-2026' || k === 'K@MEL-@L@@-882022') return true;
-    
-    // Deterministic shop name verification
-    const cleanName = (shopName || '').trim().toLowerCase().replace(/\s+/g, '');
-    if (!cleanName) return false;
-    
-    let sum = 0;
-    for (let i = 0; i < cleanName.length; i++) {
-      sum += cleanName.charCodeAt(i) * (i + 1);
-    }
-    
-    const part1 = sum.toString(16).toUpperCase().padStart(4, '0');
-    const part2 = (sum * 7).toString().slice(-4).padStart(4, '3');
-    const part3 = cleanName.length.toString().padStart(2, '0');
-    
-    const expectedLegacy = `POS-${part1}-${part2}-${part3}-ACT`;
-    if (k === expectedLegacy || k === `${expectedLegacy}-LIFE`) return true;
-    
-    // Also validate if it starts with expectedLegacy + '-Y' (any annual year like -Y26, -Y27, -Y28...)
-    if (k.startsWith(`${expectedLegacy}-Y`)) {
-      return true;
-    }
-    
-    return false;
-  };
-
-  const subscriptionDaysRemaining = useMemo(() => {
-    if (!activationKey) return 0;
-    
-    // Master key/developer keys do not expire
-    const isDev = ['KAMEL-BAYDAA-2026', 'K@MEL-@L@@-882022', 'DEV-9988-7766-XX', 'POS-PREMIUM-2026-ACTIVE'].includes(activationKey.trim().toUpperCase());
-    if (isDev) return 99999;
-    
-    // All non-developer customer keys strictly act as Annual Subscriptions (expire in 365 days)
-    if (activationTimestamp === 0) return 0;
-    
-    const ONE_DAY_MS = 1000 * 60 * 60 * 24;
-    const daysPassed = (Date.now() - activationTimestamp) / ONE_DAY_MS;
-    const remaining = Math.max(0, Math.ceil(365 - daysPassed));
-    return remaining;
-  }, [activationKey, activationTimestamp]);
-
-  const isActivated = useMemo(() => {
-    const isValidKey = validateActivationKey(activationKey, settings.shopName);
-    if (!isValidKey) return false;
-    
-    // Master key/developer keys do not expire
-    const isDev = ['KAMEL-BAYDAA-2026', 'K@MEL-@L@@-882022', 'DEV-9988-7766-XX', 'POS-PREMIUM-2026-ACTIVE'].includes(activationKey.trim().toUpperCase());
-    if (isDev) return true;
-    
-    // Regular customer keys are strictly valid if remaining days > 0
-    return subscriptionDaysRemaining > 0;
-  }, [activationKey, settings.shopName, subscriptionDaysRemaining]);
-
-  const [subscriptionTimeLeft, setSubscriptionTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!isActivated || !activationTimestamp) {
-      setSubscriptionTimeLeft(null);
-      return;
-    }
-    
-    // Developer/master licenses do not expire
-    const isDev = ['KAMEL-BAYDAA-2026', 'K@MEL-@L@@-882022', 'DEV-9988-7766-XX', 'POS-PREMIUM-2026-ACTIVE'].includes(activationKey.trim().toUpperCase());
-    if (isDev) {
-      setSubscriptionTimeLeft(null);
-      return;
-    }
-
-    const expirationTime = activationTimestamp + (365 * 1000 * 60 * 60 * 24);
-
-    const updateTimer = () => {
-      const remainingMs = expirationTime - Date.now();
-      if (remainingMs <= 0) {
-        setSubscriptionTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-      const days = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-      setSubscriptionTimeLeft({ days, hours, minutes, seconds });
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [isActivated, activationTimestamp, activationKey]);
-
-  // Effect to automatically register expired keys in used registry when subscriber expires
-  useEffect(() => {
-    if (activationKey) {
-      const isDev = ['KAMEL-BAYDAA-2026', 'K@MEL-@L@@-882022', 'DEV-9988-7766-XX', 'POS-PREMIUM-2026-ACTIVE'].includes(activationKey.trim().toUpperCase());
-      if (!isDev && activationKey.trim().toUpperCase().includes('-ACT-Y')) {
-        const ONE_DAY_MS = 1000 * 60 * 60 * 24;
-        const daysPassed = (Date.now() - activationTimestamp) / ONE_DAY_MS;
-        if (daysPassed > 365) {
-          // Add to expired keys registry
-          const expiredKeysStr = localStorage.getItem('pos_expired_activation_keys') || '[]';
-          try {
-            const expiredKeys: string[] = JSON.parse(expiredKeysStr);
-            const keyUpper = activationKey.trim().toUpperCase();
-            if (!expiredKeys.includes(keyUpper)) {
-              expiredKeys.push(keyUpper);
-              localStorage.setItem('pos_expired_activation_keys', JSON.stringify(expiredKeys));
-            }
-          } catch (e) {
-            localStorage.setItem('pos_expired_activation_keys', JSON.stringify([activationKey.trim().toUpperCase()]));
-          }
-        }
-      }
-    }
-  }, [activationKey, activationTimestamp]);
-
-  const [activationErrorMsg, setActivationErrorMsg] = useState<string>('');
-
   // Setup wizard states for custom admin/cashier customization after purchase
   const [adminPasscode, setAdminPasscode] = useState<string>(() => {
     return localStorage.getItem('pos_admin_passcode') || 'admin123';
@@ -871,13 +728,10 @@ export default function App() {
     return localStorage.getItem('pos_cashier_real_name') || 'كاشير الورديات';
   });
 
-  const [showSetupWizard, setShowSetupWizard] = useState<boolean>(() => {
-    const rawKey = localStorage.getItem('pos_activation_key') || '';
-    const isAct = validateActivationKey(rawKey, localStorage.getItem('pos_settings') ? JSON.parse(localStorage.getItem('pos_settings')!).shopName : 'Supermarket');
-    const isDev = ['KAMEL-BAYDAA-2026', 'K@MEL-@L@@-882022', 'DEV-9988-7766-XX', 'POS-PREMIUM-2026-ACTIVE'].includes(rawKey.trim().toUpperCase());
-    const comp = localStorage.getItem('pos_setup_wizard_completed') === 'true';
-    return isAct && !isDev && !comp;
-  });
+  // Open the owner setup wizard on start if a licence was activated but the wizard was never finished
+  const [showSetupWizard, setShowSetupWizard] = useState<boolean>(() =>
+    !!storage.getItem('pos_license_token') && storage.getItem('pos_setup_wizard_completed') !== 'true'
+  );
 
   // --- ADMIN PASSWORD VERIFICATION MODAL STATES ---
   const [adminVerificationAction, setAdminVerificationAction] = useState<(() => void) | null>(null);
@@ -894,59 +748,13 @@ export default function App() {
     setAdminVerificationOpen(true);
   };
 
-  const handleApplyActivation = (keyToTry: string) => {
-    setActivationErrorMsg('');
-    const trimmedKey = (keyToTry || '').trim().toUpperCase();
-    
-    // Check if key is expired/used already
-    const expiredKeysStr = localStorage.getItem('pos_expired_activation_keys') || '[]';
-    try {
-      const expiredKeys: string[] = JSON.parse(expiredKeysStr);
-      if (expiredKeys.includes(trimmedKey)) {
-        setActivationErrorMsg(lang === 'ar' ? '❌ كود التفعيل هذا منتهي الصلاحية وتم استخدامه سابقاً!' : '❌ This activation key has already expired and was used previously!');
-        showToast('error', lang === 'ar' ? 'كود منتهي الصلاحية!' : 'Code is expired!');
-        return;
-      }
-    } catch (e) {}
-
-    const isValid = validateActivationKey(trimmedKey, settings.shopName);
-    if (isValid) {
-      const isDev = ['KAMEL-BAYDAA-2026', 'K@MEL-@L@@-882022', 'DEV-9988-7766-XX', 'POS-PREMIUM-2026-ACTIVE'].includes(trimmedKey);
-      
-      setActivationKey(trimmedKey);
-      localStorage.setItem('pos_activation_key', trimmedKey);
-      
-      const now = Date.now();
-      setActivationTimestamp(now);
-      localStorage.setItem('pos_activation_timestamp', now.toString());
-      
-      if (isDev) {
-        showToast('success', lang === 'ar' ? 'مرحباً بك يا أستاذ كامل بيضاء! تم تفعيل وضع الموزع وتنشيط لوحة توليد الأكواد للزبائن بنجاح.' : 'Developer mode unlocked! Key generator panel is now available.');
-        setShowSetupWizard(false);
-      } else {
-        showToast('success', lang === 'ar' ? 'تم تفعيل البرنامج بنجاح! شكراً لثقتكم بنا.' : 'Program activated successfully! Thank you for your trust.');
-        // Prompt user customization wizard immediately
-        const completed = localStorage.getItem('pos_setup_wizard_completed') === 'true';
-        if (!completed) {
-          setShowSetupWizard(true);
-        }
-      }
-    } else {
-      setActivationErrorMsg(lang === 'ar' ? '❌ كود التفعيل غير صالح لاسم هذا المحل!' : '❌ Invalidation code for this shop name!');
-      showToast('error', lang === 'ar' ? 'كود التفعيل غير صحيح!' : 'Invalid activation code!');
-    }
-  };
-
-  const saveWizardData = (adminName: string, adminPass: string, cashierName: string, cashierPass: string) => {
+  const saveWizardData = async (adminName: string, adminPass: string, cashierName: string, cashierPass: string) => {
     localStorage.setItem('pos_admin_real_name', adminName.trim());
-    localStorage.setItem('pos_admin_passcode', adminPass.trim());
     localStorage.setItem('pos_cashier_real_name', cashierName.trim());
-    localStorage.setItem('pos_cashier_passcode', cashierPass.trim());
-
     setAdminRealName(adminName.trim());
-    setAdminPasscode(adminPass.trim());
     setCashierRealName(cashierName.trim());
-    setCashierPasscode(cashierPass.trim());
+    await setAccountPassword('admin', adminPass.trim());
+    await setAccountPassword('kaseer', cashierPass.trim());
 
     // Update initial/current users local list
     const updatedUsers = users.map(u => {
@@ -1011,17 +819,43 @@ export default function App() {
     };
   }, [currentUser, isScreenLocked, autoLockMinutes, lang]);
 
-  const handleUnlock = () => {
+  // --- ACCOUNT PASSWORDS ---
+  // admin / kaseer keep their password in dedicated keys (set by the setup wizard); other accounts on the user record
+  const getStoredPassword = (user: UserType) =>
+    user.username === 'admin' ? adminPasscode : user.username === 'kaseer' ? cashierPasscode : user.password;
+
+  const setAccountPassword = async (username: string, plain: string) => {
+    const hashed = await hashPassword(plain);
+    if (username === 'admin') {
+      storage.setItem('pos_admin_passcode', hashed);
+      setAdminPasscode(hashed);
+    } else if (username === 'kaseer') {
+      storage.setItem('pos_cashier_passcode', hashed);
+      setCashierPasscode(hashed);
+    }
+    // Other accounts keep the hash on their user record; for admin/kaseer drop any old copy there
+    const isBuiltIn = username === 'admin' || username === 'kaseer';
+    setUsers(prev => {
+      const updated = prev.map(u => (u.username !== username ? u : { ...u, password: isBuiltIn ? undefined : hashed }));
+      storage.setJSON('pos_users', updated);
+      return updated;
+    });
+  };
+
+  /** Checks a password and upgrades a legacy plaintext one to a hash on success. */
+  const checkUserPassword = async (user: UserType, input: string) => {
+    const stored = getStoredPassword(user);
+    const ok = await verifyPassword(input, stored);
+    if (ok && needsRehash(stored)) await setAccountPassword(user.username, input);
+    return ok;
+  };
+
+  const handleUnlock = async () => {
     setLockError('');
     if (!currentUser) return;
 
-    // Verify passcode
-    const isCorrect = 
-      (currentUser.username === 'admin' && lockPasscode === adminPasscode) ||
-      (currentUser.username === 'kaseer' && lockPasscode === cashierPasscode) ||
-      (lockPasscode === '112233') || // Master fallback
-      (currentUser.username === 'admin' && lockPasscode === 'admin123') ||
-      (currentUser.username === 'kaseer' && lockPasscode === '1234');
+    // Each account unlocks with its own password
+    const isCorrect = await checkUserPassword(currentUser, lockPasscode);
 
     if (isCorrect) {
       setIsScreenLocked(false);
@@ -1046,7 +880,8 @@ export default function App() {
       } else if (e.key === 'Backspace') {
         e.preventDefault();
         setLockPasscode(prev => prev.slice(0, -1));
-      } else if (/^[0-9a-zA-Z]$/.test(e.key)) {
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // any printable character, so passwords with symbols or Arabic letters can unlock
         e.preventDefault();
         setLockPasscode(prev => prev + e.key);
       }
@@ -1376,7 +1211,7 @@ export default function App() {
   // Keyboard shortcut listener for F1 checkout and F2 new suspended session
 
   // --- LOGIN HANDLER ---
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
 
@@ -1386,14 +1221,11 @@ export default function App() {
       return;
     }
 
-    // Verify customized password check with developer fallbacks
-    const isValidPass = 
-      (loginUsername === 'admin' && loginPassword === adminPasscode) ||
-      (loginUsername === 'kaseer' && loginPassword === cashierPasscode) ||
-      (matched.password && loginPassword === matched.password) ||
-      (loginPassword === '112233') || // Default master password fallback
-      (loginUsername === 'admin' && loginPassword === 'admin123') || // Default backup
-      (loginUsername === 'kaseer' && loginPassword === '1234');
+    if (!getStoredPassword(matched)) {
+      setLoginError('لم يتم تعيين كلمة مرور لهذا الحساب بعد. اطلب من المدير تعيينها من شاشة المستخدمين والصلاحيات.');
+      return;
+    }
+    const isValidPass = await checkUserPassword(matched, loginPassword);
 
     if (isValidPass) {
       setCurrentUser(matched);
@@ -1419,6 +1251,17 @@ export default function App() {
   };
 
   // Direct POS hardware (raw USB / serial receipt printing, cash drawer)
+  // Licence (verified offline, refreshed against the licence server when online)
+  const licenseState = useLicense({
+    shopName: settings.shopName,
+    lang,
+    showToast,
+    onActivated: () => {
+      if (storage.getItem('pos_setup_wizard_completed') !== 'true') setShowSetupWizard(true);
+    },
+  });
+  const { isActivated } = licenseState;
+
   const printerHardware = usePrinterHardware({ settings, customers, lang, showToast });
   const {
     hardwarePrinterType,
@@ -1845,17 +1688,11 @@ export default function App() {
     if (username === 'admin') {
       storage.setItem('pos_admin_real_name', name);
       setAdminRealName(name);
-      if (newPassword) {
-        storage.setItem('pos_admin_passcode', newPassword);
-        setAdminPasscode(newPassword);
-      }
+      if (newPassword) setAccountPassword('admin', newPassword);
     } else {
       storage.setItem('pos_cashier_real_name', name);
       setCashierRealName(name);
-      if (newPassword) {
-        storage.setItem('pos_cashier_passcode', newPassword);
-        setCashierPasscode(newPassword);
-      }
+      if (newPassword) setAccountPassword('kaseer', newPassword);
     }
   };
 
@@ -2430,13 +2267,12 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
         setLoginPassword={setLoginPassword}
         loginError={loginError}
         handleLogin={handleLogin}
+        showDefaultCredentials={!storage.getItem('pos_admin_passcode') && !storage.getItem('pos_cashier_passcode')}
       />
     );
   }
 
   // MAIN SYSTEM PAGE
-  const daysLeft = typeof subscriptionDaysRemaining === 'number' ? subscriptionDaysRemaining : 365;
-
   return (
     <div className={`bg-[#F8FAFC] flex flex-col font-sans text-slate-800 w-full max-w-none overflow-x-hidden ${activeTab === 'pos' ? 'h-screen overflow-hidden' : 'min-h-screen'}`} id="main-system" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Global CSS Style tag for dynamic font and button scale */}
@@ -2549,8 +2385,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
       {showSetupWizard && (
         <SetupWizardModal
           lang={lang}
-          adminPasscode={adminPasscode}
-          cashierPasscode={cashierPasscode}
           adminRealName={adminRealName}
           cashierRealName={cashierRealName}
           saveWizardData={saveWizardData}
@@ -2582,11 +2416,10 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
         setIsScreenLocked={setIsScreenLocked}
         setLockPasscode={setLockPasscode}
         setLockError={setLockError}
-        isActivated={isActivated}
         setShowPurchaseContactModal={setShowPurchaseContactModal}
         handleLogout={handleLogout}
         showToast={showToast}
-        daysLeft={daysLeft}
+        license={licenseState}
       />
 
       {/* --- PRIMARY LAYOUT (SIDEBAR RIGHT / CONTENT LEFT) --- */}
@@ -2890,16 +2723,8 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
                   displayScale={{ globalFontScale, setGlobalFontScale, globalButtonScale, setGlobalButtonScale, globalZoomScale, setGlobalZoomScale }}
                   printerHardware={printerHardware}
                   spooler={{ activePrintJobs, setActivePrintJobs, addPrintJob }}
-                  activation={{
-                    activationKey,
-                    setActivationKey,
-                    isActivated,
-                    subscriptionDaysRemaining,
-                    activationErrorMsg,
-                    setActivationErrorMsg,
-                    applyActivation: handleApplyActivation,
-                    openSetupWizard: () => setShowSetupWizard(true),
-                  }}
+                  license={licenseState}
+                  openSetupWizard={() => setShowSetupWizard(true)}
                   contactForm={{
                     contactName, setContactName,
                     contactPhone, setContactPhone,
@@ -3178,7 +3003,7 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
         <AdminVerificationModal
           lang={lang}
           theme={theme}
-          adminPasscode={adminPasscode}
+          verifyAdminPassword={(input) => verifyPassword(input, adminPasscode)}
           adminVerificationAction={adminVerificationAction}
           setAdminVerificationOpen={setAdminVerificationOpen}
           adminVerificationPasswordInput={adminVerificationPasswordInput}
