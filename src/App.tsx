@@ -128,8 +128,6 @@ import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 
 // System operational date base
 
-
-
 export default function App() {
   // Today's date (YYYY-MM-DD, local time); rolls over at midnight
   const SYS_DATE = useToday();
@@ -152,12 +150,6 @@ export default function App() {
   // --- BILINGUAL & MULTI-PLATFORM DEVICE STATES ---
   const [lang, setLang] = useState<'ar' | 'en'>(() => {
     return (localStorage.getItem('pos_language') as 'ar' | 'en') || 'ar';
-  });
-  const [localGeminiApiKey, setLocalGeminiApiKey] = useState<string>(() => {
-    return localStorage.getItem('pos_gemini_api_key') || '';
-  });
-  const [cashDeviceMode, setCashDeviceMode] = useState<'single' | 'multi'>(() => {
-    return (localStorage.getItem('pos_cash_device_mode') as 'single' | 'multi') || 'single';
   });
 
   const handleToggleLang = () => {
@@ -486,9 +478,7 @@ export default function App() {
   const [loginPassword, setLoginPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
   
-  // --- POS CART STATES ---
 
-  // --- TOUCH KEYPAD & FINANCIAL DISCOUNT STATES ---
   
 
   // --- INTEGRATED ARONIUM PRINTERS & SPOOLER STATES ---
@@ -625,20 +615,7 @@ export default function App() {
   const [newCustType, setNewCustType] = useState<'retail' | 'wholesale'>('retail');
   const [newCustLimit, setNewCustLimit] = useState<number>(1000);
 
-  // --- MULTI-SESSION / BILL SUSPENSION STATES ---
-
-
-
-  // Sync sessions list to localStorage on change
-
-  // Sync activeSessionId to localStorage on change
-
-  // Synchronize dynamic active fields of currently active cart inputs to the active session item
-
   // Operations to manage multi-client carts
-
-
-
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('pos_theme');
@@ -699,8 +676,6 @@ export default function App() {
   const [printReportType, setPrintReportType] = useState<'dashboard' | 'pl' | 'expenses' | 'stock_audit' | 'expiry_report' | 'returns_report' | 'waste_report' | 'reorder_report' | null>(null);
   const [expiryWarningModal, setExpiryWarningModal] = useState<Product | null>(null);
   const [generalAlert, setGeneralAlert] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
-  const [isSimulatingDirectPrint, setIsSimulatingDirectPrint] = useState<boolean>(false);
-  const [directPrintProgress, setDirectPrintProgress] = useState<number>(0);
 
   // --- SCREEN LOCK STATES ---
   const [isScreenLocked, setIsScreenLocked] = useState<boolean>(() => {
@@ -894,60 +869,8 @@ export default function App() {
   // Warehouse & Shop separate stock counts and reports states
   const [stockAuditReportLoc, setStockAuditReportLoc] = useState<'shop' | 'warehouse' | 'combined'>('shop');
 
-  // --- AI ADVISOR STATES ---
-  const [aiAuditResult, setAiAuditResult] = useState<string | null>(null);
-  const [aiAuditLoading, setAiAuditLoading] = useState<boolean>(false);
-  const [aiSubTab, setAiSubTab] = useState<'audit' | 'chat'>('audit');
-  const [chatInput, setChatInput] = useState<string>('');
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; timestamp: string }>>([
-    {
-      sender: 'ai',
-      text: 'مرحباً بك! أنا مستشارك الذكي المدعوم بـ Gemini AI 🧠. يمكنني مساعدتك في تحليل مخازنك وإخبارك بالبضائع التي أوشكت كميتها على النفاد لإعادة طلبها، وتواريخ الصلاحية التي تقترب من الانتهاء، وتقديم تحليلات أرباح وأفكار تسويقية دقيقة لمتجرك اللبناني. اسألني أي سؤال تريد!',
-      timestamp: new Date().toLocaleTimeString('ar-LB', { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
-  const [chatLoading, setChatLoading] = useState<boolean>(false);
   
-  // --- INVENTORY TABLE MANUAL COLUMN WIDTHS & PAGINATION ---
-  const [invColWidths, setInvColWidths] = useState<Record<string, number>>({
-    name: 240,
-    barcode: 120,
-    category: 120,
-    warehouseQty: 125,
-    shelfQty: 125,
-    priceUSD: 100,
-    priceLBP: 120,
-    costPrice: 100,
-    margin: 100,
-    lastSale: 120,
-    expiry: 120,
-    actions: 120
-  });
-
-  const startResizeInvcol = (colKey: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = invColWidths[colKey];
-    
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const isRtl = document.dir === 'rtl';
-      const adjustedDelta = isRtl ? -deltaX : deltaX;
-      setInvColWidths(prev => ({
-        ...prev,
-        [colKey]: Math.max(50, startWidth + adjustedDelta)
-      }));
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  };
-
+  // Days without a sale after which a product counts as stagnant (inventory & reports)
   const [stagnantDaysThreshold, setStagnantDaysThreshold] = useState<number>(30);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState<boolean>(false);
   
@@ -957,7 +880,6 @@ export default function App() {
   const [quickAddCustomerPhone, setQuickAddCustomerPhone] = useState<string>('');
   const [quickAddCustomerType, setQuickAddCustomerType] = useState<'retail' | 'wholesale'>('retail');
   const [quickAddCustomerDebtLimit, setQuickAddCustomerDebtLimit] = useState<string>('1000');
-
 
   // --- SEAMLESS CUSTOMER SEARCH & SELECT ---
   const [showCustomerDropdown, setShowCustomerDropdown] = useState<boolean>(false);
@@ -1208,8 +1130,6 @@ export default function App() {
     }
   }, [generalAlert]);
 
-  // Keyboard shortcut listener for F1 checkout and F2 new suspended session
-
   // --- LOGIN HANDLER ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1265,13 +1185,6 @@ export default function App() {
   const printerHardware = usePrinterHardware({ settings, customers, lang, showToast });
   const {
     hardwarePrinterType,
-    setHardwarePrinterType,
-    usbDeviceName,
-    serialPortInfo,
-    baudRate,
-    setBaudRate,
-    connectUSBPrinter,
-    connectSerialPrinter,
     openCashDrawer,
     printInvoiceToRawHardware,
   } = printerHardware;
@@ -1291,53 +1204,9 @@ export default function App() {
     paymentMethod,
     selectedCustomerId,
     setSelectedCustomerId,
-    sessions,
-    activeSessionId,
     handleBarcodeSubmit,
     addToCart,
   } = posRegister;
-
-  // --- DIRECT POS SIMULATED PRINT TRIGGER ---
-  const triggerDirectPOSPrint = () => {
-    setIsSimulatingDirectPrint(true);
-    setDirectPrintProgress(0);
-    playReceiptPrintSound();
-    
-    const timer = setInterval(() => {
-      setDirectPrintProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          setTimeout(() => {
-            setIsSimulatingDirectPrint(false);
-            showToast('success', '⚡ تم الإرسال ببروتوكول بث صامت ومباشر إلى طابعة الفواتير المكتشفة تلقائياً!');
-          }, 600);
-          return 100;
-        }
-        return prev + 20;
-      });
-    }, 250);
-  };
-
-  // --- BARCODE SCAN EXECUTION ---
-
-  // --- ADD TO CART UTILITY ---
-
-  // --- PRODUCT CLICK HANDLER FOR SCALE INTERCEPTION ---
-
-
-
-
-
-  // Scroll cart list automatically whenever an item is added, changed, or session switches
-
-  // --- CALCULATE CART MATHS ---
-
-
-
-  // Change calculations (dual currency)
-
-  // --- SAVE BILL & CHECKOUT (F1) ---
-
 
   // Physical keyboard listener for virtual numpads (Touch payment & touch numpad modals)
 
@@ -1801,7 +1670,6 @@ export default function App() {
   const handleUpdateGeneralSettings = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('pos_settings', JSON.stringify(settings));
-    localStorage.setItem('pos_gemini_api_key', localGeminiApiKey.trim());
     showToast('success', 'تم حفظ وتعميم إعدادات المحل وسعر الصرف الجديد بنجاح!');
   };
 
@@ -1836,37 +1704,6 @@ export default function App() {
     showToast('success', lang === 'ar'
       ? `✅ تم بنجاح تحديث أسعار الصرف والمبيع لـ (${count}) صنف حالي بناءً على الهامش الافتراضي (${margin}%).`
       : `✅ Successfully recalculated selling prices for (${count}) items using (${margin}%) default profit margin.`);
-  };
-
-  // --- DEMO DATA RESET HANDLERS ---
-  const handleResetDemoInvoices = () => {
-    executeWithAdminAuth(lang === 'ar' ? 'تصفير مبيعات وفواتير التجربة' : 'Reset Demo Invoices', () => {
-      if (confirm(lang === 'ar' ? '⚠️ هل أنت متأكد تماماً من رغبتك في حذف وتصفير جميع الفواتير والمبيعات التجريبية؟' : 'Are you sure you want to clear all mock/demo invoices and sales?')) {
-        setInvoices([]);
-        localStorage.setItem('pos_invoices', JSON.stringify([]));
-        showToast('success', lang === 'ar' ? '🧹 تم تصفير جميع فواتير المبيعات التجريبية بنجاح.' : 'Logged invoices cleared successfully.');
-      }
-    });
-  };
-
-  const handleResetDemoProducts = () => {
-    executeWithAdminAuth(lang === 'ar' ? 'حذف وتصفير جميع أصناف المخزن' : 'Delete All Products', () => {
-      if (confirm(lang === 'ar' ? '⚠️ هل أنت متأكد من رغبتك في حذف كل المنتجات والمخزون؟' : 'Are you sure you want to delete all products and inventory?')) {
-        setProducts([]);
-        localStorage.setItem('pos_products', JSON.stringify([]));
-        showToast('success', lang === 'ar' ? '🧹 تم حذف كل المنتجات التجريبية بنجاح.' : 'All products deleted successfully.');
-      }
-    });
-  };
-
-  const handleResetDemoCustomers = () => {
-    executeWithAdminAuth(lang === 'ar' ? 'تصفير وحذف قائمة الزبائن' : 'Reset Customers List', () => {
-      if (confirm(lang === 'ar' ? '⚠️ هل أنت متأكد من حذف قائمة الزبائن؟' : 'Are you sure you want to delete all customers?')) {
-        setCustomers([]);
-        localStorage.setItem('pos_customers', JSON.stringify([]));
-        showToast('success', lang === 'ar' ? '🧹 تم تصفير قائمة الزبائن بنجاح.' : 'All customers deleted successfully.');
-      }
-    });
   };
 
   // --- DATABASE MAINTENANCE & SYSTEM RESET ---
@@ -1930,268 +1767,6 @@ export default function App() {
     });
   };
 
-
-  // --- AI INTEGRATION HANDLERS ---
-  const callGeminiDirectlyClientSide = async (apiKey: string, reqType: 'chat' | 'audit', promptPayload: any) => {
-    // Standard model configuration for high speed & compatibility
-    const model = "gemini-2.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    
-    let promptText = "";
-    let systemInstruction = "";
-
-    if (reqType === 'chat') {
-      systemInstruction = "أنت مستشار ذكي وخبير مبيعات ومخزون ومحاسبة مدمج في نظام مبيعات السوبرماركت (Kamel POS). هدفك مساعدة المستخدم في فهم تقارير مبيعاته، تسيير المحل، تحسين جودة عرض السلع، وزيادة الأرباح. تحدث بلهجة تفاؤلية محمسة وعملية.";
-      
-      const shopName = settings?.shopName || "متجرنا";
-      const exchangeRate = settings?.exchangeRate || 89000;
-      const lowStockThreshold = settings?.lowStockThreshold || 5;
-
-      const totalProducts = Array.isArray(products) ? products.length : 0;
-      const totalInvoices = Array.isArray(invoices) ? invoices.length : 0;
-
-      const lowStockItems = Array.isArray(products)
-        ? products
-            .filter(p => p.quantity <= lowStockThreshold)
-            .slice(0, 15)
-            .map(p => `${p.name} (الكمية: ${p.quantity})`)
-        : [];
-
-      const expiringItems = Array.isArray(products)
-        ? products
-            .filter(p => {
-              if (!p.expiryDate) return false;
-              const exp = new Date(p.expiryDate);
-              const limit = new Date();
-              limit.setMonth(limit.getMonth() + 2);
-              return exp <= limit;
-            })
-            .slice(0, 15)
-            .map(p => `${p.name} (ينتهي في: ${p.expiryDate})`)
-        : [];
-
-      const contextPrompt = `
-معلومات النظام الإداري لنظام الـ POS:
-- اسم السوبرماركت/المحل: ${shopName}
-- سعر الصرف المعتمد بالنظام: ${exchangeRate} ليرة لبناينة لكل 1 دولار أمريكي.
-- إجمالي الأصناف المسجلة بالنظام: ${totalProducts} منتج.
-- إجمالي فواتير المبيعات الصادرة حتى الآن: ${totalInvoices} فاتورة.
-${lowStockItems.length > 0 ? `- بعض الأصناف منخفضة المخزن (تنبيه مسبق): ${lowStockItems.join(", ")}` : '- جميع المنتجات لديها مخزون كافي حالياً.'}
-${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصلاحية (خلال شهرين): ${expiringItems.join(", ")}` : '- لم يتم رصد مستحضرات/منتجات شارفت على الانتهاء بالمدى القريب.'}
-
-أنت كمستشار ذكي للنظام، ساعد الكاشير والمدير في الرد على سؤاله باحترافية واقترح استراتيجيات بيع لزيادة الأرباح، التخلص من البضائع البطيئة الحركة، إدارة المخزن، أو الرد على استشاراته المالية والتقنية. اكتب ردوداً باللغة العربية، ونسقها بشكل جميل ومنظم ومبهر.
-`;
-      promptText = `${contextPrompt}\n\nالسؤال/الطلب الحالي للمستخدم:\n${promptPayload.message}`;
-    } else {
-      systemInstruction = "أنت مدقق مالي ومحلل مبيعات خبير مدمج بنظام الكاشير (Kamel POS).";
-      
-      const shopName = settings?.shopName || "متجرنا";
-      const exchangeRate = settings?.exchangeRate || 89000;
-      const lowStockThreshold = settings?.lowStockThreshold || 5;
-
-      const totalProds = Array.isArray(products) ? products.length : 0;
-      const totalInvs = Array.isArray(invoices) ? invoices.length : 0;
-      const totalExp = Array.isArray(expenses) ? expenses.length : 0;
-      const totalWst = Array.isArray(waste) ? waste.length : 0;
-
-      const lowStockCount = Array.isArray(products) ? products.filter(p => p.quantity <= lowStockThreshold).length : 0;
-      const expiringCount = Array.isArray(products)
-        ? products.filter(p => {
-            if (!p.expiryDate) return false;
-            const exp = new Date(p.expiryDate);
-            const limit = new Date();
-            limit.setMonth(limit.getMonth() + 2);
-            return exp <= limit;
-          }).length
-        : 0;
-
-      promptText = `
-قم بإجراء فحص ومراجعة وتدقيق محاسبي وإداري شامل ومبهر لنشاط متجر POS باللغة العربية بناءً على البيانات التالية:
-- اسم المحل: ${shopName}
-- سعر الصرف: ${exchangeRate} ليرة لبنانية للدولار.
-- عدد السلع والمنتجات المسجلة: ${totalProds} منتج.
-- عدد السلع شبه المنتهية أو تجاوزت حد الأمان للمخزون (الكمية <= ${lowStockThreshold}): ${lowStockCount} منتج.
-- عدد السلع منتهية الصلاحية أو قريبة الانتهاء (أقل من شهرين): ${expiringCount} منتج.
-- إجمالي عدد المبيعات المسجلة: ${totalInvs} فاتورة.
-- السجلات المالية للمصاريف: ${totalExp} مصاريف مسجلة.
-- السجلات المالية للبضاعة الهالكة والتالفة: ${totalWst} عملية إتلاف.
-
-اكتب تقريراً تدقيقياً استشارياً منظماً ورائعاً باستخدام تنسيق Markdown يشمل:
-1. مراجعة رصيد المخزن الحالي والأصناف منتهية الصلاحية مع تحذير قوي بخطة للحل.
-2. نصائح للمبيعات وضبط التدفق المالي لتجنب الخسارة.
-3. التوصية بخطوات عملية ومؤتمتة لنمو المتجر وتحسين الأرباح.
-مستنداً لأسلوب بليغ وسهل القراءة ومحفز كخبير مالي متمرس.
-`;
-    }
-
-    let contents: any[] = [];
-    if (reqType === 'chat' && Array.isArray(promptPayload.history)) {
-      promptPayload.history.forEach((h: any) => {
-        contents.push({
-          role: h.role === 'model' ? 'model' : 'user',
-          parts: [{ text: h.parts?.[0]?.text || "" }]
-        });
-      });
-    }
-    
-    contents.push({
-      role: 'user',
-      parts: [{ text: promptText }]
-    });
-
-    const bodyPayload = {
-      contents,
-      systemInstruction: systemInstruction ? {
-        parts: [{ text: systemInstruction }]
-      } : undefined
-    };
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bodyPayload)
-    });
-
-    if (!res.ok) {
-      const errorBody = await res.json().catch(() => ({}));
-      throw new Error(errorBody?.error?.message || `API Error ${res.status}`);
-    }
-
-    const resData = await res.json();
-    return resData?.candidates?.[0]?.content?.parts?.[0]?.text || "عذراً لم يستجب الذكاء الاصطناعي بشكل سليم.";
-  };
-
-  const handleRunAiAudit = async () => {
-    if (aiAuditLoading) return;
-    setAiAuditLoading(true);
-    setAiAuditResult(null);
-    try {
-      let finalReportText = "";
-      
-      // Try local direct call first if key is present
-      if (localGeminiApiKey.trim()) {
-        try {
-          finalReportText = await callGeminiDirectlyClientSide(localGeminiApiKey.trim(), 'audit', {});
-        } catch (localErr: any) {
-          console.warn("Direct client Gemini audit failed, trying server endpoint...", localErr);
-        }
-      }
-      
-      // If direct client call didn't yield anything, try server endpoint
-      if (!finalReportText) {
-        const response = await fetch("/api/ai/audit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            products,
-            invoices,
-            expenses,
-            waste,
-            settings,
-          }),
-        });
-        if (!response.ok) {
-          throw new Error("خطأ في الاتصال بالخادم الذكي أو تعذر العثور على مفتاح API في الخادم");
-        }
-        const data = await response.json();
-        if (data.error) throw new Error(data.error);
-        finalReportText = data.text || "لم يتم استلام أي رد.";
-      }
-      
-      setAiAuditResult(finalReportText);
-      showToast('success', 'تم انتهاء فحص المخزون الذكي بنجاح!');
-    } catch (err: any) {
-      console.error(err);
-      showToast('error', `فشل الفحص الذكي: ${err?.message || err}`);
-      setAiAuditResult(`### ❌ حدث خطأ أثناء تشغيل فحص الذكاء الاصطناعي\n\nيرجى التحقق من توفير مفتاح الـ Gemini API في صفحة إعدادات البرنامج أولاً، للتشغيل في نسخة الـ EXE.\n\nتفاصيل الخطأ: ${err?.message || err}`);
-    } finally {
-      setAiAuditLoading(false);
-    }
-  };
-
-  const handleSendAiChatMessage = async (presetText?: string) => {
-    const messageToSend = presetText || chatInput;
-    if (!messageToSend.trim() || chatLoading) return;
-    
-    // Append user message
-    const userMsg = {
-      sender: 'user' as const,
-      text: messageToSend,
-      timestamp: new Date().toLocaleTimeString('ar-LB', { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    setChatMessages((prev) => [...prev, userMsg]);
-    if (!presetText) setChatInput('');
-    setChatLoading(true);
-
-    try {
-      // Map history to Gemini API format standard
-      const mappedHistory = chatMessages.slice(-10).map((msg) => ({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }]
-      }));
-
-      let aiResponseText = "";
-
-      // Try local direct call first if key is present
-      if (localGeminiApiKey.trim()) {
-        try {
-          aiResponseText = await callGeminiDirectlyClientSide(localGeminiApiKey.trim(), 'chat', {
-            message: messageToSend,
-            history: mappedHistory
-          });
-        } catch (localErr: any) {
-          console.warn("Direct client Gemini chat failed, trying server endpoint...", localErr);
-        }
-      }
-
-      // If direct client call didn't yield anything, try server endpoint
-      if (!aiResponseText) {
-        const response = await fetch("/api/ai/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: messageToSend,
-            history: mappedHistory,
-            products,
-            invoices,
-            settings,
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error("خطأ في الاتصال بخادم المحادثة الذكي أو تعذر العثور على مفتاح API في الخادم");
-        }
-        
-        const data = await response.json();
-        if (data.error) throw new Error(data.error);
-        
-        aiResponseText = data.text || "عذراً لم يستجب المساعد الذكي.";
-      }
-      
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: 'ai',
-          text: aiResponseText,
-          timestamp: new Date().toLocaleTimeString('ar-LB', { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
-    } catch (err: any) {
-      console.error(err);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: 'ai',
-          text: `❌ عذراً، فشل الاتصال بالمساعد الذكي للرد على استفسارك ومراجعة الصلاحية والنواقص.\n\nيرجى التأكد من إضافة مفتاح Gemini API صالح في صفحة إعدادات البرنامج أولاً للتشغيل في نسخة الـ EXE.\n\nتفاصيل الخطأ: ${err?.message || err}`,
-          timestamp: new Date().toLocaleTimeString('ar-LB', { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
   // --- COMPUTE STATISTICS FOR GRAPH & REPORT ---
   const totalSalesUSD = invoices.reduce((sum, inv) => sum + inv.totalUSD, 0);
   const totalSalesLBP = totalSalesUSD * settings.exchangeRate;
@@ -2211,7 +1786,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
   const topSoldProductsList = Object.values(productSalesMap)
     .sort((a, b) => b.qty - a.qty)
     .slice(0, 5);
-
 
   const renderVirtualKeyboard = () => {
     return (
@@ -2689,7 +2263,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
             </div>
           )}
 
-
           {/* ==========================================
               TAB 6.5: BATCH PRICE LABELS DESIGNER (🏷️)
               ========================================== */}
@@ -2702,7 +2275,6 @@ ${expiringItems.length > 0 ? `- أصناف قريبة من انتهاء الصل
               showToast={showToast}
             />
           )}
-
 
           {/* ==========================================
               TAB 7: GENERAL SETTINGS EDITOR (⚙️)
