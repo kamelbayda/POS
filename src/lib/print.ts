@@ -219,27 +219,45 @@ export function playReceiptPrintSound() {
   }
 }
 
-/** Prints a complete, self-contained HTML document (its own styles) through a hidden iframe. */
-export function printHtmlDocument(html: string) {
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;left:-9999px;top:-9999px';
-  document.body.appendChild(iframe);
-  const doc = iframe.contentDocument || iframe.contentWindow?.document;
-  if (!doc) return;
-  doc.open();
-  doc.write(html);
-  doc.close();
-  const run = () => {
-    try {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-    } catch (e) {
-      console.error('Print failed:', e);
+/**
+ * Prints a block of HTML with its own CSS from the current page, hiding everything else.
+ * Printing in-page (not in an iframe) reuses the app's bundled fonts, so Cairo is always there.
+ */
+export function printInPage(bodyHtml: string, css: string) {
+  document.getElementById('in-page-print-root')?.remove();
+  document.getElementById('in-page-print-style')?.remove();
+
+  const root = document.createElement('div');
+  root.id = 'in-page-print-root';
+  root.innerHTML = bodyHtml;
+  const style = document.createElement('style');
+  style.id = 'in-page-print-style';
+  style.textContent = `
+    #in-page-print-root { display: none; }
+    @media print {
+      html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
+      body > *:not(#in-page-print-root) { display: none !important; }
+      #in-page-print-root { display: block !important; }
     }
-    setTimeout(() => iframe.remove(), 3000);
+    ${css}`;
+  document.head.appendChild(style);
+  document.body.appendChild(root);
+
+  const cleanup = () => {
+    root.remove();
+    style.remove();
+    window.removeEventListener('afterprint', cleanup);
   };
-  // Wait for the web font so Arabic text prints in the right typeface
-  const fonts = (doc as Document & { fonts?: FontFaceSet }).fonts;
-  const timeout = setTimeout(run, 1500);
-  fonts?.ready.then(() => { clearTimeout(timeout); setTimeout(run, 100); });
+  window.addEventListener('afterprint', cleanup);
+  // Make sure the fonts and images used by the printout are ready first
+  const images = [...root.querySelectorAll('img')].map((img) =>
+    img.complete ? Promise.resolve() : new Promise((r) => { img.onload = img.onerror = () => r(null); }));
+  // The root is hidden on screen, so the browser has not fetched the Cairo files its text
+  // needs (Arabic and Latin are separate files per weight). Load them explicitly.
+  const text = root.textContent || '';
+  const fontLoads = document.fonts ? ['400', '600', '800'].map((w) => document.fonts.load(`${w} 12px Cairo`, text).catch(() => [])) : [];
+  Promise.race([
+    Promise.all([...fontLoads, ...images]),
+    new Promise((r) => setTimeout(r, 2000)),
+  ]).then(() => window.print());
 }

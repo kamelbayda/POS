@@ -2200,9 +2200,12 @@ export function PurchasesTab({
             <div className="flex gap-2 text-xs font-sans border-t pt-4 mt-4 select-none">
               <button 
                 onClick={() => {
-                  let shopName = '';
-                  try { shopName = JSON.parse(storage.getItem('pos_settings') || '{}').shopName || ''; } catch {}
-                  printPurchaseInvoice(activePrintPurchase, shopName, lang);
+                  let shop = { name: '', logo: undefined as string | undefined };
+                  try {
+                    const st = JSON.parse(storage.getItem('pos_settings') || '{}');
+                    shop = { name: st.shopName || '', logo: st.shopLogo || st.receiptLogoBase64 || undefined };
+                  } catch {}
+                  printPurchaseInvoice(activePrintPurchase, shop, lang);
                 }}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
               >
