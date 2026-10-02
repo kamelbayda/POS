@@ -24,6 +24,11 @@ export interface Product {
   isWeighed?: boolean; // Is sold by weight using scale
   plu?: string; // PLU code for electronic scales
   purchaseTaxRate?: number; // VAT % on the last purchase; costPriceUSD includes it
+  // Remembered from the last purchase so the next invoice line starts the same way
+  lastPurchaseCostUSD?: number; // supplier unit price before discount and VAT
+  purchaseDiscountPercent?: number;
+  bonusEvery?: number; // supplier bonus: for every N bought...
+  bonusFree?: number; // ...M more come free
 }
 
 export interface Category {
@@ -225,6 +230,8 @@ export interface PurchaseItem {
   newPriceWholesale?: number;
   expiryDate?: string;
   taxRate?: number; // VAT % charged by the supplier on costPriceUSD (which is before VAT)
+  discountPercent?: number; // supplier discount on this line, applied before VAT
+  freeQty?: number; // bonus units received free on top of qty
 }
 
 export interface PurchaseInvoice {
@@ -239,6 +246,7 @@ export interface PurchaseInvoice {
   destination?: 'shop' | 'warehouse';
   transportationCostUSD?: number;
   taxUSD?: number; // total VAT on the items, included in totalAmountUSD
+  discountUSD?: number; // total supplier discount, already taken off totalAmountUSD
 }
 
 export interface Supplier {
