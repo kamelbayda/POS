@@ -28,13 +28,26 @@ import { Product, PurchaseInvoice, PurchaseItem, Category } from '../../types';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import * as storage from '../../lib/storage';
 
-// VAT on purchase lines: costPriceUSD is before VAT, taxRate is a percentage (Lebanon VAT is 11%)
+// Purchase line maths. costPriceUSD is the supplier's unit price before discount and VAT;
+// discountPercent comes off first, VAT (taxRate, Lebanon is 11%) is charged on the discounted
+// amount, and freeQty bonus units arrive at no charge.
 const VAT_PRESETS = [0, 11];
-type TaxedLine = { qty: number; costPriceUSD: number; taxRate?: number };
-/** Unit cost including VAT: what the shop really paid, used for the product cost and margins. */
-const landedCost = (line: TaxedLine) => line.costPriceUSD * (1 + (line.taxRate || 0) / 100);
-const draftTaxUSD = (lines: TaxedLine[]) =>
-  lines.reduce((acc, l) => acc + l.qty * l.costPriceUSD * ((l.taxRate || 0) / 100), 0);
+type PricedLine = { qty: number; costPriceUSD: number; taxRate?: number; discountPercent?: number; freeQty?: number };
+const lineGross = (l: PricedLine) => l.qty * l.costPriceUSD;
+const lineDiscount = (l: PricedLine) => lineGross(l) * ((l.discountPercent || 0) / 100);
+const lineTax = (l: PricedLine) => (lineGross(l) - lineDiscount(l)) * ((l.taxRate || 0) / 100);
+/** What the supplier is paid for the line: after discount, VAT included. */
+const lineTotal = (l: PricedLine) => lineGross(l) - lineDiscount(l) + lineTax(l);
+/** Real cost of one unit on the shelf, spreading the paid total over paid + free units. */
+const landedCost = (l: PricedLine) => {
+  const units = l.qty + (l.freeQty || 0);
+  if (units > 0 && l.qty > 0) return lineTotal(l) / units;
+  return l.costPriceUSD * (1 - (l.discountPercent || 0) / 100) * (1 + (l.taxRate || 0) / 100);
+};
+/** Free units from a "for every N, M free" bonus. */
+const bonusFor = (qty: number, every?: number, free?: number) =>
+  every && every > 0 && free && free > 0 ? Math.floor(qty / every) * free : 0;
+const sumLines = (lines: PricedLine[], f: (l: PricedLine) => number) => lines.reduce((acc, l) => acc + f(l), 0);
 
 interface PurchasesTabProps {
   products: Product[];
@@ -85,6 +98,10 @@ export function PurchasesTab({
     newPriceWholesale: number;
     expiryDate: string;
     taxRate: number;
+    discountPercent: number;
+    freeQty: number;
+    bonusEvery: number; // "for every bonusEvery bought, bonusFree free"; 0 = no bonus
+    bonusFree: number;
   }>>([]);
 
   // Product Selector search states
@@ -102,6 +119,9 @@ export function PurchasesTab({
   const [newProdExpiry, setNewProdExpiry] = useState<string>('');
   const [newProdTaxRate, setNewProdTaxRate] = useState<string>('0');
   const [newProdQty, setNewProdQty] = useState<string>('');
+  const [newProdDiscount, setNewProdDiscount] = useState<string>('');
+  const [newProdBonusEvery, setNewProdBonusEvery] = useState<string>('');
+  const [newProdBonusFree, setNewProdBonusFree] = useState<string>('');
 
   const [quickMarginVal, setQuickMarginVal] = useState<string>('');
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
@@ -193,9 +213,12 @@ export function PurchasesTab({
       return;
     }
 
-    // The stored cost includes the VAT of the last purchase; the invoice line is entered before VAT
+    // The line starts from the supplier's last unit price (before discount and VAT). Older
+    // products only have the stored cost, which includes the VAT of the last purchase.
     const lastTaxRate = prod.purchaseTaxRate || 0;
-    const defaultCost = prod.costPriceUSD !== undefined && prod.costPriceUSD !== null
+    const defaultCost = prod.lastPurchaseCostUSD !== undefined
+      ? prod.lastPurchaseCostUSD
+      : prod.costPriceUSD !== undefined && prod.costPriceUSD !== null
       ? Number((prod.costPriceUSD / (1 + lastTaxRate / 100)).toFixed(2))
       : (prod.priceWholesale !== undefined && prod.priceWholesale !== null
         ? prod.priceWholesale 
@@ -214,7 +237,11 @@ export function PurchasesTab({
         newPriceUSD: prod.priceUSD,
         newPriceWholesale: defaultWholesale,
         expiryDate: prod.expiryDate || '',
-        taxRate: lastTaxRate
+        taxRate: lastTaxRate,
+        discountPercent: prod.purchaseDiscountPercent || 0,
+        freeQty: 0,
+        bonusEvery: prod.bonusEvery || 0,
+        bonusFree: prod.bonusFree || 0
       }
     ]);
 
@@ -247,6 +274,10 @@ export function PurchasesTab({
 
     const costNum = parseFloat(newProdCost) || 0;
     const quickTaxRate = Math.max(0, parseFloat(newProdTaxRate) || 0);
+    const quickDiscount = Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0));
+    const quickBonusEvery = Math.max(0, parseInt(newProdBonusEvery) || 0);
+    const quickBonusFree = Math.max(0, parseInt(newProdBonusFree) || 0);
+    const quickLine = { qty: quickQty, costPriceUSD: costNum, taxRate: quickTaxRate, discountPercent: quickDiscount, freeQty: bonusFor(quickQty, quickBonusEvery, quickBonusFree) };
     const sellRetailNum = parseFloat(newProdSellRetail) || 0;
     const sellWholesaleNum = parseFloat(newProdSellWholesale) || sellRetailNum * 0.9;
 
@@ -258,9 +289,13 @@ export function PurchasesTab({
       priceUSD: sellRetailNum,
       quantity: 0, // starts at zero, will be updated via the invoice submission
       expiryDate: newProdExpiry || sysDate,
-      costPriceUSD: Number((costNum * (1 + quickTaxRate / 100)).toFixed(2)), // VAT included, like saved invoices
+      costPriceUSD: Number(landedCost(quickLine).toFixed(2)), // real unit cost, like saved invoices
       priceWholesale: sellWholesaleNum,
-      purchaseTaxRate: quickTaxRate
+      purchaseTaxRate: quickTaxRate,
+      lastPurchaseCostUSD: costNum,
+      purchaseDiscountPercent: quickDiscount,
+      bonusEvery: quickBonusEvery,
+      bonusFree: quickBonusFree
     };
 
     // Append to master products list
@@ -278,7 +313,11 @@ export function PurchasesTab({
         newPriceUSD: sellRetailNum,
         newPriceWholesale: sellWholesaleNum,
         expiryDate: newProdExpiry || sysDate,
-        taxRate: quickTaxRate
+        taxRate: quickTaxRate,
+        discountPercent: quickDiscount,
+        freeQty: quickLine.freeQty,
+        bonusEvery: quickBonusEvery,
+        bonusFree: quickBonusFree
       }
     ]);
 
@@ -291,6 +330,9 @@ export function PurchasesTab({
     setNewProdExpiry('');
     setNewProdTaxRate('0');
     setNewProdQty('');
+    setNewProdDiscount('');
+    setNewProdBonusEvery('');
+    setNewProdBonusFree('');
     setShowQuickAddForm(false);
 
     showToast('success', isAr ? `رائع! تم تسجيل [${newProd.name}] في النظام وإدراجه بالفاتورة.` : `Product [${newProd.name}] registered and added to draft invoice.`);
@@ -299,13 +341,13 @@ export function PurchasesTab({
   // Update item field in draft items list
   const handleUpdateDraftField = (index: number, field: string, val: any) => {
     setDraftItems(prev => prev.map((item, i) => {
-      if (i === index) {
-        return {
-          ...item,
-          [field]: val
-        };
+      if (i !== index) return item;
+      const next = { ...item, [field]: val };
+      // A bonus rule fills in the free units from the bought quantity
+      if ((field === 'qty' || field === 'bonusEvery' || field === 'bonusFree') && next.bonusEvery > 0 && next.bonusFree > 0) {
+        next.freeQty = bonusFor(next.qty, next.bonusEvery, next.bonusFree);
       }
-      return item;
+      return next;
     }));
   };
 
@@ -385,13 +427,15 @@ export function PurchasesTab({
       newPriceUSD: d.newPriceUSD,
       newPriceWholesale: d.newPriceWholesale,
       expiryDate: d.expiryDate,
-      taxRate: d.taxRate
+      taxRate: d.taxRate,
+      discountPercent: d.discountPercent,
+      freeQty: d.freeQty
     }));
 
-    const totalItemsCost = draftItems.reduce((acc, item) => acc + (item.qty * item.costPriceUSD), 0);
-    const totalTax = draftTaxUSD(draftItems);
+    const totalTax = sumLines(draftItems, lineTax);
+    const totalDiscount = sumLines(draftItems, lineDiscount);
     const transCostNum = parseFloat(transportationCost) || 0;
-    const totalInvoiceAmount = totalItemsCost + totalTax + transCostNum;
+    const totalInvoiceAmount = sumLines(draftItems, lineTotal) + transCostNum;
 
     const newPurchaseInvoice: PurchaseInvoice = {
       id: `pur-inv-${Date.now()}`,
@@ -404,7 +448,8 @@ export function PurchasesTab({
       note: note.trim(),
       destination: purchaseDestination,
       transportationCostUSD: transCostNum,
-      taxUSD: Number(totalTax.toFixed(2))
+      taxUSD: Number(totalTax.toFixed(2)),
+      discountUSD: Number(totalDiscount.toFixed(2))
     };
 
     // 2. Update Master Products: increments stock quantities (to shop or warehouse), set new cost prices, retail prices, wholesale prices, and expiry dates!
@@ -412,12 +457,17 @@ export function PurchasesTab({
       const draftVal = draftItems.find(d => d.product.id === prod.id);
       if (draftVal) {
         const isToWarehouse = purchaseDestination === 'warehouse';
+        const received = draftVal.qty + (draftVal.freeQty || 0); // bonus units go on the shelf too
         return {
           ...prod,
-          quantity: isToWarehouse ? prod.quantity : (prod.quantity + draftVal.qty), // add to retail shop if not to warehouse
-          warehouseQuantity: isToWarehouse ? ((prod.warehouseQuantity || 0) + draftVal.qty) : (prod.warehouseQuantity || 0), // add to warehouse if selected
-          costPriceUSD: Number(landedCost(draftVal).toFixed(2)), // update cost (VAT included)
+          quantity: isToWarehouse ? prod.quantity : (prod.quantity + received), // add to retail shop if not to warehouse
+          warehouseQuantity: isToWarehouse ? ((prod.warehouseQuantity || 0) + received) : (prod.warehouseQuantity || 0), // add to warehouse if selected
+          costPriceUSD: Number(landedCost(draftVal).toFixed(2)), // real unit cost: after discount, VAT included, spread over free units
           purchaseTaxRate: draftVal.taxRate,
+          lastPurchaseCostUSD: draftVal.costPriceUSD,
+          purchaseDiscountPercent: draftVal.discountPercent,
+          bonusEvery: draftVal.bonusEvery,
+          bonusFree: draftVal.bonusFree,
           priceUSD: draftVal.newPriceUSD, // update retail price as requested
           priceWholesale: draftVal.newPriceWholesale, // update wholesale selling price
           expiryDate: draftVal.expiryDate || prod.expiryDate // update expiry date
@@ -494,6 +544,10 @@ export function PurchasesTab({
           newPriceWholesale: number;
           expiryDate: string;
           taxRate: number;
+          discountPercent: number;
+          freeQty: number;
+          bonusEvery: number;
+          bonusFree: number;
         }> = [];
 
         scannedItemsList.forEach(item => {
@@ -510,7 +564,11 @@ export function PurchasesTab({
               newPriceUSD: calculatedPriceRetail,
               newPriceWholesale: calculatedPriceWholesale,
               expiryDate: matchedProd.expiryDate || sysDate,
-              taxRate: matchedProd.purchaseTaxRate || 0
+              taxRate: matchedProd.purchaseTaxRate || 0,
+              discountPercent: matchedProd.purchaseDiscountPercent || 0,
+              freeQty: bonusFor(item.qty, matchedProd.bonusEvery, matchedProd.bonusFree),
+              bonusEvery: matchedProd.bonusEvery || 0,
+              bonusFree: matchedProd.bonusFree || 0
             });
           }
         });
@@ -750,10 +808,12 @@ export function PurchasesTab({
 
               {/* Total Invoice Draft Calculation Card */}
               {(() => {
-                const totalItemsCost = draftItems.reduce((acc, item) => acc + (item.qty * item.costPriceUSD), 0);
-                const totalTax = draftTaxUSD(draftItems);
+                const totalItemsCost = sumLines(draftItems, lineGross);
+                const totalDiscount = sumLines(draftItems, lineDiscount);
+                const totalTax = sumLines(draftItems, lineTax);
+                const totalFree = draftItems.reduce((acc, d) => acc + (d.freeQty || 0), 0);
                 const transCostNum = parseFloat(transportationCost) || 0;
-                const grandTotalCost = totalItemsCost + totalTax + transCostNum;
+                const grandTotalCost = totalItemsCost - totalDiscount + totalTax + transCostNum;
 
                 return (
                   <div className="bg-slate-900 text-slate-100 p-4 rounded-xl space-y-2 border border-slate-800 text-right font-sans">
@@ -761,6 +821,18 @@ export function PurchasesTab({
                       <span className="font-mono">{totalItemsCost.toFixed(2)} $</span>
                       <span>{isAr ? 'إجمالي السلع:' : 'Items Total:'}</span>
                     </div>
+                    {totalDiscount > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-emerald-300" id="purchase-draft-discount">
+                        <span className="font-mono">- {totalDiscount.toFixed(2)} $</span>
+                        <span>{isAr ? 'الحسم:' : 'Discount:'}</span>
+                      </div>
+                    )}
+                    {totalFree > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-sky-300" id="purchase-draft-free">
+                        <span className="font-mono">{totalFree}</span>
+                        <span>{isAr ? '🎁 بضاعة مجانية (بونص):' : '🎁 Free bonus units:'}</span>
+                      </div>
+                    )}
                     {totalTax > 0 && (
                       <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-amber-300" id="purchase-draft-vat">
                         <span className="font-mono">+ {totalTax.toFixed(2)} $</span>
@@ -997,9 +1069,68 @@ export function PurchasesTab({
                       </div>
                     </div>
 
+                    {/* Supplier discount and bonus for the new item */}
+                    <div className="flex flex-wrap items-end gap-3 text-xs bg-white/70 border border-slate-200 rounded-lg p-2.5">
+                      <div className="w-32">
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-discount">{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
+                        <input
+                          id="quick-add-discount"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="any"
+                          placeholder="0"
+                          value={newProdDiscount}
+                          onChange={e => setNewProdDiscount(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold text-emerald-700"
+                        />
+                      </div>
+                      <div className="flex items-end gap-1.5">
+                        <div>
+                          <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-bonus-every">{isAr ? '🎁 بونص: كل' : '🎁 Bonus: every'}</label>
+                          <input
+                            id="quick-add-bonus-every"
+                            type="number"
+                            min="0"
+                            placeholder="12"
+                            value={newProdBonusEvery}
+                            onChange={e => setNewProdBonusEvery(e.target.value)}
+                            className="w-16 bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold"
+                          />
+                        </div>
+                        <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
+                        <input
+                          id="quick-add-bonus-free"
+                          type="number"
+                          min="0"
+                          placeholder="1"
+                          value={newProdBonusFree}
+                          onChange={e => setNewProdBonusFree(e.target.value)}
+                          className="w-14 bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold"
+                          aria-label={isAr ? 'الكمية المجانية لكل دفعة' : 'Free units per batch'}
+                        />
+                        <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'مجاناً' : 'free'}</span>
+                      </div>
+                      {(() => {
+                        const free = bonusFor(parseFloat(newProdQty) || 0, parseInt(newProdBonusEvery) || 0, parseInt(newProdBonusFree) || 0);
+                        return free > 0 ? (
+                          <span className="text-[11px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded mb-1">
+                            🎁 {isAr ? `+${free} مجاناً على هالكمية` : `+${free} free on this quantity`}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+
                     {/* --- DYNAMIC PRICING MARGIN ASSISTANT FOR QUICK NEW PRODUCT --- */}
                     {(() => {
-                      const qCost = (parseFloat(newProdCost) || 0) * (1 + Math.max(0, parseFloat(newProdTaxRate) || 0) / 100); // VAT included
+                      const qQty = parseFloat(newProdQty) || 0;
+                      const qCost = landedCost({ // real unit cost: after discount, VAT included, spread over free units
+                        qty: qQty,
+                        costPriceUSD: parseFloat(newProdCost) || 0,
+                        taxRate: Math.max(0, parseFloat(newProdTaxRate) || 0),
+                        discountPercent: Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0)),
+                        freeQty: bonusFor(qQty, parseInt(newProdBonusEvery) || 0, parseInt(newProdBonusFree) || 0),
+                      });
                       const qPrice = parseFloat(newProdSellRetail) || 0;
                       const qProfit = qPrice - qCost;
                       const qMargin = qPrice > 0 ? (qProfit / qPrice) * 100 : 0;
@@ -1290,9 +1421,15 @@ export function PurchasesTab({
                           {/* Row actions */}
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-emerald-600' font-extrabold text-xs bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded">
-                              {isAr ? 'المجموع:' : 'Sub:'} <span className="font-black">{(item.qty * landedCost(item)).toFixed(2)}$</span>
+                              {isAr ? 'المجموع:' : 'Sub:'} <span className="font-black">{lineTotal(item).toFixed(2)}$</span>
+                              {item.discountPercent > 0 && <span className="text-[9px] font-bold text-emerald-700 mr-1">{isAr ? `بعد حسم ${item.discountPercent}%` : `after ${item.discountPercent}% off`}</span>}
                               {item.taxRate > 0 && <span className="text-[9px] font-bold text-amber-700 mr-1">{isAr ? `شامل ضريبة ${item.taxRate}%` : `incl. ${item.taxRate}% VAT`}</span>}
                             </span>
+                            {item.freeQty > 0 && (
+                              <span className="text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded">
+                                🎁 {isAr ? `+${item.freeQty} مجاناً` : `+${item.freeQty} free`}
+                              </span>
+                            )}
                             <button
                               onClick={() => handleRemoveFromDraft(idx)}
                               className="text-rose-500 hover:text-white hover:bg-rose-500 p-1 rounded-lg transition"
@@ -1343,6 +1480,7 @@ export function PurchasesTab({
                               step="0.01"
                               min="0"
                               required
+                              id={`draft-cost-${item.product.id}`}
                               value={item.costPriceUSD}
                               onChange={e => handleUpdateDraftField(idx, 'costPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))}
                               className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-slate-700"
@@ -1413,6 +1551,69 @@ export function PurchasesTab({
                             />
                           </div>
 
+                        </div>
+
+                        {/* Supplier discount and bonus (free units) */}
+                        <div className="flex flex-wrap items-end gap-3 font-sans text-xs bg-white/60 border border-slate-150 rounded-lg p-2.5">
+                          <div className="w-28">
+                            <label className="block text-slate-500 font-bold mb-1 text-[10px]" htmlFor={`draft-discount-${item.product.id}`}>{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
+                            <input
+                              id={`draft-discount-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="any"
+                              placeholder="0"
+                              value={item.discountPercent || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'discountPercent', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-emerald-700"
+                            />
+                          </div>
+                          <div className="flex items-end gap-1.5">
+                            <div>
+                              <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? '🎁 بونص: كل' : '🎁 Bonus: every'}</label>
+                              <input
+                                id={`draft-bonus-every-${item.product.id}`}
+                                type="number"
+                                min="0"
+                                placeholder="12"
+                                value={item.bonusEvery || ''}
+                                onChange={e => handleUpdateDraftField(idx, 'bonusEvery', Math.max(0, parseInt(e.target.value) || 0))}
+                                className="w-16 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
+                              />
+                            </div>
+                            <span className="pb-2 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
+                            <input
+                              id={`draft-bonus-free-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              placeholder="1"
+                              value={item.bonusFree || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'bonusFree', Math.max(0, parseInt(e.target.value) || 0))}
+                              className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
+                            />
+                            <span className="pb-2 text-slate-500 font-bold">{isAr ? 'مجاناً' : 'free'}</span>
+                          </div>
+                          <div className="w-28">
+                            <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-${item.product.id}`}>{isAr ? 'الكمية المجانية:' : 'Free units:'}</label>
+                            <input
+                              id={`draft-free-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="0"
+                              value={item.freeQty || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
+                            />
+                          </div>
+                          {(item.freeQty > 0 || item.discountPercent > 0) && item.qty > 0 && (
+                            <span className="text-[10px] text-slate-500 font-semibold pb-2">
+                              {isAr
+                                ? `بينضاف للمخزن ${item.qty + item.freeQty} • كلفة القطعة الفعلية ${landedCost(item).toFixed(3)}$`
+                                : `${item.qty + item.freeQty} into stock • real unit cost ${landedCost(item).toFixed(3)}$`}
+                            </span>
+                          )}
                         </div>
 
                         {/* --- INLINE DYNAMIC PRICING MARGIN ASSISTANT FOR DRAFT ITEM --- */}
@@ -1794,15 +1995,17 @@ export function PurchasesTab({
 
                                               <td className="p-2 text-center font-mono text-slate-600 font-bold">
                                                 {i.costPriceUSD.toFixed(2)} $
+                                                {(i.discountPercent || 0) > 0 && <span className="block text-[9px] text-emerald-700">-{i.discountPercent}% {isAr ? 'حسم' : 'off'}</span>}
                                                 {(i.taxRate || 0) > 0 && <span className="block text-[9px] text-amber-700">+{i.taxRate}% TVA</span>}
                                               </td>
 
                                               <td className="p-2 text-center font-mono text-slate-500 font-semibold bg-emerald-50/20">
-                                                {(i.qty * i.costPriceUSD).toFixed(2)} $
+                                                {lineTotal(i).toFixed(2)} $
                                               </td>
 
                                               <td className="p-2 text-center font-mono font-bold text-slate-800">
                                                 {i.qty} {isAr ? 'قطعة' : 'pcs'}
+                                                {(i.freeQty || 0) > 0 && <span className="block text-[9px] text-sky-700">🎁 +{i.freeQty} {isAr ? 'مجاناً' : 'free'}</span>}
                                               </td>
 
                                               <td className="p-2 text-right font-bold text-slate-800">
@@ -1831,6 +2034,12 @@ export function PurchasesTab({
                                       </span>
                                     </div>
                                     <div className="flex gap-4 items-center flex-row-reverse flex-wrap">
+                                      {(inv.discountUSD || 0) > 0 && (
+                                        <span className="inline-flex items-center gap-1 font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded">
+                                          {isAr ? 'الحسم: ' : 'Discount: '}
+                                          <strong className="font-mono text-emerald-900">-{(inv.discountUSD || 0).toFixed(2)} $</strong>
+                                        </span>
+                                      )}
                                       {(inv.taxUSD || 0) > 0 && (
                                         <span className="inline-flex items-center gap-1 font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
                                           {isAr ? 'الضريبة (TVA): ' : 'VAT: '}
@@ -1930,10 +2139,12 @@ export function PurchasesTab({
                           </td>
                           <td className="p-3 text-center font-mono font-bold text-slate-700">
                             {it.costPriceUSD.toFixed(1)} $
+                            {(it.discountPercent || 0) > 0 && <span className="block text-[9px] text-emerald-700">-{it.discountPercent}% {isAr ? 'حسم' : 'off'}</span>}
                             {(it.taxRate || 0) > 0 && <span className="block text-[9px] text-amber-700">+{it.taxRate}% TVA</span>}
                           </td>
                           <td className="p-3 text-center font-mono font-black text-slate-850">
                             {it.qty} {isAr ? 'قطع' : 'pcs'}
+                            {(it.freeQty || 0) > 0 && <span className="block text-[9px] text-sky-700">🎁 +{it.freeQty} {isAr ? 'مجاناً' : 'free'}</span>}
                           </td>
                           <td className="p-3 pr-4 font-bold text-slate-800">
                             {it.productName}
@@ -1952,7 +2163,8 @@ export function PurchasesTab({
               {(() => {
                 const transCost = activePrintPurchase.transportationCostUSD || 0;
                 const taxCost = activePrintPurchase.taxUSD || 0;
-                const itemsCost = activePrintPurchase.totalAmountUSD - transCost - taxCost;
+                const discountCost = activePrintPurchase.discountUSD || 0;
+                const itemsCost = activePrintPurchase.totalAmountUSD - transCost - taxCost + discountCost; // before discount
 
                 return (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center text-xs gap-4">
@@ -1972,6 +2184,12 @@ export function PurchasesTab({
                         <span className="font-mono text-slate-700">{itemsCost.toFixed(2)} $</span>
                         <span className="text-slate-500">{isAr ? 'قيمة السلع:' : 'Items Value:'}</span>
                       </div>
+                      {discountCost > 0 && (
+                        <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
+                          <span className="font-mono text-emerald-700">-{discountCost.toFixed(2)} $</span>
+                          <span className="text-slate-500">{isAr ? 'الحسم:' : 'Discount:'}</span>
+                        </div>
+                      )}
                       {taxCost > 0 && (
                         <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
                           <span className="font-mono text-amber-800">+{taxCost.toFixed(2)} $</span>
