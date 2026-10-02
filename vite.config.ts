@@ -35,7 +35,9 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+          // Cairo ships every subset; precache only the Arabic and Latin ones the app uses
+          globIgnores: ['**/*latin-ext*', '**/*vietnamese*', '**/*cyrillic*', '**/*greek*'],
           // The app bundle is several MB; cache it whole so the till works offline.
           maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
           navigateFallback: 'index.html',
