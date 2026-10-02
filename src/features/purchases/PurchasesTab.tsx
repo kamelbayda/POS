@@ -125,8 +125,8 @@ export function PurchasesTab({
 
   const [quickMarginVal, setQuickMarginVal] = useState<string>('');
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
-  const [draftMarginInputs, setDraftMarginInputs] = useState<{[key: number]: string}>({});
-  const [draftMarkupInputs, setDraftMarkupInputs] = useState<{[key: number]: string}>({});
+  const [draftMarginInputs, setDraftMarginInputs] = useState<{[productId: string]: string}>({});
+  const [draftMarkupInputs, setDraftMarkupInputs] = useState<{[productId: string]: string}>({});
   const [transportationCost, setTransportationCost] = useState<string>('0');
 
   // Category Creation Inline State
@@ -228,8 +228,7 @@ export function PurchasesTab({
       ? prod.priceWholesale
       : Number((prod.priceUSD * 0.85).toFixed(2));
 
-    setDraftItems(prev => [
-      ...prev,
+    setDraftItems(prev => [ // newest line on top
       {
         product: prod,
         qty: 0, // typed by the user: the received quantity from the supplier invoice
@@ -242,7 +241,8 @@ export function PurchasesTab({
         freeQty: 0,
         bonusEvery: prod.bonusEvery || 0,
         bonusFree: prod.bonusFree || 0
-      }
+      },
+      ...prev
     ]);
 
     setProdSearchQuery('');
@@ -304,8 +304,7 @@ export function PurchasesTab({
     storage.setJSON('pos_products', updatedProductsList);
 
     // Automatically put into the draft invoice items
-    setDraftItems(prev => [
-      ...prev,
+    setDraftItems(prev => [ // newest line on top
       {
         product: newProd,
         qty: quickQty,
@@ -318,7 +317,8 @@ export function PurchasesTab({
         freeQty: quickLine.freeQty,
         bonusEvery: quickBonusEvery,
         bonusFree: quickBonusFree
-      }
+      },
+      ...prev
     ]);
 
     // Reset Form
@@ -418,7 +418,8 @@ export function PurchasesTab({
     }
 
     // 1. Generate items for ledger storage
-    const invoiceItemsToSave: PurchaseItem[] = draftItems.map(d => ({
+    // Lines are shown newest first; store them in the order they were entered
+    const invoiceItemsToSave: PurchaseItem[] = [...draftItems].reverse().map(d => ({
       id: `pur-item-${Date.now()}-${Math.random()}`,
       productId: d.product.id,
       productName: d.product.name,
@@ -577,7 +578,7 @@ export function PurchasesTab({
           // Merge or overwrite draft items
           setDraftItems(prev => {
             const preserved = prev.filter(p => !matchedDrafts.some(md => md.product.id === p.product.id));
-            return [...preserved, ...matchedDrafts];
+            return [...matchedDrafts.reverse(), ...preserved]; // newest on top, like manual adds
           });
           
           showToast('success', isAr 
@@ -1441,7 +1442,7 @@ export function PurchasesTab({
 
                           {/* Brand Info */}
                           <div className="font-sans text-right">
-                            <span className="font-black text-slate-800 text-sm block">{idx + 1}. {item.product.name}</span>
+                            <span className="font-black text-slate-800 text-sm block">{draftItems.length - idx}. {item.product.name}</span>
                             <div className="flex items-center gap-2 mt-0.5 justify-end">
                               <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded font-semibold font-mono">{item.product.barcode}</span>
                               <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded font-semibold">{item.product.category}</span>
@@ -1624,8 +1625,8 @@ export function PurchasesTab({
                           const dMargin = dPrice > 0 ? (dProfit / dPrice) * 100 : 0;
                           const dMarkup = dCost > 0 ? (dProfit / dCost) * 100 : 0;
 
-                          const marginInputVal = draftMarginInputs[idx] || '';
-                          const markupInputVal = draftMarkupInputs[idx] || '';
+                          const marginInputVal = draftMarginInputs[item.product.id] || '';
+                          const markupInputVal = draftMarkupInputs[item.product.id] || '';
 
                           return (
                             <div className="bg-emerald-50/20 border border-emerald-50/70 p-3 rounded-lg text-right font-sans space-y-2.5 mt-2.5">
@@ -1696,7 +1697,7 @@ export function PurchasesTab({
                                     max="99"
                                     placeholder="15"
                                     value={marginInputVal}
-                                    onChange={e => setDraftMarginInputs(prev => ({ ...prev, [idx]: e.target.value }))}
+                                    onChange={e => setDraftMarginInputs(prev => ({ ...prev, [item.product.id]: e.target.value }))}
                                     className="w-10 text-center bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 py-0.5 px-1 rounded text-[9px] font-bold font-sans"
                                   />
                                   <button
@@ -1731,7 +1732,7 @@ export function PurchasesTab({
                                     min="0"
                                     placeholder="20"
                                     value={markupInputVal}
-                                    onChange={e => setDraftMarkupInputs(prev => ({ ...prev, [idx]: e.target.value }))}
+                                    onChange={e => setDraftMarkupInputs(prev => ({ ...prev, [item.product.id]: e.target.value }))}
                                     className="w-10 text-center bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 py-0.5 px-1 rounded text-[9px] font-bold font-sans"
                                   />
                                   <button
