@@ -218,3 +218,28 @@ export function playReceiptPrintSound() {
     console.warn('Audio feedback failed or was blocked by gesture rules:', err);
   }
 }
+
+/** Prints a complete, self-contained HTML document (its own styles) through a hidden iframe. */
+export function printHtmlDocument(html: string) {
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;left:-9999px;top:-9999px';
+  document.body.appendChild(iframe);
+  const doc = iframe.contentDocument || iframe.contentWindow?.document;
+  if (!doc) return;
+  doc.open();
+  doc.write(html);
+  doc.close();
+  const run = () => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch (e) {
+      console.error('Print failed:', e);
+    }
+    setTimeout(() => iframe.remove(), 3000);
+  };
+  // Wait for the web font so Arabic text prints in the right typeface
+  const fonts = (doc as Document & { fonts?: FontFaceSet }).fonts;
+  const timeout = setTimeout(run, 1500);
+  fonts?.ready.then(() => { clearTimeout(timeout); setTimeout(run, 100); });
+}
