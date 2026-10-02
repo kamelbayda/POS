@@ -101,6 +101,7 @@ export function PurchasesTab({
   const [newProdSellWholesale, setNewProdSellWholesale] = useState<string>('');
   const [newProdExpiry, setNewProdExpiry] = useState<string>('');
   const [newProdTaxRate, setNewProdTaxRate] = useState<string>('0');
+  const [newProdQty, setNewProdQty] = useState<string>('');
 
   const [quickMarginVal, setQuickMarginVal] = useState<string>('');
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
@@ -175,6 +176,14 @@ export function PurchasesTab({
 
   // --- ACTIONS ---
 
+  // The received quantity must be typed for every line, so focus it as soon as a line is added
+  const focusDraftQty = (productId: string) =>
+    setTimeout(() => {
+      const el = document.getElementById(`draft-qty-${productId}`) as HTMLInputElement | null;
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el?.focus();
+    }, 50);
+
   // Add selected product to draft list
   const handleAddProductToDraft = (prod: Product) => {
     // Check if ready in list
@@ -200,7 +209,7 @@ export function PurchasesTab({
       ...prev,
       {
         product: prod,
-        qty: 12, // Default standard package size like a dozen
+        qty: 0, // typed by the user: the received quantity from the supplier invoice
         costPriceUSD: defaultCost,
         newPriceUSD: prod.priceUSD,
         newPriceWholesale: defaultWholesale,
@@ -211,12 +220,19 @@ export function PurchasesTab({
 
     setProdSearchQuery('');
     setShowProdDropdown(false);
-    showToast('success', isAr ? `تمت إضافة [${prod.name}] لقائمة الأسعار والكميات.` : `Added [${prod.name}] to list.`);
+    focusDraftQty(prod.id);
+    showToast('success', isAr ? `تمت إضافة [${prod.name}]. اكتب الكمية المستلمة.` : `Added [${prod.name}]. Enter the received quantity.`);
   };
 
   // Handle Quick Add New Product to catalog directly
   const handleQuickAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    const quickQty = parseFloat(newProdQty) || 0;
+    if (quickQty <= 0) {
+      showToast('error', isAr ? 'الرجاء كتابة الكمية المستلمة من هذا الصنف!' : 'Please enter the received quantity!');
+      document.getElementById('quick-add-qty')?.focus();
+      return;
+    }
     if (!newProdName || !newProdBarcode) {
       showToast('error', isAr ? 'الرجاء ملء اسم الصنف الجديد والباركود!' : 'Name and Barcode are required!');
       return;
@@ -257,7 +273,7 @@ export function PurchasesTab({
       ...prev,
       {
         product: newProd,
-        qty: 12,
+        qty: quickQty,
         costPriceUSD: costNum,
         newPriceUSD: sellRetailNum,
         newPriceWholesale: sellWholesaleNum,
@@ -274,6 +290,7 @@ export function PurchasesTab({
     setNewProdSellWholesale('');
     setNewProdExpiry('');
     setNewProdTaxRate('0');
+    setNewProdQty('');
     setShowQuickAddForm(false);
 
     showToast('success', isAr ? `رائع! تم تسجيل [${newProd.name}] في النظام وإدراجه بالفاتورة.` : `Product [${newProd.name}] registered and added to draft invoice.`);
@@ -349,6 +366,12 @@ export function PurchasesTab({
     }
     if (!supplierName.trim()) {
       showToast('error', isAr ? 'يرجى كتابة اسم المورّد أو الشركة الموزعة لتوثيق الفاتورة.' : 'Supplier name is required!');
+      return;
+    }
+    const missingQty = draftItems.find(d => !(d.qty > 0));
+    if (missingQty) {
+      showToast('error', isAr ? `حدد الكمية المستلمة للصنف [${missingQty.product.name}] حتى تنضاف للمخزن.` : `Enter the received quantity for [${missingQty.product.name}].`);
+      focusDraftQty(missingQty.product.id);
       return;
     }
 
@@ -877,7 +900,23 @@ export function PurchasesTab({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                      <div>
+                        <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة 📥:' : 'Received Qty 📥:'}</label>
+                        <input
+                          id="quick-add-qty"
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="any"
+                          required
+                          value={newProdQty}
+                          onChange={e => setNewProdQty(e.target.value)}
+                          className="w-full bg-white border-2 border-rose-300 focus:border-emerald-500 rounded-lg p-2 text-xs text-center font-mono font-black"
+                          placeholder={isAr ? 'مثال: 24' : 'e.g. 24'}
+                        />
+                      </div>
+
                       <div>
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر كلفة الشراء ($):' : 'Cost Price ($):'}</label>
                         <input 
@@ -1243,7 +1282,7 @@ export function PurchasesTab({
                 <div className="space-y-4 font-sans text-right">
                   {draftItems.map((item, idx) => {
                     return (
-                      <div key={item.product.id} className="bg-slate-50 border border-slate-150 rounded-xl p-4 space-y-3 hover:border-slate-300 transition relative">
+                      <div key={item.product.id} className={`bg-slate-50 border rounded-xl p-4 space-y-3 transition relative ${item.qty > 0 ? 'border-slate-150 hover:border-slate-300' : 'border-rose-300'}`}>
                         
                         {/* Title and Category block */}
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 pb-2">
@@ -1281,14 +1320,18 @@ export function PurchasesTab({
                           
                           {/* 1. Qty to buy */}
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'الكمية المشتراة 📥:' : 'Purchased Qty 📥:'}</label>
+                            <label className={`block font-bold mb-1 text-[10px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${item.product.id}`}>{isAr ? 'الكمية المستلمة 📥 (مطلوب):' : 'Received Qty 📥 (required):'}</label>
                             <input
+                              id={`draft-qty-${item.product.id}`}
                               type="number"
-                              min="1"
+                              inputMode="decimal"
+                              min="0"
+                              step="any"
                               required
-                              value={item.qty}
-                              onChange={e => handleUpdateDraftField(idx, 'qty', Math.max(1, parseInt(e.target.value) || 0))}
-                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-black text-slate-800"
+                              placeholder={isAr ? 'الكمية' : 'Qty'}
+                              value={item.qty > 0 ? item.qty : ''}
+                              onChange={e => handleUpdateDraftField(idx, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className={`w-full rounded-lg p-1.5 text-center font-mono font-black text-slate-800 border-2 ${item.qty > 0 ? 'bg-white border-slate-200' : 'bg-rose-50 border-rose-400'}`}
                             />
                           </div>
 
