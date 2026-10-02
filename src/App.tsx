@@ -82,6 +82,7 @@ import { UsersTab } from './features/users/UsersTab';
 import { StockCountTab } from './features/stock-count/StockCountTab';
 import { InvoicesLogTab } from './features/invoices/InvoicesLogTab';
 import { PriceLabelsTab } from './features/price-labels/PriceLabelsTab';
+import { ShelfTagsTab } from './features/shelf-tags/ShelfTagsTab';
 import { InventoryTab } from './features/inventory/InventoryTab';
 import { ReportsTab } from './features/reports/ReportsTab';
 import { SettingsTab } from './features/settings/SettingsTab';
@@ -1070,6 +1071,17 @@ export default function App() {
           {/* ==========================================
               TAB 6.5: BATCH PRICE LABELS DESIGNER (🏷️)
               ========================================== */}
+          {activeTab === 'shelf_tags' && (
+            <ShelfTagsTab
+              products={products}
+              promotions={promotions}
+              settings={settings}
+              lang={lang}
+              sysDate={SYS_DATE}
+              showToast={showToast}
+            />
+          )}
+
           {activeTab === 'price_labels' && (
             <PriceLabelsTab
               products={products}

@@ -1,4 +1,4 @@
-import { Archive, ArrowLeftRight, Barcode, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, User, Users } from 'lucide-react';
+import { Archive, ArrowLeftRight, Barcode, BadgeDollarSign, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, User, Users } from 'lucide-react';
 import { CartItem } from '../types';
 import React from 'react';
 
@@ -17,6 +17,7 @@ const menuItems = [
   { id: 'btn-nav-promotions', tab: 'promotions', labelAr: 'العروض الترويجية والخصم', labelEn: 'Promotions & Discounts', icon: Tag },
   { id: 'btn-nav-users', tab: 'users', labelAr: 'المستخدمين والصلاحيات', labelEn: 'Users & Permissions', icon: User },
   { id: 'btn-nav-firebase', tab: 'firebase_sync', labelAr: 'مزامنة السحاب', labelEn: 'Cloud Synchronization', icon: Cloud },
+  { id: 'btn-nav-shelf-tags', tab: 'shelf_tags', labelAr: 'ملصقات أسعار الرفوف', labelEn: 'Shelf Price Tags', icon: BadgeDollarSign },
   { id: 'btn-nav-price-labels', tab: 'price_labels', labelAr: 'بطاقات وملصقات الأسعار', labelEn: 'Price Labels Designer', icon: Barcode },
   { id: 'btn-nav-settings', tab: 'settings', labelAr: 'إعدادات النظام المتكاملة', labelEn: 'System Settings', icon: Settings },
 ];
