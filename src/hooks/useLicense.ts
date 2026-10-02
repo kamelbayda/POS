@@ -135,6 +135,24 @@ export function useLicense({ shopName, lang, showToast, onActivated }: Deps) {
     onActivated?.();
   };
 
+  /**
+   * Proves the person at the till owns this install, for "forgot password". On a licensed
+   * device the key must match the active licence; otherwise the key is activated now, which
+   * the server only allows for a valid key that is free or already bound to this device.
+   */
+  const verifyOwnerKey = async (rawKey: string): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const key = rawKey.trim().toUpperCase();
+    if (!key) return { ok: false, error: message('bad_request') };
+    if (isLicensed && license) {
+      return license.key === key ? { ok: true } : { ok: false, error: message('invalid_key') };
+    }
+    const result = await activateLicense(key, shopName);
+    if ('error' in result) return { ok: false, error: message(result.error) };
+    saveToken(result.token);
+    storage.removeItem(LEGACY_KEY);
+    return { ok: true };
+  };
+
   const deactivate = () => {
     saveToken(null);
     storage.removeItem(LEGACY_KEY);
@@ -155,6 +173,7 @@ export function useLicense({ shopName, lang, showToast, onActivated }: Deps) {
     activationErrorMsg,
     setActivationErrorMsg,
     applyActivation,
+    verifyOwnerKey,
     deactivate,
   };
 }

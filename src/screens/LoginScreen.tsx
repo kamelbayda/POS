@@ -13,6 +13,7 @@ interface LoginScreenProps {
   handleLogin: (e: React.FormEvent) => void;
   /** Show the factory default accounts only while their passwords were never changed. */
   showDefaultCredentials: boolean;
+  onForgotPassword: () => void;
 }
 
 export function LoginScreen({
@@ -26,6 +27,7 @@ export function LoginScreen({
   loginError,
   handleLogin,
   showDefaultCredentials,
+  onForgotPassword,
 }: LoginScreenProps) {
   return (
     <div className="min-h-screen bg-gradient-to-tr from-emerald-50 via-slate-50 to-emerald-100/30 flex items-center justify-center p-4" id="login-screen">
@@ -106,6 +108,15 @@ export function LoginScreen({
             className="w-full bg-[#1D9E75] hover:bg-[#15805e] text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-700/10 hover:shadow-emerald-700/20 active:scale-[0.98] cursor-pointer"
           >
             {lang === 'ar' ? 'دخول للنظام 🔓' : 'Login to System 🔓'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="w-full text-center text-sm font-bold text-[#1D9E75] hover:underline cursor-pointer"
+            id="btn-forgot-password"
+          >
+            {lang === 'ar' ? 'نسيت كلمة مرور المدير؟' : 'Forgot admin password?'}
           </button>
 
           {showDefaultCredentials && (

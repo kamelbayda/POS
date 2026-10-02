@@ -129,6 +129,7 @@ import { hashPassword, verifyPassword, needsRehash } from './lib/password';
 import { PurchasesTab } from './features/purchases/PurchasesTab';
 import { WarehouseTab } from './features/warehouse/WarehouseTab';
 import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
+import { ForgotPasswordModal } from './modals/ForgotPasswordModal';
 import { CloudBackupBanner } from './components/CloudBackupBanner';
 import { auth, shopDoc } from './firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
@@ -300,6 +301,7 @@ export default function App() {
 
   // --- SEAMLESS CUSTOMER SEARCH & SELECT ---
   const [showPurchaseContactModal, setShowPurchaseContactModal] = useState<boolean>(false);
+  const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
 
   // --- CONTACT / PURCHASE FORM STATES ---
   const [contactName, setContactName] = useState<string>('');
@@ -617,6 +619,7 @@ export default function App() {
   // IF NOT LOGGED IN, SHOW BEAUTIFUL LOGIN SCREEN
   if (!currentUser) {
     return (
+      <>
       <LoginScreen
         SYS_DATE={SYS_DATE}
         lang={lang}
@@ -628,7 +631,24 @@ export default function App() {
         loginError={loginError}
         handleLogin={handleLogin}
         showDefaultCredentials={!storage.getItem('pos_admin_passcode') && !storage.getItem('pos_cashier_passcode')}
+        onForgotPassword={() => setShowForgotPassword(true)}
       />
+      {showForgotPassword && (
+        <ForgotPasswordModal
+          lang={lang}
+          isLicensed={licenseState.isLicensed}
+          verifyOwnerKey={licenseState.verifyOwnerKey}
+          resetAdminPassword={(plain) => accounts.setAccountPassword('admin', plain)}
+          onClose={() => setShowForgotPassword(false)}
+          onDone={() => {
+            setShowForgotPassword(false);
+            setLoginUsername('admin');
+            setLoginPassword('');
+            showToast('success', lang === 'ar' ? 'تم تعيين كلمة مرور المدير الجديدة. سجّل الدخول بها الآن.' : 'New admin password set. Sign in with it now.');
+          }}
+        />
+      )}
+      </>
     );
   }
 
