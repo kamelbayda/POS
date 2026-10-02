@@ -28,6 +28,14 @@ import { Product, PurchaseInvoice, PurchaseItem, Category } from '../../types';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import * as storage from '../../lib/storage';
 
+// VAT on purchase lines: costPriceUSD is before VAT, taxRate is a percentage (Lebanon VAT is 11%)
+const VAT_PRESETS = [0, 11];
+type TaxedLine = { qty: number; costPriceUSD: number; taxRate?: number };
+/** Unit cost including VAT: what the shop really paid, used for the product cost and margins. */
+const landedCost = (line: TaxedLine) => line.costPriceUSD * (1 + (line.taxRate || 0) / 100);
+const draftTaxUSD = (lines: TaxedLine[]) =>
+  lines.reduce((acc, l) => acc + l.qty * l.costPriceUSD * ((l.taxRate || 0) / 100), 0);
+
 interface PurchasesTabProps {
   products: Product[];
   setProducts: (prods: Product[]) => void;
@@ -76,6 +84,7 @@ export function PurchasesTab({
     newPriceUSD: number;
     newPriceWholesale: number;
     expiryDate: string;
+    taxRate: number;
   }>>([]);
 
   // Product Selector search states
@@ -91,6 +100,8 @@ export function PurchasesTab({
   const [newProdSellRetail, setNewProdSellRetail] = useState<string>('');
   const [newProdSellWholesale, setNewProdSellWholesale] = useState<string>('');
   const [newProdExpiry, setNewProdExpiry] = useState<string>('');
+  const [newProdTaxRate, setNewProdTaxRate] = useState<string>('0');
+  const [newProdQty, setNewProdQty] = useState<string>('');
 
   const [quickMarginVal, setQuickMarginVal] = useState<string>('');
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
@@ -165,6 +176,14 @@ export function PurchasesTab({
 
   // --- ACTIONS ---
 
+  // The received quantity must be typed for every line, so focus it as soon as a line is added
+  const focusDraftQty = (productId: string) =>
+    setTimeout(() => {
+      const el = document.getElementById(`draft-qty-${productId}`) as HTMLInputElement | null;
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el?.focus();
+    }, 50);
+
   // Add selected product to draft list
   const handleAddProductToDraft = (prod: Product) => {
     // Check if ready in list
@@ -174,8 +193,10 @@ export function PurchasesTab({
       return;
     }
 
+    // The stored cost includes the VAT of the last purchase; the invoice line is entered before VAT
+    const lastTaxRate = prod.purchaseTaxRate || 0;
     const defaultCost = prod.costPriceUSD !== undefined && prod.costPriceUSD !== null
-      ? prod.costPriceUSD
+      ? Number((prod.costPriceUSD / (1 + lastTaxRate / 100)).toFixed(2))
       : (prod.priceWholesale !== undefined && prod.priceWholesale !== null
         ? prod.priceWholesale 
         : Number((prod.priceUSD * 0.75).toFixed(2)));
@@ -188,22 +209,30 @@ export function PurchasesTab({
       ...prev,
       {
         product: prod,
-        qty: 12, // Default standard package size like a dozen
+        qty: 0, // typed by the user: the received quantity from the supplier invoice
         costPriceUSD: defaultCost,
         newPriceUSD: prod.priceUSD,
         newPriceWholesale: defaultWholesale,
-        expiryDate: prod.expiryDate || ''
+        expiryDate: prod.expiryDate || '',
+        taxRate: lastTaxRate
       }
     ]);
 
     setProdSearchQuery('');
     setShowProdDropdown(false);
-    showToast('success', isAr ? `تمت إضافة [${prod.name}] لقائمة الأسعار والكميات.` : `Added [${prod.name}] to list.`);
+    focusDraftQty(prod.id);
+    showToast('success', isAr ? `تمت إضافة [${prod.name}]. اكتب الكمية المستلمة.` : `Added [${prod.name}]. Enter the received quantity.`);
   };
 
   // Handle Quick Add New Product to catalog directly
   const handleQuickAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    const quickQty = parseFloat(newProdQty) || 0;
+    if (quickQty <= 0) {
+      showToast('error', isAr ? 'الرجاء كتابة الكمية المستلمة من هذا الصنف!' : 'Please enter the received quantity!');
+      document.getElementById('quick-add-qty')?.focus();
+      return;
+    }
     if (!newProdName || !newProdBarcode) {
       showToast('error', isAr ? 'الرجاء ملء اسم الصنف الجديد والباركود!' : 'Name and Barcode are required!');
       return;
@@ -217,6 +246,7 @@ export function PurchasesTab({
     }
 
     const costNum = parseFloat(newProdCost) || 0;
+    const quickTaxRate = Math.max(0, parseFloat(newProdTaxRate) || 0);
     const sellRetailNum = parseFloat(newProdSellRetail) || 0;
     const sellWholesaleNum = parseFloat(newProdSellWholesale) || sellRetailNum * 0.9;
 
@@ -228,8 +258,9 @@ export function PurchasesTab({
       priceUSD: sellRetailNum,
       quantity: 0, // starts at zero, will be updated via the invoice submission
       expiryDate: newProdExpiry || sysDate,
-      costPriceUSD: costNum,
-      priceWholesale: sellWholesaleNum
+      costPriceUSD: Number((costNum * (1 + quickTaxRate / 100)).toFixed(2)), // VAT included, like saved invoices
+      priceWholesale: sellWholesaleNum,
+      purchaseTaxRate: quickTaxRate
     };
 
     // Append to master products list
@@ -242,11 +273,12 @@ export function PurchasesTab({
       ...prev,
       {
         product: newProd,
-        qty: 12,
+        qty: quickQty,
         costPriceUSD: costNum,
         newPriceUSD: sellRetailNum,
         newPriceWholesale: sellWholesaleNum,
-        expiryDate: newProdExpiry || sysDate
+        expiryDate: newProdExpiry || sysDate,
+        taxRate: quickTaxRate
       }
     ]);
 
@@ -257,6 +289,8 @@ export function PurchasesTab({
     setNewProdSellRetail('');
     setNewProdSellWholesale('');
     setNewProdExpiry('');
+    setNewProdTaxRate('0');
+    setNewProdQty('');
     setShowQuickAddForm(false);
 
     showToast('success', isAr ? `رائع! تم تسجيل [${newProd.name}] في النظام وإدراجه بالفاتورة.` : `Product [${newProd.name}] registered and added to draft invoice.`);
@@ -334,6 +368,12 @@ export function PurchasesTab({
       showToast('error', isAr ? 'يرجى كتابة اسم المورّد أو الشركة الموزعة لتوثيق الفاتورة.' : 'Supplier name is required!');
       return;
     }
+    const missingQty = draftItems.find(d => !(d.qty > 0));
+    if (missingQty) {
+      showToast('error', isAr ? `حدد الكمية المستلمة للصنف [${missingQty.product.name}] حتى تنضاف للمخزن.` : `Enter the received quantity for [${missingQty.product.name}].`);
+      focusDraftQty(missingQty.product.id);
+      return;
+    }
 
     // 1. Generate items for ledger storage
     const invoiceItemsToSave: PurchaseItem[] = draftItems.map(d => ({
@@ -344,12 +384,14 @@ export function PurchasesTab({
       costPriceUSD: d.costPriceUSD,
       newPriceUSD: d.newPriceUSD,
       newPriceWholesale: d.newPriceWholesale,
-      expiryDate: d.expiryDate
+      expiryDate: d.expiryDate,
+      taxRate: d.taxRate
     }));
 
     const totalItemsCost = draftItems.reduce((acc, item) => acc + (item.qty * item.costPriceUSD), 0);
+    const totalTax = draftTaxUSD(draftItems);
     const transCostNum = parseFloat(transportationCost) || 0;
-    const totalInvoiceAmount = totalItemsCost + transCostNum;
+    const totalInvoiceAmount = totalItemsCost + totalTax + transCostNum;
 
     const newPurchaseInvoice: PurchaseInvoice = {
       id: `pur-inv-${Date.now()}`,
@@ -361,7 +403,8 @@ export function PurchasesTab({
       paymentStatus: paymentStatus,
       note: note.trim(),
       destination: purchaseDestination,
-      transportationCostUSD: transCostNum
+      transportationCostUSD: transCostNum,
+      taxUSD: Number(totalTax.toFixed(2))
     };
 
     // 2. Update Master Products: increments stock quantities (to shop or warehouse), set new cost prices, retail prices, wholesale prices, and expiry dates!
@@ -373,7 +416,8 @@ export function PurchasesTab({
           ...prod,
           quantity: isToWarehouse ? prod.quantity : (prod.quantity + draftVal.qty), // add to retail shop if not to warehouse
           warehouseQuantity: isToWarehouse ? ((prod.warehouseQuantity || 0) + draftVal.qty) : (prod.warehouseQuantity || 0), // add to warehouse if selected
-          costPriceUSD: draftVal.costPriceUSD, // update cost
+          costPriceUSD: Number(landedCost(draftVal).toFixed(2)), // update cost (VAT included)
+          purchaseTaxRate: draftVal.taxRate,
           priceUSD: draftVal.newPriceUSD, // update retail price as requested
           priceWholesale: draftVal.newPriceWholesale, // update wholesale selling price
           expiryDate: draftVal.expiryDate || prod.expiryDate // update expiry date
@@ -449,6 +493,7 @@ export function PurchasesTab({
           newPriceUSD: number;
           newPriceWholesale: number;
           expiryDate: string;
+          taxRate: number;
         }> = [];
 
         scannedItemsList.forEach(item => {
@@ -464,7 +509,8 @@ export function PurchasesTab({
               costPriceUSD: item.costPriceUSD,
               newPriceUSD: calculatedPriceRetail,
               newPriceWholesale: calculatedPriceWholesale,
-              expiryDate: matchedProd.expiryDate || sysDate
+              expiryDate: matchedProd.expiryDate || sysDate,
+              taxRate: matchedProd.purchaseTaxRate || 0
             });
           }
         });
@@ -705,8 +751,9 @@ export function PurchasesTab({
               {/* Total Invoice Draft Calculation Card */}
               {(() => {
                 const totalItemsCost = draftItems.reduce((acc, item) => acc + (item.qty * item.costPriceUSD), 0);
+                const totalTax = draftTaxUSD(draftItems);
                 const transCostNum = parseFloat(transportationCost) || 0;
-                const grandTotalCost = totalItemsCost + transCostNum;
+                const grandTotalCost = totalItemsCost + totalTax + transCostNum;
 
                 return (
                   <div className="bg-slate-900 text-slate-100 p-4 rounded-xl space-y-2 border border-slate-800 text-right font-sans">
@@ -714,6 +761,12 @@ export function PurchasesTab({
                       <span className="font-mono">{totalItemsCost.toFixed(2)} $</span>
                       <span>{isAr ? 'إجمالي السلع:' : 'Items Total:'}</span>
                     </div>
+                    {totalTax > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-amber-300" id="purchase-draft-vat">
+                        <span className="font-mono">+ {totalTax.toFixed(2)} $</span>
+                        <span>{isAr ? 'الضريبة (TVA):' : 'VAT:'}</span>
+                      </div>
+                    )}
                     {transCostNum > 0 && (
                       <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-slate-400">
                         <span className="font-mono">+ {transCostNum.toFixed(2)} $</span>
@@ -847,7 +900,23 @@ export function PurchasesTab({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                      <div>
+                        <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة 📥:' : 'Received Qty 📥:'}</label>
+                        <input
+                          id="quick-add-qty"
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="any"
+                          required
+                          value={newProdQty}
+                          onChange={e => setNewProdQty(e.target.value)}
+                          className="w-full bg-white border-2 border-rose-300 focus:border-emerald-500 rounded-lg p-2 text-xs text-center font-mono font-black"
+                          placeholder={isAr ? 'مثال: 24' : 'e.g. 24'}
+                        />
+                      </div>
+
                       <div>
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر كلفة الشراء ($):' : 'Cost Price ($):'}</label>
                         <input 
@@ -861,6 +930,31 @@ export function PurchasesTab({
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
                           placeholder="0.00"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
+                        <div className="flex gap-1">
+                          <input
+                            id="quick-add-vat"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={newProdTaxRate}
+                            onChange={e => setNewProdTaxRate(e.target.value)}
+                            className="w-full min-w-0 bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
+                          />
+                          {VAT_PRESETS.filter(r => r > 0).map(r => (
+                            <button
+                              key={`quick-vat-${r}`}
+                              type="button"
+                              onClick={() => setNewProdTaxRate(parseFloat(newProdTaxRate) === r ? '0' : String(r))}
+                              className={`px-2 rounded-lg border text-[10px] font-black cursor-pointer shrink-0 ${parseFloat(newProdTaxRate) === r ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400'}`}
+                            >
+                              {r}%
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       <div>
@@ -905,7 +999,7 @@ export function PurchasesTab({
 
                     {/* --- DYNAMIC PRICING MARGIN ASSISTANT FOR QUICK NEW PRODUCT --- */}
                     {(() => {
-                      const qCost = parseFloat(newProdCost) || 0;
+                      const qCost = (parseFloat(newProdCost) || 0) * (1 + Math.max(0, parseFloat(newProdTaxRate) || 0) / 100); // VAT included
                       const qPrice = parseFloat(newProdSellRetail) || 0;
                       const qProfit = qPrice - qCost;
                       const qMargin = qPrice > 0 ? (qProfit / qPrice) * 100 : 0;
@@ -1188,7 +1282,7 @@ export function PurchasesTab({
                 <div className="space-y-4 font-sans text-right">
                   {draftItems.map((item, idx) => {
                     return (
-                      <div key={item.product.id} className="bg-slate-50 border border-slate-150 rounded-xl p-4 space-y-3 hover:border-slate-300 transition relative">
+                      <div key={item.product.id} className={`bg-slate-50 border rounded-xl p-4 space-y-3 transition relative ${item.qty > 0 ? 'border-slate-150 hover:border-slate-300' : 'border-rose-300'}`}>
                         
                         {/* Title and Category block */}
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 pb-2">
@@ -1196,7 +1290,8 @@ export function PurchasesTab({
                           {/* Row actions */}
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-emerald-600' font-extrabold text-xs bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded">
-                              {isAr ? 'المجموع:' : 'Sub:'} <span className="font-black">{(item.qty * item.costPriceUSD).toFixed(2)}$</span>
+                              {isAr ? 'المجموع:' : 'Sub:'} <span className="font-black">{(item.qty * landedCost(item)).toFixed(2)}$</span>
+                              {item.taxRate > 0 && <span className="text-[9px] font-bold text-amber-700 mr-1">{isAr ? `شامل ضريبة ${item.taxRate}%` : `incl. ${item.taxRate}% VAT`}</span>}
                             </span>
                             <button
                               onClick={() => handleRemoveFromDraft(idx)}
@@ -1221,18 +1316,22 @@ export function PurchasesTab({
                         </div>
 
                         {/* Editable properties: Inputs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 font-sans text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 font-sans text-xs">
                           
                           {/* 1. Qty to buy */}
                           <div>
-                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'الكمية المشتراة 📥:' : 'Purchased Qty 📥:'}</label>
+                            <label className={`block font-bold mb-1 text-[10px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${item.product.id}`}>{isAr ? 'الكمية المستلمة 📥 (مطلوب):' : 'Received Qty 📥 (required):'}</label>
                             <input
+                              id={`draft-qty-${item.product.id}`}
                               type="number"
-                              min="1"
+                              inputMode="decimal"
+                              min="0"
+                              step="any"
                               required
-                              value={item.qty}
-                              onChange={e => handleUpdateDraftField(idx, 'qty', Math.max(1, parseInt(e.target.value) || 0))}
-                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-black text-slate-800"
+                              placeholder={isAr ? 'الكمية' : 'Qty'}
+                              value={item.qty > 0 ? item.qty : ''}
+                              onChange={e => handleUpdateDraftField(idx, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className={`w-full rounded-lg p-1.5 text-center font-mono font-black text-slate-800 border-2 ${item.qty > 0 ? 'bg-white border-slate-200' : 'bg-rose-50 border-rose-400'}`}
                             />
                           </div>
 
@@ -1248,6 +1347,32 @@ export function PurchasesTab({
                               onChange={e => handleUpdateDraftField(idx, 'costPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))}
                               className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-slate-700"
                             />
+                          </div>
+
+                          {/* 2b. VAT charged by the supplier */}
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
+                            <div className="flex gap-1">
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.taxRate}
+                                onChange={e => handleUpdateDraftField(idx, 'taxRate', Math.max(0, parseFloat(e.target.value) || 0))}
+                                className="w-full min-w-0 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-slate-700"
+                                aria-label={isAr ? 'نسبة الضريبة' : 'VAT rate'}
+                              />
+                              {VAT_PRESETS.filter(r => r > 0).map(r => (
+                                <button
+                                  key={`vat-${idx}-${r}`}
+                                  type="button"
+                                  onClick={() => handleUpdateDraftField(idx, 'taxRate', item.taxRate === r ? 0 : r)}
+                                  className={`px-1.5 rounded-lg border text-[10px] font-black cursor-pointer shrink-0 ${item.taxRate === r ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400'}`}
+                                >
+                                  {r}%
+                                </button>
+                              ))}
+                            </div>
                           </div>
 
                           {/* 3. Retail Sell Price */}
@@ -1292,7 +1417,7 @@ export function PurchasesTab({
 
                         {/* --- INLINE DYNAMIC PRICING MARGIN ASSISTANT FOR DRAFT ITEM --- */}
                         {(() => {
-                          const dCost = item.costPriceUSD;
+                          const dCost = landedCost(item); // margins on the real cost, VAT included
                           const dPrice = item.newPriceUSD;
                           const dProfit = dPrice - dCost;
                           const dMargin = dPrice > 0 ? (dProfit / dPrice) * 100 : 0;
@@ -1669,6 +1794,7 @@ export function PurchasesTab({
 
                                               <td className="p-2 text-center font-mono text-slate-600 font-bold">
                                                 {i.costPriceUSD.toFixed(2)} $
+                                                {(i.taxRate || 0) > 0 && <span className="block text-[9px] text-amber-700">+{i.taxRate}% TVA</span>}
                                               </td>
 
                                               <td className="p-2 text-center font-mono text-slate-500 font-semibold bg-emerald-50/20">
@@ -1705,6 +1831,12 @@ export function PurchasesTab({
                                       </span>
                                     </div>
                                     <div className="flex gap-4 items-center flex-row-reverse flex-wrap">
+                                      {(inv.taxUSD || 0) > 0 && (
+                                        <span className="inline-flex items-center gap-1 font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
+                                          {isAr ? 'الضريبة (TVA): ' : 'VAT: '}
+                                          <strong className="font-mono text-amber-900">{(inv.taxUSD || 0).toFixed(2)} $</strong>
+                                        </span>
+                                      )}
                                       {inv.transportationCostUSD !== undefined && inv.transportationCostUSD > 0 && (
                                         <span className="inline-flex items-center gap-1 text-slate-600 font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
                                           🚚 {isAr ? `تكاليف المواصلات والشحن: ` : `Transportation Cost: `}
@@ -1714,7 +1846,7 @@ export function PurchasesTab({
                                       <span className="text-slate-500 font-medium">
                                         {isAr ? 'قيمة السلع الثنائية:' : 'Items cost:'}{' '}
                                         <strong className="font-mono bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
-                                          {(inv.totalAmountUSD - (inv.transportationCostUSD || 0)).toFixed(2)} $
+                                          {(inv.totalAmountUSD - (inv.transportationCostUSD || 0) - (inv.taxUSD || 0)).toFixed(2)} $
                                         </strong>
                                       </span>
                                     </div>
@@ -1798,6 +1930,7 @@ export function PurchasesTab({
                           </td>
                           <td className="p-3 text-center font-mono font-bold text-slate-700">
                             {it.costPriceUSD.toFixed(1)} $
+                            {(it.taxRate || 0) > 0 && <span className="block text-[9px] text-amber-700">+{it.taxRate}% TVA</span>}
                           </td>
                           <td className="p-3 text-center font-mono font-black text-slate-850">
                             {it.qty} {isAr ? 'قطع' : 'pcs'}
@@ -1818,7 +1951,8 @@ export function PurchasesTab({
               {/* Invoice Summary Card */}
               {(() => {
                 const transCost = activePrintPurchase.transportationCostUSD || 0;
-                const itemsCost = activePrintPurchase.totalAmountUSD - transCost;
+                const taxCost = activePrintPurchase.taxUSD || 0;
+                const itemsCost = activePrintPurchase.totalAmountUSD - transCost - taxCost;
 
                 return (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center text-xs gap-4">
@@ -1838,6 +1972,12 @@ export function PurchasesTab({
                         <span className="font-mono text-slate-700">{itemsCost.toFixed(2)} $</span>
                         <span className="text-slate-500">{isAr ? 'قيمة السلع:' : 'Items Value:'}</span>
                       </div>
+                      {taxCost > 0 && (
+                        <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
+                          <span className="font-mono text-amber-800">+{taxCost.toFixed(2)} $</span>
+                          <span className="text-slate-500">{isAr ? 'الضريبة (TVA):' : 'VAT:'}</span>
+                        </div>
+                      )}
                       {transCost > 0 && (
                         <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
                           <span className="font-mono text-amber-800">+{transCost.toFixed(2)} $</span>

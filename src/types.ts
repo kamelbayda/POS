@@ -23,6 +23,7 @@ export interface Product {
   image?: string; // Base64 or image URL
   isWeighed?: boolean; // Is sold by weight using scale
   plu?: string; // PLU code for electronic scales
+  purchaseTaxRate?: number; // VAT % on the last purchase; costPriceUSD includes it
 }
 
 export interface Category {
@@ -223,6 +224,7 @@ export interface PurchaseItem {
   newPriceUSD: number;
   newPriceWholesale?: number;
   expiryDate?: string;
+  taxRate?: number; // VAT % charged by the supplier on costPriceUSD (which is before VAT)
 }
 
 export interface PurchaseInvoice {
@@ -236,6 +238,7 @@ export interface PurchaseInvoice {
   note?: string;
   destination?: 'shop' | 'warehouse';
   transportationCostUSD?: number;
+  taxUSD?: number; // total VAT on the items, included in totalAmountUSD
 }
 
 export interface Supplier {
