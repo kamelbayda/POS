@@ -69,7 +69,7 @@ export function LoginScreen({
 
           <div>
             <label className="block text-slate-700 font-bold mb-1.5 text-sm text-right" htmlFor="username">
-              {lang === 'ar' ? 'اسم المستخدم' : 'Username'}
+              {lang === 'ar' ? 'الإيميل أو اسم المستخدم' : 'Email or username'}
             </label>
             <div className="relative">
               <input 
@@ -78,7 +78,9 @@ export function LoginScreen({
                 value={loginUsername}
                 onChange={e => setLoginUsername(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-right focus:outline-none focus:ring-2 focus:ring-[#1D9E75] focus:bg-white transition"
-                placeholder={lang === 'ar' ? 'مثال: admin' : 'e.g., admin'}
+                placeholder={lang === 'ar' ? 'name@email.com أو admin' : 'name@email.com or admin'}
+                autoCapitalize="none"
+                autoComplete="username"
                 required
               />
               <User className="absolute left-3.5 top-3.5 text-slate-400 w-5 h-5" />
@@ -116,7 +118,7 @@ export function LoginScreen({
             className="w-full text-center text-sm font-bold text-[#1D9E75] hover:underline cursor-pointer"
             id="btn-forgot-password"
           >
-            {lang === 'ar' ? 'نسيت اسم المستخدم أو كلمة المرور؟' : 'Forgot username or password?'}
+            {lang === 'ar' ? 'نسيت كلمة المرور؟ (بالإيميل وكود التفعيل)' : 'Forgot password? (email + activation key)'}
           </button>
 
           {showDefaultCredentials && (

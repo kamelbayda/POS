@@ -22,6 +22,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
   const [usersSearchQuery, setUsersSearchQuery] = useState<string>('');
   const [newUserUsername, setNewUserUsername] = useState<string>('');
   const [newUserFullname, setNewUserFullname] = useState<string>('');
+  const [newUserEmail, setNewUserEmail] = useState<string>('');
   const [newUserPassword, setNewUserPassword] = useState<string>('');
   const [newUserRole, setNewUserRole] = useState<Role>('cashier');
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -35,6 +36,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
     setEditingUser(null);
     setNewUserUsername('');
     setNewUserFullname('');
+    setNewUserEmail('');
     setNewUserPassword('');
     setNewUserRole('cashier');
   };
@@ -47,6 +49,20 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
 
     if (!username || !name) {
       showToast('error', 'الرجاء كتابة تفاصيل حساب الموظف بالكامل.');
+      return;
+    }
+    // The email is how the person signs in and recovers the account
+    const email = newUserEmail.trim().toLowerCase();
+    if (!email && !(editingUser && (editingUser.username === 'admin' || editingUser.username === 'kaseer'))) {
+      showToast('error', 'الرجاء كتابة إيميل الموظف: بيستعمله للدخول ولاسترجاع الحساب.');
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast('error', 'الإيميل مش مكتوب صح.');
+      return;
+    }
+    if (email && users.some(u => u.email === email && u.id !== editingUser?.id)) {
+      showToast('error', 'هالإيميل مسجّل لحساب تاني!');
       return;
     }
     const hashedPassword = newPassword ? await hashPassword(newPassword) : undefined;
@@ -64,7 +80,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
 
       const updated = users.map(u => {
         if (u.id !== editingUser.id) return u;
-        const updatedUser: User = { ...u, username, name, role: newUserRole };
+        const updatedUser: User = { ...u, username, name, role: newUserRole, email: email || undefined };
         if (newPassword) updatedUser.password = hashedPassword;
         return updatedUser;
       });
@@ -88,7 +104,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
         return;
       }
 
-      const newUser: User = { id: `usr-${Date.now()}`, username, name, role: newUserRole };
+      const newUser: User = { id: `usr-${Date.now()}`, username, name, role: newUserRole, email };
       if (newPassword) newUser.password = hashedPassword;
 
       saveUsers([...users, newUser]);
@@ -101,6 +117,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
     setEditingUser(user);
     setNewUserUsername(user.username);
     setNewUserFullname(user.name);
+    setNewUserEmail(user.email || '');
     setNewUserPassword(PASSWORD_MASK); // never show the stored password (it is a hash)
     setNewUserRole(user.role);
     document.getElementById('reg-user-form')?.scrollIntoView({ behavior: 'smooth' });
@@ -162,6 +179,23 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm text-right"
                   placeholder="مثلاً: أحمد فؤاد"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 mb-1 text-xs font-bold" htmlFor="user-email">
+                  {lang === 'ar' ? 'الإيميل (للدخول واسترجاع الحساب):' : 'Email (sign-in and account recovery):'}
+                </label>
+                <input
+                  id="user-email"
+                  type="email"
+                  dir="ltr"
+                  autoCapitalize="none"
+                  value={newUserEmail}
+                  onChange={e => setNewUserEmail(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm font-mono"
+                  placeholder="name@email.com"
+                  required={!(editingUser && (editingUser.username === 'admin' || editingUser.username === 'kaseer'))}
                 />
               </div>
 
@@ -273,6 +307,9 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
                     <div className="text-right">
                       <span className="font-bold text-slate-855 text-sm block">{u.name}</span>
                       <span className="text-xs text-slate-400 font-mono block">اسم الدخول: @{u.username}</span>
+                      {u.email
+                        ? <span className="text-xs text-emerald-700 font-mono block" dir="ltr">{u.email}</span>
+                        : <span className="text-[11px] text-amber-600 font-bold block">{lang === 'ar' ? '⚠️ بلا إيميل: ما بينفع يسترجع الحساب' : '⚠️ No email: cannot recover the account'}</span>}
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
                         u.role === 'admin' ? 'bg-indigo-50 text-indigo-700 border border-indigo-150' : u.role === 'accountant' ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-amber-50 text-amber-700 border border-amber-100'
                       }`}>
