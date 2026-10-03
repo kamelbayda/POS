@@ -651,13 +651,14 @@ export default function App() {
           lang={lang}
           isLicensed={licenseState.isLicensed}
           verifyOwnerKey={licenseState.verifyOwnerKey}
-          resetAdminPassword={(plain) => accounts.setAccountPassword('admin', plain)}
+          users={users}
+          resetPassword={(username, plain) => accounts.setAccountPassword(username, plain)}
           onClose={() => setShowForgotPassword(false)}
-          onDone={() => {
+          onDone={(username) => {
             setShowForgotPassword(false);
-            setLoginUsername('admin');
+            setLoginUsername(username);
             setLoginPassword('');
-            showToast('success', lang === 'ar' ? 'تم تعيين كلمة مرور المدير الجديدة. سجّل الدخول بها الآن.' : 'New admin password set. Sign in with it now.');
+            showToast('success', lang === 'ar' ? `تم تعيين كلمة مرور جديدة للحساب ${username}. سجّل الدخول بها الآن.` : `New password set for ${username}. Sign in with it now.`);
           }}
         />
       )}

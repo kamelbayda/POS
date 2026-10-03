@@ -116,7 +116,7 @@ export function LoginScreen({
             className="w-full text-center text-sm font-bold text-[#1D9E75] hover:underline cursor-pointer"
             id="btn-forgot-password"
           >
-            {lang === 'ar' ? 'نسيت كلمة مرور المدير؟' : 'Forgot admin password?'}
+            {lang === 'ar' ? 'نسيت اسم المستخدم أو كلمة المرور؟' : 'Forgot username or password?'}
           </button>
 
           {showDefaultCredentials && (
