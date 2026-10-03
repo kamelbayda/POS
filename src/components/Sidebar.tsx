@@ -1,4 +1,4 @@
-import { Archive, ArrowLeftRight, Barcode, BadgeDollarSign, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, User, Users } from 'lucide-react';
+import { Archive, ArrowLeftRight, Barcode, BadgeDollarSign, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, Truck, User, Users } from 'lucide-react';
 import { CartItem } from '../types';
 import React from 'react';
 
@@ -6,7 +6,8 @@ import React from 'react';
 // Sidebar navigation entries (id is used by tests and deep links)
 const menuItems = [
   { id: 'btn-nav-pos', tab: 'pos', labelAr: 'شاشة البيع المباشر', labelEn: 'Direct POS Screen', icon: ShoppingCart },
-  { id: 'btn-nav-inventory', tab: 'inventory', labelAr: 'إدارة المخزن والموردين', labelEn: 'Inventory & Stock', icon: Layers },
+  { id: 'btn-nav-inventory', tab: 'inventory', labelAr: 'إدارة المخزن', labelEn: 'Inventory & Stock', icon: Layers },
+  { id: 'btn-nav-suppliers', tab: 'suppliers', labelAr: 'الموردين', labelEn: 'Suppliers', icon: Truck },
   { id: 'btn-nav-customers', tab: 'customers', labelAr: 'حسابات الزبائن والديون', labelEn: 'Customers & Debts', icon: Users },
   { id: 'btn-nav-returns', tab: 'returns_waste', labelAr: 'المرتجعات والتالف', labelEn: 'Returns & Waste', icon: ArrowLeftRight },
   { id: 'btn-nav-purchases', tab: 'purchases', labelAr: 'فواتير المشتريات', labelEn: 'Purchase Invoices', icon: ShoppingBag },

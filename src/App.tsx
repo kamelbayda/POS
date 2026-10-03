@@ -77,6 +77,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier, CartSession } from './types';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, DEFAULT_USERS, getSeededProducts, getSeededInvoices, DEFAULT_CUSTOMERS, DEFAULT_SUPPLIERS, DEFAULT_PROMOTIONS, DEFAULT_EXPENSES } from './mockData';
 import { CustomersTab } from './features/customers/CustomersTab';
+import { SuppliersTab } from './features/suppliers/SuppliersTab';
 import { ReturnsWasteTab } from './features/returns-waste/ReturnsWasteTab';
 import { UsersTab } from './features/users/UsersTab';
 import { StockCountTab } from './features/stock-count/StockCountTab';
@@ -933,11 +934,21 @@ export default function App() {
             <CustomersTab 
               customers={customers}
               setCustomers={setCustomers}
+              lang={lang}
+              showToast={showToast}
+              invoices={invoices}
+            />
+          )}
+
+          {/* ==========================================
+              SUPPLIERS AND ACCOUNTS PAYABLE (🏢)
+              ========================================== */}
+          {activeTab === 'suppliers' && (
+            <SuppliersTab
               suppliers={suppliers}
               setSuppliers={setSuppliers}
               lang={lang}
               showToast={showToast}
-              invoices={invoices}
             />
           )}
 
