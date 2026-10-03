@@ -25,6 +25,8 @@ export interface CloudSyncDeps {
 }
 
 export type CloudSyncStatus = 'off' | 'aligning' | 'live' | 'declined';
+/** How a device joins a cloud shop that already has data. */
+export type AlignChoice = 'upload' | 'download' | 'cancel';
 
 const ALIGNED_KEY = 'pos_cloud_shop'; // uid of the cloud shop this device's data matches
 const PASSCODE_KEYS = { admin: 'pos_admin_passcode', kaseer: 'pos_cashier_passcode' } as const;
@@ -68,6 +70,21 @@ export function useCloudSync({ loaded, SYS_DATE, lang, lists, settings, setSetti
   const [uid, setUid] = useState<string | null>(null);
   const [status, setStatus] = useState<CloudSyncStatus>('off');
   const [attempt, setAttempt] = useState(0); // bumped to ask again after "declined"
+  // Waiting for the person to choose how this device joins a cloud shop with data
+  const [choicePending, setChoicePending] = useState(false);
+  const choiceResolver = useRef<((c: AlignChoice) => void) | null>(null);
+  // Set when the person asked to download from the login screen: no need to ask again
+  const presetChoice = useRef<AlignChoice | null>(null);
+  const askChoice = () => {
+    if (presetChoice.current) { const c = presetChoice.current; presetChoice.current = null; return Promise.resolve(c); }
+    setChoicePending(true);
+    return new Promise<AlignChoice>((resolve) => { choiceResolver.current = resolve; });
+  };
+  const resolveChoice = (c: AlignChoice) => {
+    setChoicePending(false);
+    choiceResolver.current?.(c);
+    choiceResolver.current = null;
+  };
 
   // Latest values for listeners (which outlive renders)
   const listsRef = useRef(lists);
@@ -100,12 +117,17 @@ export function useCloudSync({ loaded, SYS_DATE, lang, lists, settings, setSetti
           await uploadEverything();
           showToast('success', ar ? '☁️ تم رفع بيانات المحل. هلّق فيك تفوت بنفس الحساب من جهاز تاني.' : '☁️ Shop data uploaded. You can now sign in on another device.');
         } else {
-          const ok = window.confirm(ar
-            ? 'هالحساب فيه بيانات محل على السحاب.\n\nبدك تنزّلها على هالجهاز حتى يشتغل مع باقي الأجهزة؟\n\n⚠️ البيانات الحالية على هالجهاز بيحل محلها يلي عالسحاب.'
-            : 'This account already has shop data in the cloud.\n\nDownload it to this device so it works with the other devices?\n\n⚠️ The current data on this device will be replaced.');
-          if (!ok) { setStatus('declined'); return; }
-          await downloadEverything();
-          showToast('success', ar ? '☁️ تم تنزيل بيانات المحل. هالجهاز صار متزامن مع باقي الأجهزة.' : '☁️ Shop data downloaded. This device is now in sync.');
+          const choice = await askChoice();
+          if (cancelled) return;
+          if (choice === 'cancel') { setStatus('declined'); return; }
+          if (choice === 'upload') {
+            // This device's data goes up; records only the cloud has come down with live sync
+            await uploadEverything();
+            showToast('success', ar ? '☁️ تم رفع بيانات هالجهاز ودمجها مع السحاب.' : '☁️ This device\'s data was uploaded and merged with the cloud.');
+          } else {
+            await downloadEverything();
+            showToast('success', ar ? '☁️ تم تنزيل بيانات المحل. هالجهاز صار متزامن، وفيك تفوت بإيميلك وكلمة سرّك.' : '☁️ Shop data downloaded. This device is in sync; sign in with your email and password.');
+          }
         }
         if (cancelled) return;
         storage.setItem(ALIGNED_KEY, uid);
@@ -256,8 +278,17 @@ export function useCloudSync({ loaded, SYS_DATE, lang, lists, settings, setSetti
       // A list the cloud does not have yet (e.g. users uploaded by an older version) keeps this
       // device's copy; live sync then uploads it instead of wiping it here.
       if (snap.empty) continue;
-      const rows = snap.docs.map((d) => ({ ...(d.data() as DocumentData), id: d.id }));
-      if (spec.log) rows.sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')));
+      let rows: Array<{ id: string }> = snap.docs.map((d) => ({ ...(d.data() as DocumentData), id: d.id }));
+      if (spec.log) {
+        // Sales, returns... are never dropped: records only this device has are kept and uploaded
+        const inCloud = new Set(rows.map((r) => r.id));
+        const localOnly = (listsRef.current[spec.name]?.items ?? []).filter((r) => r?.id && !inCloud.has(r.id));
+        if (localOnly.length) {
+          await commit(localOnly.map((r) => { const data = JSON.parse(stable(r)); return (b) => b.set(shopDoc(spec.name, r.id), data); }));
+          rows = [...rows, ...localOnly];
+        }
+        rows.sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')));
+      }
       listsRef.current[spec.name]?.set(rows);
       storage.setJSON(spec.storageKey, rows);
     }
@@ -277,5 +308,20 @@ export function useCloudSync({ loaded, SYS_DATE, lang, lists, settings, setSetti
     if (pass) window.dispatchEvent(new Event(PASSCODES_CHANGED_EVENT));
   }
 
-  return { status, signedIn: !!uid, retry: () => setAttempt((n) => n + 1) };
+  return {
+    status,
+    signedIn: !!uid,
+    retry: () => setAttempt((n) => n + 1),
+    choicePending,
+    resolveChoice,
+    /**
+     * New device joining from the login screen: download the shop without asking, even if
+     * this device was linked to the cloud before. Call before (or right after) signing in.
+     */
+    joinByDownload: () => {
+      presetChoice.current = 'download';
+      storage.removeItem(ALIGNED_KEY);
+      setAttempt((n) => n + 1);
+    },
+  };
 }

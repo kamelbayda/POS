@@ -14,6 +14,8 @@ interface LoginScreenProps {
   /** Show the factory default accounts only while their passwords were never changed. */
   showDefaultCredentials: boolean;
   onForgotPassword: () => void;
+  /** New device: sign in to the shop's cloud account and download the shop. */
+  onJoinCloud: () => void;
 }
 
 export function LoginScreen({
@@ -28,6 +30,7 @@ export function LoginScreen({
   handleLogin,
   showDefaultCredentials,
   onForgotPassword,
+  onJoinCloud,
 }: LoginScreenProps) {
   return (
     <div className="min-h-screen bg-gradient-to-tr from-emerald-50 via-slate-50 to-emerald-100/30 flex items-center justify-center p-4" id="login-screen">
@@ -119,6 +122,15 @@ export function LoginScreen({
             id="btn-forgot-password"
           >
             {lang === 'ar' ? 'نسيت كلمة المرور؟ (بالإيميل وكود التفعيل)' : 'Forgot password? (email + activation key)'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onJoinCloud}
+            className="w-full text-center text-sm font-bold text-sky-700 hover:underline cursor-pointer"
+            id="btn-join-cloud"
+          >
+            {lang === 'ar' ? '☁️ جهاز جديد؟ نزّل بيانات المحل من السحاب' : '☁️ New device? Download the shop from the cloud'}
           </button>
 
           {showDefaultCredentials && (

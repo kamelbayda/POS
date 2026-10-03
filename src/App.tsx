@@ -133,6 +133,8 @@ import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
 import { ForgotPasswordModal } from './modals/ForgotPasswordModal';
 import { CloudBackupBanner } from './components/CloudBackupBanner';
 import { useCloudSync } from './hooks/useCloudSync';
+import { CloudAlignModal } from './components/CloudAlignModal';
+import { CloudJoinModal } from './components/CloudJoinModal';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 
 // System operational date base
@@ -292,6 +294,7 @@ export default function App() {
   // --- SEAMLESS CUSTOMER SEARCH & SELECT ---
   const [showPurchaseContactModal, setShowPurchaseContactModal] = useState<boolean>(false);
   const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
+  const [showCloudJoin, setShowCloudJoin] = useState<boolean>(false);
 
   // --- CONTACT / PURCHASE FORM STATES ---
   const [contactName, setContactName] = useState<string>('');
@@ -654,7 +657,12 @@ export default function App() {
         handleLogin={handleLogin}
         showDefaultCredentials={!storage.getItem('pos_admin_passcode') && !storage.getItem('pos_cashier_passcode')}
         onForgotPassword={() => setShowForgotPassword(true)}
+        onJoinCloud={() => setShowCloudJoin(true)}
       />
+      {showCloudJoin && (
+        <CloudJoinModal lang={lang} onBeforeSignIn={cloudSync.joinByDownload} onClose={() => setShowCloudJoin(false)} />
+      )}
+      {cloudSync.choicePending && <CloudAlignModal lang={lang} onChoose={cloudSync.resolveChoice} />}
       {showForgotPassword && (
         <ForgotPasswordModal
           lang={lang}
@@ -830,6 +838,8 @@ export default function App() {
         showToast={showToast}
         license={licenseState}
       />
+
+      {cloudSync.choicePending && <CloudAlignModal lang={lang} onChoose={cloudSync.resolveChoice} />}
 
       <CloudBackupBanner
         lang={lang}
