@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as storage from '../lib/storage';
 import { User } from '../types';
 import { hashPassword, verifyPassword, needsRehash } from '../lib/password';
+import { PASSCODES_CHANGED_EVENT } from '../lib/cloudSync';
 
 export interface UseAccountsDeps {
   lang: "ar" | "en";
@@ -50,6 +51,16 @@ export function useAccounts({
   const [cashierPasscode, setCashierPasscode] = useState<string>(() => {
     return storage.getItem('pos_cashier_passcode') || '1234';
   });
+
+  // Passwords changed on another device arrive through cloud sync
+  useEffect(() => {
+    const reload = () => {
+      setAdminPasscode(storage.getItem('pos_admin_passcode') || 'admin123');
+      setCashierPasscode(storage.getItem('pos_cashier_passcode') || '1234');
+    };
+    window.addEventListener(PASSCODES_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(PASSCODES_CHANGED_EVENT, reload);
+  }, []);
 
   const [adminRealName, setAdminRealName] = useState<string>(() => {
     return storage.getItem('pos_admin_real_name') || 'المدير المسؤول';

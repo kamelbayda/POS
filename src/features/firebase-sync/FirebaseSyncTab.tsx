@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { CloudSyncStatus } from '../../hooks/useCloudSync';
 import { 
   Cloud, 
   CloudOff, 
@@ -58,6 +59,8 @@ import * as storage from '../../lib/storage';
 
 interface FirebaseSyncTabProps {
   lang: 'ar' | 'en';
+  /** Live multi-device sync state (hooks/useCloudSync). */
+  liveSync: { status: CloudSyncStatus; retry: () => void };
   showToast: (type: 'success' | 'error' | 'warning', msg: string) => void;
   products: Product[];
   setProducts: (p: Product[]) => void;
@@ -114,6 +117,7 @@ async function batchWrite(entries: Array<[DocumentReference, object]>) {
 
 export function FirebaseSyncTab({
   lang,
+  liveSync,
   showToast,
   products,
   setProducts,
@@ -474,6 +478,29 @@ export function FirebaseSyncTab({
 
   return (
     <div className="space-y-6 text-right" id="tab-firebase-sync-view">
+      {/* Live multi-device sync status */}
+      <div id="live-sync-status" className={`rounded-2xl border p-4 flex flex-wrap items-center justify-between gap-3 ${
+        liveSync.status === 'live' ? 'bg-emerald-50 border-emerald-200' : liveSync.status === 'declined' ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
+        <div className="text-sm">
+          <div className="font-black text-slate-800">
+            {liveSync.status === 'live' && (isAr ? '🟢 المزامنة المباشرة شغّالة' : '🟢 Live sync is on')}
+            {liveSync.status === 'aligning' && (isAr ? '⏳ عم يجهّز المزامنة…' : '⏳ Preparing sync…')}
+            {liveSync.status === 'declined' && (isAr ? '🟡 هالجهاز مش مربوط بالمزامنة المباشرة' : '🟡 This device is not linked to live sync')}
+            {liveSync.status === 'off' && (isAr ? '⚪ المزامنة المباشرة مطفية (سجّل دخول تحت)' : '⚪ Live sync is off (sign in below)')}
+          </div>
+          <div className="text-xs text-slate-600 mt-1">
+            {isAr
+              ? 'كل الأجهزة يلي بتفوت بنفس الحساب بتشوف نفس الأصناف والأسعار والمبيعات خلال ثواني، وبتضل تشتغل بلا إنترنت.'
+              : 'Every device signed in to the same account sees the same products, prices and sales within seconds, and keeps working offline.'}
+          </div>
+        </div>
+        {liveSync.status === 'declined' && (
+          <button onClick={liveSync.retry} className="bg-amber-500 hover:bg-amber-600 text-white font-black text-xs px-4 py-2 rounded-xl cursor-pointer">
+            {isAr ? 'ربط هالجهاز (تنزيل بيانات السحاب)' : 'Link this device (download cloud data)'}
+          </button>
+        )}
+      </div>
+
       
       {/* 1. Header Banner */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-6 rounded-2xl shadow-sm relative overflow-hidden">

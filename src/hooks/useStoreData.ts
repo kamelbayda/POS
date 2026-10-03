@@ -36,6 +36,9 @@ export function useStoreData({
 
   const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>([]);
 
+  // True once everything has been read from localStorage (cloud sync waits for it)
+  const [loaded, setLoaded] = useState(false);
+
   // Load from local storage or seed
   useEffect(() => {
     // 1. Settings
@@ -165,9 +168,11 @@ export function useStoreData({
       storage.setJSON('pos_purchases', []);
       setPurchaseInvoices([]);
     }
+    setLoaded(true);
   }, []);
 
   return {
+    loaded,
     products,
     setProducts,
     categories,
