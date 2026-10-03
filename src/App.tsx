@@ -132,8 +132,7 @@ import { WarehouseTab } from './features/warehouse/WarehouseTab';
 import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
 import { ForgotPasswordModal } from './modals/ForgotPasswordModal';
 import { CloudBackupBanner } from './components/CloudBackupBanner';
-import { auth, shopDoc } from './firebase';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { useCloudSync } from './hooks/useCloudSync';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 
 // System operational date base
@@ -142,20 +141,9 @@ export default function App() {
   // Today's date (YYYY-MM-DD, local time); rolls over at midnight
   const SYS_DATE = useToday();
 
-  // --- FIREBASE LIVE SYNC WRITE-THROUGH HELPER ---
-  const syncWriteToCloud = async (collectionName: string, docId: string, data: any, isDelete: boolean = false) => {
-    if (!auth.currentUser) return;
-    try {
-      const docRef = shopDoc(collectionName, docId);
-      if (isDelete) {
-        await deleteDoc(docRef);
-      } else {
-        await setDoc(docRef, data);
-      }
-    } catch (err) {
-      console.warn(`Firestore sync skipped for ${collectionName}/${docId}:`, err);
-    }
-  };
+  // Cloud writes are done by useCloudSync, which mirrors every list as it changes (and sends
+  // stock and balances as increments). Feature hooks still call this; it is intentionally a no-op.
+  const syncWriteToCloud = async (_collectionName: string, _docId: string, _data: any, _isDelete: boolean = false) => {};
 
   // --- BILINGUAL & MULTI-PLATFORM DEVICE STATES ---
   const [lang, setLang] = useState<'ar' | 'en'>(() => {
@@ -201,6 +189,7 @@ export default function App() {
 
   const storeData = useStoreData({ SYS_DATE });
   const {
+    loaded: storeLoaded,
     products,
     setProducts,
     categories,
@@ -404,6 +393,29 @@ export default function App() {
   const showToast = (type: 'success' | 'error' | 'warning', message: string) => {
     setGeneralAlert({ type, message });
   };
+
+  // Live sync between every device signed in to the same cloud shop
+  const cloudSync = useCloudSync({
+    loaded: storeLoaded,
+    SYS_DATE,
+    lang,
+    lists: {
+      products: { items: products, set: setProducts },
+      categories: { items: categories, set: setCategories },
+      customers: { items: customers, set: setCustomers },
+      suppliers: { items: suppliers, set: setSuppliers },
+      promotions: { items: promotions, set: setPromotions },
+      users: { items: users, set: setUsers },
+      invoices: { items: invoices, set: setInvoices },
+      returns: { items: returns, set: setReturns },
+      waste: { items: waste, set: setWaste },
+      expenses: { items: expenses, set: setExpenses },
+      purchaseInvoices: { items: purchaseInvoices, set: setPurchaseInvoices },
+    },
+    settings,
+    setSettings,
+    showToast,
+  });
 
   const accounts = useAccounts({ lang, users, setUsers, currentUser, setCurrentUser, loginUsername, loginPassword, setLoginError, showToast });
   const {
@@ -1154,6 +1166,7 @@ export default function App() {
               ) : (
                 <FirebaseSyncTab
                   lang={lang}
+                  liveSync={cloudSync}
                   showToast={showToast}
                   products={products}
                   setProducts={setProducts}
