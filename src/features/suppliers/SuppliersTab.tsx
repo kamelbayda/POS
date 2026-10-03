@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Award, Calendar, Check, DollarSign, FileText, Plus, Trash, Users, X } from 'lucide-react';
+import { AlertTriangle, Award, Calendar, Check, DollarSign, FileText, Pencil, Plus, Trash, Users, X } from 'lucide-react';
 import { Supplier } from '../../types';
 import * as storage from '../../lib/storage';
 
@@ -24,11 +24,46 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
 
   const [suppSearch, setSuppSearch] = useState('');
 
+  // Supplier being edited in the form (null = the form adds a new supplier)
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setSuppName('');
+    setSuppPhone('');
+    setSuppCompany('');
+    setSuppDebt('0');
+  };
+
+  const startEdit = (supp: Supplier) => {
+    setEditingId(supp.id);
+    setSuppName(supp.name);
+    setSuppPhone(supp.phone && supp.phone !== 'N/A' ? supp.phone : '');
+    setSuppCompany(supp.companyName && supp.companyName !== 'N/A' ? supp.companyName : '');
+    setSuppDebt(String(supp.debtBalance || 0));
+    document.getElementById('supplier-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
   // --- SUPPLIER ACTIONS ---
   const handleAddSupplier = (e: React.FormEvent) => {
     e.preventDefault();
     if (!suppName.trim()) {
       showToast('error', lang === 'ar' ? 'الرجاء إدخال اسم المورد بشكل صحيح!' : 'Please enter supplier name');
+      return;
+    }
+
+    if (editingId) {
+      const updated = suppliers.map(s => s.id !== editingId ? s : {
+        ...s,
+        name: suppName.trim(),
+        phone: suppPhone.trim() || 'N/A',
+        companyName: suppCompany.trim() || 'N/A',
+        debtBalance: Math.max(0, parseFloat(suppDebt) || 0),
+      });
+      setSuppliers(updated);
+      storage.setJSON('pos_suppliers', updated);
+      showToast('success', lang === 'ar' ? `تم تعديل بيانات المورد [${suppName.trim()}].` : `Supplier [${suppName.trim()}] updated.`);
+      resetForm();
       return;
     }
 
@@ -44,11 +79,7 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
     setSuppliers(updated);
     storage.setJSON('pos_suppliers', updated);
 
-    // Clear form
-    setSuppName('');
-    setSuppPhone('');
-    setSuppCompany('');
-    setSuppDebt('0');
+    resetForm();
 
     showToast('success', lang === 'ar' ? `تم تسجيل المورد الجديد [${newSupplier.name}] بنجاح! 🏢` : `Supplier [${newSupplier.name}] registered successfully!`);
   };
@@ -93,6 +124,7 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
       const updated = suppliers.filter(s => s.id !== id);
       setSuppliers(updated);
       storage.setJSON('pos_suppliers', updated);
+      if (editingId === id) resetForm();
       showToast('success', lang === 'ar' ? 'تم حذف حساب المورد بنجاح.' : 'Supplier account removed.');
     }
   };
@@ -141,13 +173,13 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: Register Supplier */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs h-fit">
+            <div id="supplier-form" className={`bg-white p-5 rounded-2xl border shadow-xs h-fit scroll-mt-24 ${editingId ? 'border-sky-400 ring-2 ring-sky-100' : 'border-slate-200'}`}>
               <h3 className="font-extrabold text-slate-800 text-base mb-4 pb-2 border-b border-slate-100 text-right flex items-center gap-2 flex-row-reverse">
-                <Plus className="w-5 h-5 text-amber-500" />
-                <span>{lang === 'ar' ? 'تعريف وتسجيل مورد جديد' : 'Register New Supplier'}</span>
+                {editingId ? <Pencil className="w-5 h-5 text-sky-600" /> : <Plus className="w-5 h-5 text-amber-500" />}
+                <span>{editingId ? (lang === 'ar' ? 'تعديل بيانات المورد' : 'Edit Supplier') : (lang === 'ar' ? 'تعريف وتسجيل مورد جديد' : 'Register New Supplier')}</span>
               </h3>
 
-              <form onSubmit={handleAddSupplier} className="space-y-4">
+              <form onSubmit={handleAddSupplier} className="space-y-4" id="supplier-form-fields">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 text-right mb-1">
                     {lang === 'ar' ? 'اسم المورد / المسؤول (الكامل): *' : 'Supplier Representative Name: *'}
@@ -190,7 +222,9 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
 
                 <div>
                   <label className="block text-xs font-bold text-slate-500 text-right mb-1">
-                    {lang === 'ar' ? 'رصيد دين ابتدائي للمورد (إذا وجد) ($):' : 'Initial Outstanding Balance Owed ($):'}
+                    {editingId
+                      ? (lang === 'ar' ? 'المبلغ المستحق للمورد حالياً ($):' : 'Current Balance Owed ($):')
+                      : (lang === 'ar' ? 'رصيد دين ابتدائي للمورد (إذا وجد) ($):' : 'Initial Outstanding Balance Owed ($):')}
                   </label>
                   <input 
                     type="number" 
@@ -206,8 +240,13 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
                   className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-2.5 rounded-xl transition text-sm flex items-center justify-center gap-1.5 cursor-pointer mt-2"
                 >
                   <Check className="w-4 h-4" />
-                  <span>{lang === 'ar' ? 'حفظ المورد في السجلات المعرّفة' : 'Commit Supplier Account'}</span>
+                  <span>{editingId ? (lang === 'ar' ? 'حفظ التعديلات' : 'Save Changes') : (lang === 'ar' ? 'حفظ المورد في السجلات المعرّفة' : 'Commit Supplier Account')}</span>
                 </button>
+                {editingId && (
+                  <button type="button" onClick={resetForm} className="w-full border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold py-2 rounded-xl text-sm cursor-pointer">
+                    {lang === 'ar' ? 'إلغاء التعديل' : 'Cancel editing'}
+                  </button>
+                )}
               </form>
             </div>
 
@@ -256,14 +295,27 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
                           <p className="text-xs font-mono text-slate-400 mt-1">📞 {supp.phone}</p>
                         </div>
 
-                        {/* Right Delete trigger */}
-                        <button 
-                          onClick={() => handleDeleteSupplier(supp.id, supp.name)}
-                          className="text-slate-300 hover:text-rose-600 p-1.5 rounded transition cursor-pointer"
-                          title={lang === 'ar' ? 'حذف المورد' : 'Remove supplier'}
-                        >
-                          <Trash className="w-4 h-4" />
-                        </button>
+                        {/* Edit and delete */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => startEdit(supp)}
+                            className="flex items-center gap-1 text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+                            title={lang === 'ar' ? 'تعديل المورد' : 'Edit supplier'}
+                            data-edit-supplier={supp.id}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>{lang === 'ar' ? 'تعديل' : 'Edit'}</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSupplier(supp.id, supp.name)}
+                            className="flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+                            title={lang === 'ar' ? 'حذف المورد' : 'Remove supplier'}
+                            data-delete-supplier={supp.id}
+                          >
+                            <Trash className="w-3.5 h-3.5" />
+                            <span>{lang === 'ar' ? 'حذف' : 'Delete'}</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Financial indicators for money owed to supplier */}

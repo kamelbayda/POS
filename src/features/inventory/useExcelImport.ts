@@ -100,6 +100,7 @@ export function useExcelImport({
         const costIdx = findColIndex(['سعر التكلفة', 'cost', 'التكلفة', 'تكلفة']);
         const qtyIdx = findColIndex(['الكمية', 'quantity', 'qty', 'كمية']);
         const expiryIdx = findColIndex(['الانتهاء', 'expiry', 'date', 'تاريخ']);
+        const lbpIdx = findColIndex(['بالليرة', 'ليرة', 'lbp']);
         
         const finalNameIdx = nameIdx >= 0 ? nameIdx : 0;
         const finalBarcodeIdx = barcodeIdx >= 0 ? barcodeIdx : 1;
@@ -128,7 +129,10 @@ export function useExcelImport({
             continue;
           }
           
-          let originalBarcode = String(row[finalBarcodeIdx] || '').trim();
+          // Several barcodes for one product may be separated with | (e.g. exports from Aronium)
+          const allBarcodes = String(row[finalBarcodeIdx] || '').split('|').map(b => b.trim()).filter(Boolean);
+          let originalBarcode = allBarcodes[0] || '';
+          const extraBarcodes = allBarcodes.slice(1);
           const originalCategory = String(row[finalCategoryIdx] || 'عام').trim();
           
           const parseNumber = (val: any): number => {
@@ -142,6 +146,7 @@ export function useExcelImport({
           const priceWholesale = wholesaleIdx >= 0 && row[finalWholesaleIdx] !== undefined ? parseNumber(row[finalWholesaleIdx]) : undefined;
           const costPriceUSD = costIdx >= 0 && row[finalCostIdx] !== undefined ? parseNumber(row[finalCostIdx]) : undefined;
           const quantity = qtyIdx >= 0 ? parseNumber(row[finalQtyIdx]) : 0;
+          const priceLBP = lbpIdx >= 0 && row[lbpIdx] !== undefined && row[lbpIdx] !== '' ? parseNumber(row[lbpIdx]) : undefined;
           
           let expiryDate = '';
           const rawExpiry = row[finalExpiryIdx];
@@ -187,7 +192,9 @@ export function useExcelImport({
               priceWholesale: priceWholesale,
               costPriceUSD: costPriceUSD,
               quantity: quantity,
-              expiryDate: expiryDate
+              expiryDate: expiryDate,
+              ...(extraBarcodes.length ? { barcodes: extraBarcodes } : {}),
+              ...(priceLBP ? { priceLBP } : {}),
             },
             status: isNew ? 'new' : 'update',
             warning: !originalBarcode ? (lang === 'ar' ? 'سيتم توليد باركود تلقائيا' : 'Barcode will be auto-generated') : undefined
@@ -259,6 +266,8 @@ export function useExcelImport({
             priceUSD: p.priceUSD,
             priceWholesale: p.priceWholesale !== undefined ? p.priceWholesale : existingItem.priceWholesale,
             costPriceUSD: p.costPriceUSD !== undefined ? p.costPriceUSD : existingItem.costPriceUSD,
+            priceLBP: p.priceLBP !== undefined ? p.priceLBP : existingItem.priceLBP,
+            barcodes: p.barcodes?.length ? [...new Set([...(existingItem.barcodes || []), ...p.barcodes])] : existingItem.barcodes,
             quantity: p.quantity,
             expiryDate: p.expiryDate || existingItem.expiryDate || SYS_DATE
           };
