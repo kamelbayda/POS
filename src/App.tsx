@@ -394,6 +394,15 @@ export default function App() {
     setGeneralAlert({ type, message });
   };
 
+  // A device must always have accounts to sign in with (an empty list once came from an
+  // older cloud download); fall back to the defaults
+  useEffect(() => {
+    if (storeLoaded && users.length === 0) {
+      setUsers(DEFAULT_USERS);
+      storage.setJSON('pos_users', DEFAULT_USERS);
+    }
+  }, [storeLoaded, users.length]);
+
   // Live sync between every device signed in to the same cloud shop
   const cloudSync = useCloudSync({
     loaded: storeLoaded,
@@ -653,12 +662,17 @@ export default function App() {
           verifyOwnerKey={licenseState.verifyOwnerKey}
           users={users}
           resetPassword={(username, plain) => accounts.setAccountPassword(username, plain)}
+          linkEmail={(username, email) => setUsers(prev => {
+            const updated = prev.map(u => (u.username === username ? { ...u, email } : u));
+            storage.setJSON('pos_users', updated);
+            return updated;
+          })}
           onClose={() => setShowForgotPassword(false)}
-          onDone={(username) => {
+          onDone={(email) => {
             setShowForgotPassword(false);
-            setLoginUsername(username);
+            setLoginUsername(email);
             setLoginPassword('');
-            showToast('success', lang === 'ar' ? `تم تعيين كلمة مرور جديدة للحساب ${username}. سجّل الدخول بها الآن.` : `New password set for ${username}. Sign in with it now.`);
+            showToast('success', lang === 'ar' ? 'تم تعيين كلمة المرور الجديدة. سجّل الدخول بالإيميل وكلمة المرور الجديدة.' : 'New password set. Sign in with your email and the new password.');
           }}
         />
       )}

@@ -253,6 +253,9 @@ export function useCloudSync({ loaded, SYS_DATE, lang, lists, settings, setSetti
   async function downloadEverything() {
     for (const spec of SYNCED_COLLECTIONS) {
       const snap = await getDocs(shopCollection(spec.name));
+      // A list the cloud does not have yet (e.g. users uploaded by an older version) keeps this
+      // device's copy; live sync then uploads it instead of wiping it here.
+      if (snap.empty) continue;
       const rows = snap.docs.map((d) => ({ ...(d.data() as DocumentData), id: d.id }));
       if (spec.log) rows.sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')));
       listsRef.current[spec.name]?.set(rows);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyRound, X, UserRound } from 'lucide-react';
+import { KeyRound, X } from 'lucide-react';
 import { User } from '../types';
 
 interface ForgotPasswordModalProps {
@@ -9,36 +9,48 @@ interface ForgotPasswordModalProps {
   users: User[];
   verifyOwnerKey: (key: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   resetPassword: (username: string, plain: string) => Promise<void>;
+  /** Saves the email on an account (used to give the admin its first email). */
+  linkEmail: (username: string, email: string) => void;
   onClose: () => void;
-  /** Called with the account whose password was reset (to prefill the login form). */
-  onDone: (username: string) => void;
+  /** Called with the email to sign in with. */
+  onDone: (email: string) => void;
 }
 
 const MIN_LENGTH = 4;
-const ROLE_LABELS: Record<User['role'], { ar: string; en: string }> = {
-  admin: { ar: 'مدير', en: 'Admin' },
-  cashier: { ar: 'كاشير', en: 'Cashier' },
-  accountant: { ar: 'محاسب', en: 'Accountant' },
-};
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Recovers access with the activation key: step 1 proves ownership with the key
- * (the active one on a licensed device, or a valid key that activates now), step 2
- * shows every account's username and sets a new password for the chosen one.
+ * Account recovery with the account's email plus the shop's activation key (the active
+ * one on a licensed device, or a valid key that activates now). If no account has that
+ * email yet and the admin has none, the email is linked to the admin account.
  */
-export function ForgotPasswordModal({ lang, isLicensed, users, verifyOwnerKey, resetPassword, onClose, onDone }: ForgotPasswordModalProps) {
+export function ForgotPasswordModal({ lang, isLicensed, users, verifyOwnerKey, resetPassword, linkEmail, onClose, onDone }: ForgotPasswordModalProps) {
   const ar = lang === 'ar';
-  const [step, setStep] = useState<'key' | 'account'>('key');
+  const [step, setStep] = useState<'verify' | 'password'>('verify');
+  const [email, setEmail] = useState('');
   const [key, setKey] = useState('');
-  const [username, setUsername] = useState(() => users.find((u) => u.role === 'admin')?.username || users[0]?.username || 'admin');
+  const [account, setAccount] = useState<User | null>(null);
+  const [linkToAdmin, setLinkToAdmin] = useState(false);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const checkKey = async (e: React.FormEvent) => {
+  const verify = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const mail = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(mail)) {
+      setError(ar ? 'الإيميل مش مكتوب صح.' : 'Please enter a valid email.');
+      return;
+    }
+    const byEmail = users.find((u) => u.email === mail);
+    const admin = users.find((u) => u.username === 'admin') || users.find((u) => u.role === 'admin');
+    const canLinkAdmin = !byEmail && !!admin && !admin.email;
+    if (!byEmail && !canLinkAdmin) {
+      setError(ar ? 'ما في حساب مسجّل بهالإيميل على هالجهاز.' : 'No account on this device has that email.');
+      return;
+    }
     setBusy(true);
     const result = await verifyOwnerKey(key);
     setBusy(false);
@@ -46,7 +58,9 @@ export function ForgotPasswordModal({ lang, isLicensed, users, verifyOwnerKey, r
       setError(result.error);
       return;
     }
-    setStep('account');
+    setAccount(byEmail || admin!);
+    setLinkToAdmin(!byEmail);
+    setStep('password');
   };
 
   const save = async (e: React.FormEvent) => {
@@ -60,21 +74,23 @@ export function ForgotPasswordModal({ lang, isLicensed, users, verifyOwnerKey, r
       setError(ar ? 'كلمتا المرور غير متطابقتين.' : 'Passwords do not match.');
       return;
     }
+    const mail = email.trim().toLowerCase();
     setBusy(true);
-    await resetPassword(username, password);
+    if (linkToAdmin) linkEmail(account!.username, mail);
+    await resetPassword(account!.username, password);
     setBusy(false);
-    onDone(username);
+    onDone(mail);
   };
 
   const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#1D9E75] focus:bg-white transition';
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" id="forgot-password-modal" dir={ar ? 'rtl' : 'ltr'}>
-      <form onSubmit={step === 'key' ? checkKey : save} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4 text-start max-h-[92vh] overflow-y-auto">
+      <form onSubmit={step === 'verify' ? verify : save} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4 text-start max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="font-black text-slate-800 flex items-center gap-2">
             <KeyRound className="w-5 h-5 text-[#1D9E75]" />
-            {ar ? 'استعادة اسم المستخدم وكلمة المرور' : 'Recover username and password'}
+            {ar ? 'استرجاع الحساب' : 'Recover account'}
           </h2>
           <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label={ar ? 'إغلاق' : 'Close'}>
             <X className="w-5 h-5 text-slate-500" />
@@ -83,13 +99,17 @@ export function ForgotPasswordModal({ lang, isLicensed, users, verifyOwnerKey, r
 
         {error && <div className="bg-rose-50 border border-rose-100 text-rose-600 text-sm p-3 rounded-xl">{error}</div>}
 
-        {step === 'key' ? (
+        {step === 'verify' ? (
           <>
             <p className="text-xs text-slate-500 leading-relaxed">
-              {isLicensed
-                ? (ar ? 'أدخل كود التفعيل المفعّل على هذا الجهاز لعرض أسماء المستخدمين وتعيين كلمة مرور جديدة.' : 'Enter the activation key active on this device to see the usernames and set a new password.')
-                : (ar ? 'أدخل كود تفعيل صالح لهذا المحل (سيتم تفعيل البرنامج به) لعرض أسماء المستخدمين وتعيين كلمة مرور جديدة.' : 'Enter a valid activation key for this shop (the program will be activated with it) to see the usernames and set a new password.')}
+              {ar
+                ? `اكتب إيميل حسابك و${isLicensed ? 'كود التفعيل المفعّل على هالجهاز' : 'كود تفعيل صالح للمحل (البرنامج بيتفعّل فيه)'}، وبعدين بتختار كلمة مرور جديدة.`
+                : `Enter your account email and ${isLicensed ? 'the activation key active on this device' : 'a valid activation key for this shop (the program will be activated with it)'}, then choose a new password.`}
             </p>
+            <div>
+              <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="recovery-email">{ar ? 'الإيميل' : 'Email'}</label>
+              <input id="recovery-email" type="email" value={email} onChange={e => setEmail(e.target.value)} className={`${inputClass} font-mono`} dir="ltr" placeholder="name@email.com" autoCapitalize="none" autoComplete="email" required />
+            </div>
             <div>
               <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="recovery-key">{ar ? 'كود التفعيل' : 'Activation key'}</label>
               <input id="recovery-key" value={key} onChange={e => setKey(e.target.value)} className={`${inputClass} font-mono`} dir="ltr" placeholder="POS-XXXXX-XXXXX-XXXXX" autoComplete="off" required />
@@ -100,26 +120,17 @@ export function ForgotPasswordModal({ lang, isLicensed, users, verifyOwnerKey, r
           </>
         ) : (
           <>
-            <div>
-              <div className="text-slate-700 font-bold mb-1.5 text-sm">{ar ? 'الحسابات على هذا الجهاز (اختر حساباً):' : 'Accounts on this device (pick one):'}</div>
-              <div className="space-y-1.5" id="recovery-accounts">
-                {users.map((u) => (
-                  <label key={u.id} className={`flex items-center gap-3 border rounded-xl px-3 py-2 cursor-pointer ${username === u.username ? 'border-[#1D9E75] bg-emerald-50' : 'border-slate-200 hover:bg-slate-50'}`}>
-                    <input type="radio" name="recovery-user" checked={username === u.username} onChange={() => setUsername(u.username)} className="accent-[#1D9E75]" />
-                    <UserRound className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span className="flex-1 min-w-0">
-                      <span className="block font-mono font-black text-slate-800" dir="ltr" style={{ textAlign: ar ? 'right' : 'left' }}>{u.username}</span>
-                      <span className="block text-[11px] text-slate-500 truncate">{u.name}</span>
-                    </span>
-                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full shrink-0">{ROLE_LABELS[u.role]?.[lang] ?? u.role}</span>
-                  </label>
-                ))}
-              </div>
+            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-sm" id="recovery-account">
+              <div className="font-black text-slate-800">{account!.name}</div>
+              <div className="text-xs text-slate-600 font-mono" dir="ltr" style={{ textAlign: ar ? 'right' : 'left' }}>{email.trim().toLowerCase()}</div>
+              {linkToAdmin && (
+                <div className="text-xs text-amber-700 font-bold mt-1">
+                  {ar ? 'هالإيميل رح ينربط بحساب المدير، وبتفوت فيه من هلّق ورايح.' : 'This email will be linked to the admin account and used to sign in from now on.'}
+                </div>
+              )}
             </div>
             <div>
-              <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="recovery-password">
-                {ar ? 'كلمة مرور جديدة لـ ' : 'New password for '}<span className="font-mono" dir="ltr">{username}</span>
-              </label>
+              <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="recovery-password">{ar ? 'كلمة المرور الجديدة' : 'New password'}</label>
               <input id="recovery-password" type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputClass} autoComplete="new-password" required />
             </div>
             <div>

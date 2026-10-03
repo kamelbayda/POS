@@ -242,9 +242,10 @@ export function useAccounts({
     e.preventDefault();
     setLoginError('');
 
-    const matched = users.find(u => u.username === loginUsername);
+    const id = loginUsername.trim().toLowerCase();
+    const matched = users.find(u => u.username === id || (!!u.email && u.email === id));
     if (!matched) {
-      setLoginError('اسم المستخدم غير موجود بالنظام!');
+      setLoginError('لا يوجد حساب بهذا الإيميل أو اسم المستخدم!');
       return;
     }
 

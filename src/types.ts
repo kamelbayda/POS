@@ -102,6 +102,7 @@ export interface User {
   name: string;
   role: 'admin' | 'cashier' | 'accountant';
   password?: string;
+  email?: string; // login and account recovery (lowercase)
 }
 
 export interface PrinterConfig {
