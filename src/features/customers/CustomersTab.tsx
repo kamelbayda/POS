@@ -152,7 +152,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
   const totalPoints = customers.reduce((sum, c) => sum + c.loyaltyPoints, 0);
 
   return (
-    <div className="space-y-6" id="extensions-customers">
+    <div className="space-y-6 lg:flex-1 lg:flex lg:flex-col" id="extensions-customers">
       
       <>
           {/* Customers stats row */}
@@ -200,7 +200,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:flex-1">
             {/* Left Column: Register profile */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs h-fit">
               <h3 className="font-extrabold text-slate-800 text-base mb-4 pb-2 border-b border-slate-100 text-right flex items-center gap-2 flex-row-reverse">
@@ -274,7 +274,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
             </div>
 
             {/* Right Column: Customer items directory */}
-            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs h-[520px] flex flex-col">
+            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs h-[520px] lg:h-auto lg:min-h-[520px] flex flex-col">
               <div className="mb-4 pb-2 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
                 <h3 className="font-extrabold text-slate-800 text-base text-right flex items-center justify-start gap-2 flex-row-reverse shrink-0">
                   <Users className="w-5 h-5 text-emerald-600" />
@@ -294,7 +294,8 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
               </div>
 
               {/* Table container */}
-              <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 scrollbar-thin">
+              <div className="relative flex-1 min-h-0">
+              <div className="absolute inset-0 overflow-y-auto space-y-3.5 pr-1 scrollbar-thin">
                 {filteredCustomers.length === 0 ? (
                   <div className="text-center py-12 text-slate-400">
                     {lang === 'ar' ? 'لا يوجد نتائج للبحث الحالي.' : 'No customer accounts matches your search.'}
@@ -412,6 +413,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                     </div>
                   ))
                 )}
+              </div>
               </div>
             </div>
           </div>
