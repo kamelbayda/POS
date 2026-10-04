@@ -29,6 +29,9 @@ export interface Product {
   purchaseDiscountPercent?: number;
   bonusEvery?: number; // supplier bonus: for every N bought...
   bonusFree?: number; // ...M more come free
+  // Operating cost on top of the purchase cost (see lib/operatingCost.ts)
+  operatingCostUSD?: number; // fixed $ per unit
+  operatingCostPercent?: number; // % of the purchase cost
 }
 
 export interface Category {

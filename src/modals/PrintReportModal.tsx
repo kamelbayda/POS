@@ -2,6 +2,7 @@ import { Product, Invoice, SystemSettings, ReturnRecord, WasteRecord, ExpenseRec
 import { Printer, TrendingUp, DollarSign, Minus, ClipboardList, Hourglass, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import { printElementViaIFrame } from '../lib/print';
 import React from 'react';
+import { withOperatingCost } from '../lib/operatingCost';
 
 interface PrintReportModalProps {
   SYS_DATE: string;
@@ -38,11 +39,12 @@ export function PrintReportModal({
   const totalCOGS = invoices.reduce((sum, inv) => {
     const invCOGS = inv.items.reduce((itemSum, item) => {
       const prod = products.find(p => p.id === item.productId);
-      const cost = prod?.costPriceUSD !== undefined && prod?.costPriceUSD !== null
+      const baseCost = prod?.costPriceUSD !== undefined && prod?.costPriceUSD !== null
         ? prod.costPriceUSD 
         : (prod?.priceWholesale !== undefined && prod?.priceWholesale !== null
           ? prod.priceWholesale 
           : item.priceUSD * 0.75);
+      const cost = prod ? withOperatingCost(prod, baseCost) : baseCost;
       return itemSum + (cost * item.quantity);
     }, 0);
     return sum + invCOGS;
