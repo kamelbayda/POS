@@ -97,8 +97,9 @@ async function callServer(path: 'activate' | 'refresh', body: Record<string, str
   return { ok: true, token: data.token, payload };
 }
 
-export const activateLicense = (key: string, shopName: string) =>
-  callServer('activate', { key: key.trim().toUpperCase(), deviceId: getDeviceId(), shopName });
+/** `ownerEmail` lets the licence admin page show which customer a key belongs to. */
+export const activateLicense = (key: string, shopName: string, ownerEmail = '') =>
+  callServer('activate', { key: key.trim().toUpperCase(), deviceId: getDeviceId(), shopName, email: ownerEmail });
 
 export const refreshLicense = (key: string) =>
   callServer('refresh', { key, deviceId: getDeviceId() });

@@ -514,6 +514,7 @@ export default function App() {
   // Licence (verified offline, refreshed against the licence server when online)
   const licenseState = useLicense({
     shopName: settings.shopName,
+    ownerEmail: (users.find(u => u.username === 'admin')?.email || users.find(u => u.role === 'admin' && u.email)?.email || ''),
     lang,
     showToast,
     onActivated: () => {
