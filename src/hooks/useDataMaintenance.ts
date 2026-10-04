@@ -1,6 +1,7 @@
 import React from 'react';
 import { Product, Invoice, SystemSettings, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseInvoice, Supplier } from '../types';
 import * as storage from '../lib/storage';
+import { withOperatingCost } from '../lib/operatingCost';
 
 export interface UseDataMaintenanceDeps {
   lang: "ar" | "en";
@@ -50,7 +51,7 @@ export function useDataMaintenance({
       const cost = p.costPriceUSD;
       if (cost !== undefined && cost !== null && cost > 0) {
         count++;
-        const newPriceUSD = parseFloat((cost * (1 + margin / 100)).toFixed(2));
+        const newPriceUSD = parseFloat((withOperatingCost(p, cost) * (1 + margin / 100)).toFixed(2));
         const newPriceWholesale = parseFloat((newPriceUSD * 0.9).toFixed(2));
         return {
           ...p,

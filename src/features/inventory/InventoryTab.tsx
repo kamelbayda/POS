@@ -4,6 +4,7 @@ import { Category, Product, ProcessedProduct, SystemSettings, User } from '../..
 import { ColumnSelector } from '../../components/ColumnSelector';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
+import { withOperatingCost } from '../../lib/operatingCost';
 
 interface InventoryTabProps {
   products: Product[];
@@ -121,6 +122,8 @@ export function InventoryTab({
   const [newProdPriceUSD, setNewProdPriceUSD] = useState<string>('');
   const [newProdPriceWholesale, setNewProdPriceWholesale] = useState<string>('');
   const [newProdCostPriceUSD, setNewProdCostPriceUSD] = useState<string>('');
+  const [newProdOpCostUSD, setNewProdOpCostUSD] = useState<string>('');
+  const [newProdOpCostPct, setNewProdOpCostPct] = useState<string>('');
   const [newProdMinWholesaleQty, setNewProdMinWholesaleQty] = useState<string>('5');
   const [newProdSku, setNewProdSku] = useState<string>('');
   const [newProdQuantity, setNewProdQuantity] = useState<string>('10');
@@ -135,7 +138,11 @@ export function InventoryTab({
   const [customMarkupVal, setCustomMarkupVal] = useState<string>('');
 
   const numPrice = parseFloat(newProdPriceUSD) || 0;
-  const numCost = parseFloat(newProdCostPriceUSD) || 0;
+  const formOpCost = { operatingCostUSD: parseFloat(newProdOpCostUSD) || 0, operatingCostPercent: parseFloat(newProdOpCostPct) || 0 };
+  const numBaseCost = parseFloat(newProdCostPriceUSD) || 0;
+  // Margins and prices in the form use the full cost: purchase cost + operating cost
+  const numCost = withOperatingCost(formOpCost, numBaseCost);
+  const hasOpCost = formOpCost.operatingCostUSD > 0 || formOpCost.operatingCostPercent > 0;
   const rawProfit = numPrice - numCost;
   const currentMargin = numPrice > 0 ? (rawProfit / numPrice) * 100 : 0;
   const currentMarkup = numCost > 0 ? (rawProfit / numCost) * 100 : 0;
@@ -192,6 +199,8 @@ export function InventoryTab({
             minWholesaleQty: minWQty,
             sku,
             costPriceUSD: cost,
+            operatingCostUSD: formOpCost.operatingCostUSD || undefined,
+            operatingCostPercent: formOpCost.operatingCostPercent || undefined,
             image: newProdImage,
             isWeighed: newProdIsWeighed,
             plu: newProdPlu.trim(),
@@ -218,6 +227,8 @@ export function InventoryTab({
         minWholesaleQty: minWQty,
         sku,
         costPriceUSD: cost,
+        operatingCostUSD: formOpCost.operatingCostUSD || undefined,
+        operatingCostPercent: formOpCost.operatingCostPercent || undefined,
         image: newProdImage,
         isWeighed: newProdIsWeighed,
         plu: newProdPlu.trim(),
@@ -235,6 +246,8 @@ export function InventoryTab({
     setNewProdPriceUSD('');
     setNewProdPriceWholesale('');
     setNewProdCostPriceUSD('');
+    setNewProdOpCostUSD('');
+    setNewProdOpCostPct('');
     setNewProdMinWholesaleQty('5');
     setNewProdSku('');
     setNewProdQuantity('10');
@@ -256,6 +269,8 @@ export function InventoryTab({
     setNewProdPriceUSD(p.priceUSD.toString());
     setNewProdPriceWholesale(p.priceWholesale ? p.priceWholesale.toString() : (p.priceUSD * 0.9).toFixed(2));
     setNewProdCostPriceUSD(p.costPriceUSD ? p.costPriceUSD.toString() : (p.priceUSD * 0.75).toFixed(2));
+    setNewProdOpCostUSD(p.operatingCostUSD ? p.operatingCostUSD.toString() : '');
+    setNewProdOpCostPct(p.operatingCostPercent ? p.operatingCostPercent.toString() : '');
     setNewProdMinWholesaleQty(p.minWholesaleQty ? p.minWholesaleQty.toString() : '5');
     setNewProdSku(p.sku || '');
     setNewProdQuantity(p.quantity.toString());
@@ -326,7 +341,7 @@ export function InventoryTab({
         {/* --- COMPUTE AND ALERT PRODUCTS WITH LOW MARGINS (< 5%) --- */}
         {currentUser.role === 'admin' && (() => {
           const lowMarginProds = products.filter(p => {
-            const finalCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+            const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
             const profitAmount = p.priceUSD - finalCost;
             const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
             return marginPercent < 5;
@@ -514,7 +529,7 @@ export function InventoryTab({
                     const costNum = parseFloat(costVal);
                     if (!isNaN(costNum) && costNum > 0) {
                       const margin = settings.defaultMarginPercent !== undefined ? settings.defaultMarginPercent : 15;
-                      const calculatedPrice = costNum * (1 + margin / 100);
+                      const calculatedPrice = withOperatingCost(formOpCost, costNum) * (1 + margin / 100);
                       setNewProdPriceUSD(calculatedPrice.toFixed(2));
                       setNewProdPriceWholesale((calculatedPrice * 0.9).toFixed(2));
                     }
@@ -522,7 +537,7 @@ export function InventoryTab({
                   onBlur={e => {
                     handleMathBlur(e.target.value, setNewProdCostPriceUSD, (res) => {
                       const margin = settings.defaultMarginPercent !== undefined ? settings.defaultMarginPercent : 15;
-                      const calculatedPrice = res * (1 + margin / 100);
+                      const calculatedPrice = withOperatingCost(formOpCost, res) * (1 + margin / 100);
                       setNewProdPriceUSD(calculatedPrice.toFixed(2));
                       setNewProdPriceWholesale((calculatedPrice * 0.9).toFixed(2));
                     });
@@ -530,7 +545,7 @@ export function InventoryTab({
                   onKeyDown={e => {
                     handleMathKeyDown(e, e.currentTarget.value, setNewProdCostPriceUSD, (res) => {
                       const margin = settings.defaultMarginPercent !== undefined ? settings.defaultMarginPercent : 15;
-                      const calculatedPrice = res * (1 + margin / 100);
+                      const calculatedPrice = withOperatingCost(formOpCost, res) * (1 + margin / 100);
                       setNewProdPriceUSD(calculatedPrice.toFixed(2));
                       setNewProdPriceWholesale((calculatedPrice * 0.9).toFixed(2));
                     });
@@ -538,6 +553,39 @@ export function InventoryTab({
                   className="w-full bg-emerald-50/50 border border-emerald-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-emerald-500 font-bold text-emerald-900"
                   placeholder="مثلاً: 0.75"
                 />
+              </div>
+              <div>
+                <label className="block text-orange-800 mb-1 text-xs font-black" title="نقل، تبريد، تغليف... بتنضاف عالكلفة بحساب الربح">كلفة تشغيلية للقطعة ($):</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  id="prod-opcost-usd"
+                  value={newProdOpCostUSD}
+                  onChange={e => setNewProdOpCostUSD(e.target.value)}
+                  onBlur={e => handleMathBlur(e.target.value, setNewProdOpCostUSD)}
+                  onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdOpCostUSD)}
+                  className="w-full bg-orange-50/50 border border-orange-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-orange-400 font-bold text-orange-900"
+                  placeholder="مثلاً: 0.10"
+                />
+              </div>
+              <div>
+                <label className="block text-orange-800 mb-1 text-xs font-black" title="نسبة من سعر التكلفة">أو كلفة تشغيلية (% من التكلفة):</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  id="prod-opcost-pct"
+                  value={newProdOpCostPct}
+                  onChange={e => setNewProdOpCostPct(e.target.value)}
+                  onBlur={e => handleMathBlur(e.target.value, setNewProdOpCostPct)}
+                  onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdOpCostPct)}
+                  className="w-full bg-orange-50/50 border border-orange-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-orange-400 font-bold text-orange-900"
+                  placeholder="مثلاً: 5"
+                />
+                {hasOpCost && numBaseCost > 0 && (
+                  <span className="block text-[10px] text-orange-700 font-bold mt-0.5" id="prod-full-cost">
+                    الكلفة الكاملة: {numCost.toFixed(2)} $
+                  </span>
+                )}
               </div>
               <div>
                 <label className="block text-slate-600 mb-1 text-xs font-bold">حد أدنى للجملة:</label>
@@ -839,7 +887,7 @@ export function InventoryTab({
               {/* Analysis indicators */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
                 <div className="bg-white p-2 border border-emerald-50 rounded-lg">
-                  <span className="block text-[10px] text-slate-400 font-bold">سعر التكلفة المدخل</span>
+                  <span className="block text-[10px] text-slate-400 font-bold">{hasOpCost ? 'الكلفة الكاملة (مع التشغيلية)' : 'سعر التكلفة المدخل'}</span>
                   <span className="text-xs font-mono font-black text-slate-800">{numCost > 0 ? `${numCost.toFixed(2)} $` : '0.00 $'}</span>
                 </div>
                 <div className="bg-white p-2 border border-emerald-50 rounded-lg">
@@ -1418,7 +1466,7 @@ export function InventoryTab({
 
                   // Column-specific header filters (case-insensitive)
                   const computedPriceLBP = p.priceUSD * settings.exchangeRate;
-                  const finalCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+                  const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
                   const profitAmount = p.priceUSD - finalCost;
                   const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
 
@@ -1489,7 +1537,7 @@ export function InventoryTab({
 
                 return paginatedProducts.map(p => {
                   const computedPriceLBP = p.priceUSD * settings.exchangeRate;
-                  const finalCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+                  const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
                   const profitAmount = p.priceUSD - finalCost;
                   const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
                   const isLowMargin = currentUser.role === 'admin' && marginPercent < 5;
@@ -1701,7 +1749,7 @@ export function InventoryTab({
 
             // Column-specific header filters (case-insensitive)
             const computedPriceLBP = p.priceUSD * settings.exchangeRate;
-            const finalCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+            const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
             const profitAmount = p.priceUSD - finalCost;
             const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
 

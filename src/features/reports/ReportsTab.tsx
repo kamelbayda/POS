@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Calendar, Check, CheckCircle2, DollarSign, FileText, Globe, Hourglass, Layers, Printer, RefreshCw, Search, ShieldAlert, ShoppingBag, Trash2, TrendingUp } from 'lucide-react';
 import { ExpenseRecord, Invoice, Product, Promotion, ReturnRecord, SystemSettings, WasteRecord } from '../../types';
+import { withOperatingCost } from '../../lib/operatingCost';
 
 export type ReportType = 'dashboard' | 'pl' | 'expenses' | 'stock_audit' | 'expiry_report' | 'returns_report' | 'waste_report' | 'reorder_report';
 export type StockAuditLocation = 'shop' | 'warehouse' | 'combined';
@@ -116,11 +117,13 @@ export function ReportsTab({
   const totalCOGS = invoices.reduce((sum, inv) => {
     const invCOGS = inv.items.reduce((itemSum, item) => {
       const prod = products.find(p => p.id === item.productId);
-      const cost = prod?.costPriceUSD !== undefined && prod?.costPriceUSD !== null
+      const baseCost = prod?.costPriceUSD !== undefined && prod?.costPriceUSD !== null
         ? prod.costPriceUSD 
         : (prod?.priceWholesale !== undefined && prod?.priceWholesale !== null
           ? prod.priceWholesale 
           : item.priceUSD * 0.75);
+      // Cost of goods sold includes the product's operating cost
+      const cost = prod ? withOperatingCost(prod, baseCost) : baseCost;
       return itemSum + (cost * item.quantity);
     }, 0);
     return sum + invCOGS;
