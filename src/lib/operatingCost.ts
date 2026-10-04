@@ -15,3 +15,26 @@ export function operatingCostPerUnit(p: Pick<Product, 'operatingCostUSD' | 'oper
 export function withOperatingCost(p: Pick<Product, 'operatingCostUSD' | 'operatingCostPercent'>, baseCost: number): number {
   return baseCost + operatingCostPerUnit(p, baseCost);
 }
+
+/**
+ * Cost of the goods sold in these invoices, split into purchase cost and the products'
+ * operating cost. Products without a recorded cost fall back to their wholesale price,
+ * then to 75% of the sale price.
+ */
+export function costOfGoodsSold(
+  invoices: Array<{ items: Array<{ productId: string; priceUSD: number; quantity: number }> }>,
+  products: Product[],
+): { purchase: number; operating: number; total: number } {
+  const byId = new Map(products.map((p) => [p.id, p]));
+  let purchase = 0;
+  let operating = 0;
+  for (const inv of invoices) {
+    for (const item of inv.items) {
+      const prod = byId.get(item.productId);
+      const base = prod?.costPriceUSD ?? prod?.priceWholesale ?? item.priceUSD * 0.75;
+      purchase += base * item.quantity;
+      if (prod) operating += operatingCostPerUnit(prod, base) * item.quantity;
+    }
+  }
+  return { purchase, operating, total: purchase + operating };
+}

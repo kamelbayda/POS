@@ -2,7 +2,7 @@ import { Product, Invoice, SystemSettings, ReturnRecord, WasteRecord, ExpenseRec
 import { Printer, TrendingUp, DollarSign, Minus, ClipboardList, Hourglass, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import { printElementViaIFrame } from '../lib/print';
 import React from 'react';
-import { withOperatingCost } from '../lib/operatingCost';
+import { costOfGoodsSold } from '../lib/operatingCost';
 
 interface PrintReportModalProps {
   SYS_DATE: string;
@@ -36,19 +36,9 @@ export function PrintReportModal({
   topSoldProductsList,
 }: PrintReportModalProps) {
   // Safe accounting values computed dynamically
-  const totalCOGS = invoices.reduce((sum, inv) => {
-    const invCOGS = inv.items.reduce((itemSum, item) => {
-      const prod = products.find(p => p.id === item.productId);
-      const baseCost = prod?.costPriceUSD !== undefined && prod?.costPriceUSD !== null
-        ? prod.costPriceUSD 
-        : (prod?.priceWholesale !== undefined && prod?.priceWholesale !== null
-          ? prod.priceWholesale 
-          : item.priceUSD * 0.75);
-      const cost = prod ? withOperatingCost(prod, baseCost) : baseCost;
-      return itemSum + (cost * item.quantity);
-    }, 0);
-    return sum + invCOGS;
-  }, 0);
+  // Cost of goods sold: purchase cost plus the products' operating cost, shown apart
+  const cogs = costOfGoodsSold(invoices, products);
+  const totalCOGS = cogs.total;
 
   const grossProfit = totalSalesUSD - totalCOGS;
   const totalWasteLoss = waste.reduce((sum, item) => sum + (item.estimatedLossUSD || 0), 0);
@@ -626,7 +616,11 @@ export function PrintReportModal({
                 </div>
                 <div className="flex justify-between items-center text-xs pb-1 border-b border-dashed border-slate-300">
                   <span className="font-bold text-slate-700">تكلفة البضاعة المقدرة الأصلي (COGS):</span>
-                  <span className="font-mono font-bold text-rose-700">-{totalCOGS.toFixed(2)} $</span>
+                  <span className="font-mono font-bold text-rose-700">-{cogs.purchase.toFixed(2)} $</span>
+                </div>
+                <div className="flex justify-between items-center text-xs pb-1 border-b border-dashed border-slate-300">
+                  <span className="font-bold text-slate-700">الكلفة التشغيلية للأصناف المباعة:</span>
+                  <span className="font-mono font-bold text-rose-700">-{cogs.operating.toFixed(2)} $</span>
                 </div>
                 <div className="flex justify-between items-center text-xs p-2 rounded bg-emerald-50 border border-emerald-100">
                   <span className="font-extrabold text-[#1D9E75]">إجمالي الربح الإجمالي للنشاط (Gross Profit):</span>
