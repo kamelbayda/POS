@@ -1,5 +1,5 @@
 import { Globe, ShieldAlert, User, Lock } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import { BeeCashMark, BeeCashWordmark } from '../components/BeeCashLogo';
 
 interface LoginScreenProps {
@@ -12,8 +12,10 @@ interface LoginScreenProps {
   setLoginPassword: React.Dispatch<React.SetStateAction<string>>;
   loginError: string;
   handleLogin: (e: React.FormEvent) => void;
-  /** Show the factory default accounts only while their passwords were never changed. */
-  showDefaultCredentials: boolean;
+  /** A new shop whose admin account has no password yet: show the owner setup form. */
+  needsOwnerSetup: boolean;
+  /** Creates the owner's admin account and signs in; returns an error message or null. */
+  onCreateOwner: (name: string, email: string, password: string) => Promise<string | null>;
   onForgotPassword: () => void;
   /** New device: sign in to the shop's cloud account and download the shop. */
   onJoinCloud: () => void;
@@ -29,7 +31,8 @@ export function LoginScreen({
   setLoginPassword,
   loginError,
   handleLogin,
-  showDefaultCredentials,
+  needsOwnerSetup,
+  onCreateOwner,
   onForgotPassword,
   onJoinCloud,
 }: LoginScreenProps) {
@@ -62,6 +65,9 @@ export function LoginScreen({
           </p>
         </div>
 
+        {needsOwnerSetup ? (
+          <OwnerSetupForm lang={lang} onCreateOwner={onCreateOwner} onJoinCloud={onJoinCloud} />
+        ) : (
         <form onSubmit={handleLogin} className="p-8 space-y-5 text-right">
           {loginError && (
             <div className="bg-rose-50 border border-rose-100 text-rose-600 text-sm p-4 rounded-xl flex items-start gap-2 text-right">
@@ -81,7 +87,7 @@ export function LoginScreen({
                 value={loginUsername}
                 onChange={e => setLoginUsername(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-right focus:outline-none focus:ring-2 focus:ring-[#1D9E75] focus:bg-white transition"
-                placeholder={lang === 'ar' ? 'name@email.com أو admin' : 'name@email.com or admin'}
+                placeholder="name@email.com"
                 autoCapitalize="none"
                 autoComplete="username"
                 required
@@ -133,27 +139,89 @@ export function LoginScreen({
             {lang === 'ar' ? '☁️ جهاز جديد؟ نزّل بيانات المحل من السحاب' : '☁️ New device? Download the shop from the cloud'}
           </button>
 
-          {showDefaultCredentials && (
-          <div className="bg-slate-50 rounded-xl p-4 text-xs text-slate-500 space-y-1 border border-slate-100 text-right">
-            <div className="font-bold text-slate-700 mb-1">
-              {lang === 'ar' ? '💡 مستندات الدخول الافتراضية للتجربة:' : '💡 Experience Default Login Accounts:'}
-            </div>
-            <div>
-              {lang === 'ar' ? '• حساب المدير: ' : '• Admin Mode: '}
-              <span className="font-mono bg-slate-200 px-1 rounded text-red-700">admin</span>
-              {lang === 'ar' ? ' كلمة السر: ' : ' pass: '}
-              <span className="font-mono bg-slate-200 px-1 rounded text-red-700">admin123</span>
-            </div>
-            <div>
-              {lang === 'ar' ? '• حساب الكاشير: ' : '• Cashier Mode: '}
-              <span className="font-mono bg-slate-200 px-1 rounded text-red-700">kaseer</span>
-              {lang === 'ar' ? ' كلمة السر: ' : ' pass: '}
-              <span className="font-mono bg-slate-200 px-1 rounded text-red-700">1234</span>
-            </div>
-          </div>
-          )}
         </form>
+        )}
       </div>
     </div>
+  );
+}
+
+const MIN_PASSWORD = 4;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** First run of a new shop: the owner creates the admin account (no default passwords). */
+function OwnerSetupForm({ lang, onCreateOwner, onJoinCloud }: {
+  lang: 'ar' | 'en';
+  onCreateOwner: LoginScreenProps['onCreateOwner'];
+  onJoinCloud: () => void;
+}) {
+  const ar = lang === 'ar';
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!name.trim()) return setError(ar ? 'اكتب اسمك.' : 'Enter your name.');
+    if (!EMAIL_RE.test(email.trim())) return setError(ar ? 'الإيميل مش مكتوب صح.' : 'Please enter a valid email.');
+    if (password.length < MIN_PASSWORD) {
+      return setError(ar ? `كلمة المرور لازم تكون ${MIN_PASSWORD} أحرف أو أكتر.` : `Password must be at least ${MIN_PASSWORD} characters.`);
+    }
+    if (password !== confirm) return setError(ar ? 'كلمتا المرور مش متطابقتين.' : 'Passwords do not match.');
+    setBusy(true);
+    const err = await onCreateOwner(name, email, password);
+    setBusy(false);
+    if (err) setError(err);
+  };
+
+  const inputClass = 'w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#1D9E75] focus:bg-white transition';
+
+  return (
+    <form onSubmit={submit} className="p-8 space-y-4 text-right" id="owner-setup-form">
+      <div>
+        <h2 className="font-black text-slate-800 text-lg">{ar ? '👋 أهلاً فيك! أنشئ حساب المدير' : '👋 Welcome! Create the admin account'}</h2>
+        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+          {ar
+            ? 'هيدا حسابك إنت كصاحب المحل. بتفوت فيه بالإيميل وكلمة المرور، ومنو بتضيف حسابات الكاشير بعدين.'
+            : 'This is your owner account. You sign in with this email and password, and add cashier accounts from it later.'}
+        </p>
+      </div>
+
+      {error && (
+        <div className="bg-rose-50 border border-rose-100 text-rose-600 text-sm p-3 rounded-xl flex items-start gap-2">
+          <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="owner-name">{ar ? 'الاسم' : 'Name'}</label>
+        <input id="owner-name" value={name} onChange={e => setName(e.target.value)} className={inputClass} autoComplete="name" required />
+      </div>
+      <div>
+        <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="owner-email">{ar ? 'الإيميل' : 'Email'}</label>
+        <input id="owner-email" type="email" value={email} onChange={e => setEmail(e.target.value)} className={`${inputClass} font-mono`} dir="ltr" placeholder="name@email.com" autoCapitalize="none" autoComplete="email" required />
+      </div>
+      <div>
+        <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="owner-password">{ar ? 'كلمة المرور' : 'Password'}</label>
+        <input id="owner-password" type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputClass} autoComplete="new-password" required />
+      </div>
+      <div>
+        <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="owner-confirm">{ar ? 'تأكيد كلمة المرور' : 'Confirm password'}</label>
+        <input id="owner-confirm" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} className={inputClass} autoComplete="new-password" required />
+      </div>
+
+      <button type="submit" disabled={busy} className="w-full bg-[#1D9E75] hover:bg-[#15805e] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl transition cursor-pointer" id="btn-create-owner">
+        {busy ? (ar ? 'جارٍ الإنشاء…' : 'Creating…') : (ar ? 'إنشاء الحساب والدخول 🚀' : 'Create account and sign in 🚀')}
+      </button>
+
+      <button type="button" onClick={onJoinCloud} className="w-full text-center text-sm font-bold text-sky-700 hover:underline cursor-pointer" id="btn-join-cloud">
+        {ar ? '☁️ عندك محل عالسحاب؟ نزّل بياناتو' : '☁️ Already have a shop in the cloud? Download it'}
+      </button>
+    </form>
   );
 }
