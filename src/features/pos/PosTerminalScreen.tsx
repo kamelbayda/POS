@@ -27,6 +27,8 @@ interface PosTerminalScreenProps {
   processedProducts: { isExpired: boolean; isNearExpiry: boolean; lastSoldDate: string; daysSinceLastSale: number; isStagnant: boolean; id: string; name: string; barcode: string; barcodes?: string[]; category: string; priceUSD: number; priceLBP?: number; quantity: number; warehouseQuantity?: number; expiryDate: string; sku?: string; priceWholesale?: number; minWholesaleQty?: number; costPriceUSD?: number; image?: string; isWeighed?: boolean; plu?: string; }[];
   showToast: (type: "success" | "error" | "warning", message: string) => void;
   openCashDrawer: () => Promise<void>;
+  /** Signs the current user out (back to the login screen). */
+  handleLogout: () => void;
 }
 
 export function PosTerminalScreen({
@@ -51,6 +53,7 @@ export function PosTerminalScreen({
   processedProducts,
   showToast,
   openCashDrawer,
+  handleLogout,
 }: PosTerminalScreenProps) {
   const {
     cart,
@@ -209,6 +212,14 @@ export function PosTerminalScreen({
           >
             <Monitor className="w-3.5 h-3.5" />
             <span>{lang === 'ar' ? 'الانتقال للشاشة العادية' : 'Switch to Standard Screen'}</span>
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-black border ${theme === 'dark' ? 'bg-rose-950/40 border-rose-900 text-rose-300 hover:bg-rose-900/60' : 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100'}`}
+            id="btn-terminal-logout"
+          >
+            {lang === 'ar' ? 'تسجيل الخروج 👋' : 'Logout 👋'}
           </button>
 
         </div>

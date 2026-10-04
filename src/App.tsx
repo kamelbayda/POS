@@ -923,6 +923,7 @@ export default function App() {
               processedProducts={processedProducts}
               showToast={showToast}
               openCashDrawer={openCashDrawer}
+              handleLogout={handleLogout}
             />
           )}
 
