@@ -136,6 +136,7 @@ import { CloudBackupBanner } from './components/CloudBackupBanner';
 import { useCloudSync } from './hooks/useCloudSync';
 import { CloudAlignModal } from './components/CloudAlignModal';
 import { CloudJoinModal } from './components/CloudJoinModal';
+import { BeeCashWordmark } from './components/BeeCashLogo';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
@@ -1490,7 +1491,7 @@ export default function App() {
           © {new Date(SYS_DATE).getFullYear()} {settings.shopName}. جميع الحقوق محفوظة لمدير النظام.
         </p>
         <p className="mt-1">
-          تم تصميم ومطابقة نظام الـ POS المتكامل باستخدام الخط Tahoma الموحد لدعم العملة والجرود وتاريخ الصلاحيات.
+          🐝 {lang === 'ar' ? 'يعمل بنظام' : 'Powered by'} <BeeCashWordmark /> {lang === 'ar' ? '· نظام الكاشير والمخزون' : '· checkout & inventory'}
         </p>
       </footer>
     </div>
