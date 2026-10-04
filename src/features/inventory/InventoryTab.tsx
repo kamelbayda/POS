@@ -4,7 +4,7 @@ import { Category, Product, ProcessedProduct, SystemSettings, User } from '../..
 import { ColumnSelector } from '../../components/ColumnSelector';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
-import { withOperatingCost } from '../../lib/operatingCost';
+import { operatingCostPerUnit, withOperatingCost } from '../../lib/operatingCost';
 
 interface InventoryTabProps {
   products: Product[];
@@ -51,6 +51,7 @@ export function InventoryTab({
     barcode: '',
     category: '',
     cost: '',
+    opcost: '',
     profit: '',
     price_usd: '',
     price_lbp: '',
@@ -69,6 +70,7 @@ export function InventoryTab({
     barcode: true,
     category: true,
     cost: true,
+    opcost: true,
     profit: true,
     price_usd: true,
     price_lbp: true,
@@ -84,6 +86,7 @@ export function InventoryTab({
     { key: 'barcode', label: lang === 'ar' ? 'الباركود' : 'Barcode' },
     { key: 'category', label: lang === 'ar' ? 'الفئة' : 'Category' },
     { key: 'cost', label: lang === 'ar' ? 'التكلفة ($)' : 'Cost ($)' },
+    { key: 'opcost', label: lang === 'ar' ? 'الكلفة التشغيلية ($)' : 'Operating cost ($)' },
     { key: 'profit', label: lang === 'ar' ? 'هامش الربح (%)' : 'Margin (%)' },
     { key: 'price_usd', label: lang === 'ar' ? 'سعر البيع ($)' : 'Price ($)' },
     { key: 'price_lbp', label: lang === 'ar' ? 'السعر بالليرة' : 'Price LBP' },
@@ -100,6 +103,7 @@ export function InventoryTab({
     barcode: 150,
     category: 120,
     cost: 110,
+    opcost: 120,
     profit: 100,
     price_usd: 100,
     price_lbp: 120,
@@ -341,7 +345,9 @@ export function InventoryTab({
         {/* --- COMPUTE AND ALERT PRODUCTS WITH LOW MARGINS (< 5%) --- */}
         {currentUser.role === 'admin' && (() => {
           const lowMarginProds = products.filter(p => {
-            const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
+            const baseCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+            const opCost = operatingCostPerUnit(p, baseCost);
+            const finalCost = baseCost + opCost;
             const profitAmount = p.priceUSD - finalCost;
             const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
             return marginPercent < 5;
@@ -1115,6 +1121,7 @@ export function InventoryTab({
               {(currentUser.role === 'admin' || currentUser.role === 'accountant') && (
                 <>
                   {visibleInvCols.cost !== false && <col style={{ width: colWidths.cost }} />}
+                  {visibleInvCols.opcost !== false && <col style={{ width: colWidths.opcost }} />}
                   {visibleInvCols.profit !== false && <col style={{ width: colWidths.profit }} />}
                 </>
               )}
@@ -1226,6 +1233,29 @@ export function InventoryTab({
                         <div 
                           onPointerDown={e => handleResizeStart(e, 'cost')} 
                           className={`absolute ${lang === 'ar' ? 'left-0' : 'right-0'} top-0 bottom-0 w-1 bg-slate-300 hover:bg-[#1D9E75] cursor-col-resize active:bg-emerald-600 transition-all opacity-0 group-hover:opacity-100 hover:w-1.5 z-10`} 
+                        />
+                      </th>
+                    )}
+                    {visibleInvCols.opcost !== false && (
+                      <th className="p-3 relative group text-right select-none whitespace-nowrap" style={{ width: colWidths.opcost }}>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-extrabold">{lang === 'ar' ? 'الكلفة التشغيلية ($)' : 'Operating cost ($)'}</span>
+                          <input
+                            type="text"
+                            value={colFilters.opcost}
+                            onChange={e => {
+                              setColFilters(prev => ({ ...prev, opcost: e.target.value }));
+                              setInvCurrentPage(1);
+                            }}
+                            onPointerDown={e => e.stopPropagation()}
+                            onMouseDown={e => e.stopPropagation()}
+                            placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                            className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
+                          />
+                        </div>
+                        <div
+                          onPointerDown={e => handleResizeStart(e, 'opcost')}
+                          className={`absolute ${lang === 'ar' ? 'left-0' : 'right-0'} top-0 bottom-0 w-1 bg-slate-300 hover:bg-[#1D9E75] cursor-col-resize active:bg-emerald-600 transition-all opacity-0 group-hover:opacity-100 hover:w-1.5 z-10`}
                         />
                       </th>
                     )}
@@ -1466,7 +1496,9 @@ export function InventoryTab({
 
                   // Column-specific header filters (case-insensitive)
                   const computedPriceLBP = p.priceUSD * settings.exchangeRate;
-                  const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
+                  const baseCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+                  const opCost = operatingCostPerUnit(p, baseCost);
+                  const finalCost = baseCost + opCost;
                   const profitAmount = p.priceUSD - finalCost;
                   const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
 
@@ -1479,7 +1511,10 @@ export function InventoryTab({
                   if (colFilters.category && !categoryName.toLowerCase().includes(colFilters.category.toLowerCase().trim())) {
                     return false;
                   }
-                  if (currentUser.role === 'admin' && colFilters.cost && !finalCost.toFixed(2).includes(colFilters.cost.trim())) {
+                  if (currentUser.role === 'admin' && colFilters.cost && !baseCost.toFixed(2).includes(colFilters.cost.trim())) {
+                    return false;
+                  }
+                  if (currentUser.role === 'admin' && colFilters.opcost && !opCost.toFixed(2).includes(colFilters.opcost.trim())) {
                     return false;
                   }
                   if (currentUser.role === 'admin' && colFilters.profit && !marginPercent.toFixed(1).includes(colFilters.profit.trim())) {
@@ -1516,7 +1551,7 @@ export function InventoryTab({
                 if (filteredInventoryProducts.length === 0) {
                   const activeColsCount = Object.keys(visibleInvCols).filter(k => {
                     if (visibleInvCols[k] === false) return false;
-                    if ((k === 'cost' || k === 'profit') && currentUser.role !== 'admin') return false;
+                    if ((k === 'cost' || k === 'opcost' || k === 'profit') && currentUser.role !== 'admin') return false;
                     return true;
                   }).length;
                   return (
@@ -1537,7 +1572,9 @@ export function InventoryTab({
 
                 return paginatedProducts.map(p => {
                   const computedPriceLBP = p.priceUSD * settings.exchangeRate;
-                  const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
+                  const baseCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+                  const opCost = operatingCostPerUnit(p, baseCost);
+                  const finalCost = baseCost + opCost;
                   const profitAmount = p.priceUSD - finalCost;
                   const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
                   const isLowMargin = currentUser.role === 'admin' && marginPercent < 5;
@@ -1593,7 +1630,18 @@ export function InventoryTab({
                       {/* 4. Admin Cost */}
                       {(currentUser.role === 'admin' || currentUser.role === 'accountant') && visibleInvCols.cost !== false && (
                         <td className="p-3 font-mono font-bold text-amber-700 bg-amber-50/30 overflow-hidden text-ellipsis whitespace-nowrap">
-                          {finalCost.toFixed(2)} $
+                          {baseCost.toFixed(2)} $
+                        </td>
+                      )}
+
+                      {/* 4b. Admin Operating Cost */}
+                      {(currentUser.role === 'admin' || currentUser.role === 'accountant') && visibleInvCols.opcost !== false && (
+                        <td className="p-3 font-mono font-bold overflow-hidden text-ellipsis whitespace-nowrap" title={opCost > 0 ? [p.operatingCostPercent ? `${p.operatingCostPercent}% من التكلفة` : '', p.operatingCostUSD ? `${p.operatingCostUSD} $ للقطعة` : '', `الكلفة الكاملة: ${finalCost.toFixed(2)} $`].filter(Boolean).join(' · ') : undefined}>
+                          {opCost > 0 ? (
+                            <span className="text-orange-700">{opCost.toFixed(2)} $</span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
                         </td>
                       )}
 
@@ -1749,7 +1797,9 @@ export function InventoryTab({
 
             // Column-specific header filters (case-insensitive)
             const computedPriceLBP = p.priceUSD * settings.exchangeRate;
-            const finalCost = withOperatingCost(p, p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75));
+            const baseCost = p.costPriceUSD || (p.priceWholesale ? p.priceWholesale * 0.95 : p.priceUSD * 0.75);
+            const opCost = operatingCostPerUnit(p, baseCost);
+            const finalCost = baseCost + opCost;
             const profitAmount = p.priceUSD - finalCost;
             const marginPercent = p.priceUSD > 0 ? (profitAmount / p.priceUSD) * 100 : 0;
 
@@ -1762,7 +1812,10 @@ export function InventoryTab({
             if (colFilters.category && !categoryName.toLowerCase().includes(colFilters.category.toLowerCase().trim())) {
               return false;
             }
-            if (currentUser.role === 'admin' && colFilters.cost && !finalCost.toFixed(2).includes(colFilters.cost.trim())) {
+            if (currentUser.role === 'admin' && colFilters.cost && !baseCost.toFixed(2).includes(colFilters.cost.trim())) {
+              return false;
+            }
+            if (currentUser.role === 'admin' && colFilters.opcost && !opCost.toFixed(2).includes(colFilters.opcost.trim())) {
               return false;
             }
             if (currentUser.role === 'admin' && colFilters.profit && !marginPercent.toFixed(1).includes(colFilters.profit.trim())) {
