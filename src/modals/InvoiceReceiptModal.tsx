@@ -499,28 +499,28 @@ export function InvoiceReceiptModal({
 
                   {/* Receipt Details Box */}
                   <div className="space-y-1 block text-stone-700 bg-stone-100 p-2 rounded-lg border border-stone-250 font-sans text-right mt-2">
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="font-mono font-black text-stone-950">#{showInvoiceReceipt.invoiceNumber}</span>
+                    <div className="flex flex-row-reverse justify-between items-center text-[10px]">
+                      <span dir="ltr" className="font-mono font-black text-stone-950">#{showInvoiceReceipt.invoiceNumber}</span>
                       <span className="font-extrabold text-stone-600">رقم الفاتورة:</span>
                     </div>
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="font-mono text-stone-955">{showInvoiceReceipt.date} | {showInvoiceReceipt.time}</span>
+                    <div className="flex flex-row-reverse justify-between items-center text-[10px]">
+                      <span dir="ltr" className="font-mono text-stone-955">{showInvoiceReceipt.date} | {showInvoiceReceipt.time}</span>
                       <span className="text-stone-600">تاريخ ووقت المعاملة:</span>
                     </div>
                     {showReceiptCashier && (
-                      <div className="flex justify-between items-center text-[10px]">
+                      <div className="flex flex-row-reverse justify-between items-center text-[10px]">
                         <span className="font-bold text-stone-950">{showInvoiceReceipt.cashier}</span>
                         <span className="text-stone-600">المستخدم الكاشير:</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center text-[10px]">
+                    <div className="flex flex-row-reverse justify-between items-center text-[10px]">
                       <span className="font-bold text-stone-950 bg-stone-250 px-1.5 py-0.5 rounded text-[9px]">
                         {showInvoiceReceipt.paymentMethod === 'cash' ? 'كاش (Cash)' : showInvoiceReceipt.paymentMethod === 'debt' ? 'آجل (دين)' : 'بطاقة دفع'}
                       </span>
                       <span className="text-stone-600">طريقة السداد الماكينة:</span>
                     </div>
-                    <div className="flex justify-between items-center text-[10px] border-t border-stone-250 mt-1 pt-1">
-                      <span className="font-mono font-bold text-stone-905">{showInvoiceReceipt.exchangeRate.toLocaleString()} L.L.</span>
+                    <div className="flex flex-row-reverse justify-between items-center text-[10px] border-t border-stone-250 mt-1 pt-1">
+                      <span dir="ltr" className="font-mono font-bold text-stone-905">{showInvoiceReceipt.exchangeRate.toLocaleString()} ل.ل</span>
                       <span className="text-stone-600">سعر الصرف المطبق:</span>
                     </div>
                   </div>
@@ -549,25 +549,25 @@ export function InvoiceReceiptModal({
 
                   {/* premium styled invoice pricing summary */}
                   <div className="space-y-1 text-stone-900 text-right font-sans">
-                    <div className="flex justify-between text-[11px]">
-                      <span className="font-mono font-bold text-stone-800">${showInvoiceReceipt.subtotalUSD.toFixed(2)}</span>
+                    <div className="flex flex-row-reverse justify-between text-[11px]">
+                      <span dir="ltr" className="font-mono font-bold text-stone-800">${showInvoiceReceipt.subtotalUSD.toFixed(2)}</span>
                       <span className="text-stone-600 font-bold">المجموع الفرعي الإجمالي:</span>
                     </div>
                     {showInvoiceReceipt.discountUSD > 0 && (
-                      <div className="flex justify-between text-[11px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-md animate-pulse">
-                        <span className="font-mono font-black">-${showInvoiceReceipt.discountUSD.toFixed(2)}</span>
+                      <div className="flex flex-row-reverse justify-between text-[11px] text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-md animate-pulse">
+                        <span dir="ltr" className="font-mono font-black">-${showInvoiceReceipt.discountUSD.toFixed(2)}</span>
                         <span>الخصم التسويقي الممنوح:</span>
                       </div>
                     )}
 
                     {/* Light styled total block */}
                     <div className="bg-stone-100 text-stone-955 rounded-xl p-3.5 my-2.5 space-y-1 text-right border-r-4 border-emerald-600 shadow-xs border border-stone-250 font-sans">
-                      <div className="flex justify-between items-center">
-                        <span className="font-mono font-black text-base text-emerald-700">${showInvoiceReceipt.totalUSD.toFixed(2)}</span>
+                      <div className="flex flex-row-reverse justify-between items-center">
+                        <span dir="ltr" className="font-mono font-black text-base text-emerald-700">${showInvoiceReceipt.totalUSD.toFixed(2)}</span>
                         <span className="text-xs font-black tracking-wide text-stone-900">الصافي للدفع (دولار):</span>
                       </div>
-                      <div className="flex justify-between items-center border-t border-stone-350 pt-1.5 mt-1">
-                        <span className="font-mono font-black text-base text-stone-955">{Math.ceil(showInvoiceReceipt.totalLBP).toLocaleString()} ل.ل</span>
+                      <div className="flex flex-row-reverse justify-between items-center border-t border-stone-350 pt-1.5 mt-1">
+                        <span dir="ltr" className="font-mono font-black text-base text-stone-955">{Math.ceil(showInvoiceReceipt.totalLBP).toLocaleString()} ل.ل</span>
                         <span className="text-xs font-black tracking-wide text-stone-900 font-bold">الصافي للدفع (ليرة):</span>
                       </div>
                     </div>
@@ -579,42 +579,42 @@ export function InvoiceReceiptModal({
                       <div className="font-black text-stone-905 border-b border-stone-300 pb-1 mb-1 text-center text-[10px] flex items-center justify-center gap-1">
                         <span>🔄 تفصيل المدفوعات ومطابقة الصرف</span>
                       </div>
-                      <div className="flex justify-between font-bold leading-none text-stone-900">
-                        <span className="font-mono">1$ = {showInvoiceReceipt.exchangeRate.toLocaleString()} L.L.</span>
+                      <div className="flex flex-row-reverse justify-between font-bold leading-none text-stone-900">
+                        <span dir="ltr" className="font-mono">1$ = {showInvoiceReceipt.exchangeRate.toLocaleString()} ل.ل</span>
                         <span className="text-stone-600">سعر الصرف لليوم:</span>
                       </div>
                       <div className="text-stone-300 text-[8px] my-0.5 text-center">-----------------------------------</div>
-                      <div className="flex justify-between text-[10px] text-stone-700">
-                        <span className="font-mono text-stone-900">${showInvoiceReceipt.totalUSD.toFixed(2)}</span>
+                      <div className="flex flex-row-reverse justify-between text-[10px] text-stone-700">
+                        <span dir="ltr" className="font-mono text-stone-900">${showInvoiceReceipt.totalUSD.toFixed(2)}</span>
                         <span>قيمة الفاتورة بالدولار:</span>
                       </div>
-                      <div className="flex justify-between text-[10px] text-stone-700">
-                        <span className="font-mono text-stone-900">{Math.ceil(showInvoiceReceipt.totalLBP).toLocaleString()} ل.ل</span>
+                      <div className="flex flex-row-reverse justify-between text-[10px] text-stone-700">
+                        <span dir="ltr" className="font-mono text-stone-900">{Math.ceil(showInvoiceReceipt.totalLBP).toLocaleString()} ل.ل</span>
                         <span>قيمة الفاتورة بالليرة:</span>
                       </div>
                       <div className="text-stone-300 text-[8px] my-0.5 text-center">-----------------------------------</div>
-                      <div className="flex justify-between text-[10px]">
-                        <span className="font-mono text-stone-900">${(showInvoiceReceipt.paidAmountUSD || 0).toFixed(2)}</span>
+                      <div className="flex flex-row-reverse justify-between text-[10px]">
+                        <span dir="ltr" className="font-mono text-stone-900">${(showInvoiceReceipt.paidAmountUSD || 0).toFixed(2)}</span>
                         <span>المدفوع نقداً بالدولار:</span>
                       </div>
-                      <div className="flex justify-between text-[10px]">
-                        <span className="font-mono text-stone-900">{Math.ceil(showInvoiceReceipt.paidAmountLBP || 0).toLocaleString()} ل.ل</span>
+                      <div className="flex flex-row-reverse justify-between text-[10px]">
+                        <span dir="ltr" className="font-mono text-stone-900">{Math.ceil(showInvoiceReceipt.paidAmountLBP || 0).toLocaleString()} ل.ل</span>
                         <span>المدفوع نقداً بالليرة:</span>
                       </div>
-                      <div className="flex justify-between font-extrabold text-stone-955 border-t border-stone-250 pt-1 mt-1">
-                        <span className="font-mono text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded animate-pulse">
+                      <div className="flex flex-row-reverse justify-between font-extrabold text-stone-955 border-t border-stone-250 pt-1 mt-1">
+                        <span dir="ltr" className="font-mono text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded animate-pulse">
                           {((showInvoiceReceipt.paidAmountUSD || 0) + ((showInvoiceReceipt.paidAmountLBP || 0) / showInvoiceReceipt.exchangeRate)).toFixed(2)} $
                         </span>
                         <span>إجمالي المستلم الفعلي:</span>
                       </div>
                       <div className="text-stone-300 text-[8px] my-0.5 text-center">-----------------------------------</div>
-                      <div className="flex justify-between font-black text-emerald-955 bg-emerald-100 px-2 py-1 rounded-lg text-[10.5px]">
-                        <span className="font-mono">{Math.ceil(showInvoiceReceipt.changeAmountLBP || 0).toLocaleString()} ل.ل</span>
+                      <div className="flex flex-row-reverse justify-between font-black text-emerald-955 bg-emerald-100 px-2 py-1 rounded-lg text-[10.5px]">
+                        <span dir="ltr" className="font-mono">{Math.ceil(showInvoiceReceipt.changeAmountLBP || 0).toLocaleString()} ل.ل</span>
                         <span>الباقي المسترجع للزبون:</span>
                       </div>
                       {showInvoiceReceipt.changeAmountUSD && showInvoiceReceipt.changeAmountUSD > 0 ? (
-                        <div className="flex justify-between font-black text-emerald-955 bg-emerald-100 px-2 py-1 rounded-lg text-[10.5px] mt-0.5">
-                          <span className="font-mono">${showInvoiceReceipt.changeAmountUSD.toFixed(2)}</span>
+                        <div className="flex flex-row-reverse justify-between font-black text-emerald-955 bg-emerald-100 px-2 py-1 rounded-lg text-[10.5px] mt-0.5">
+                          <span dir="ltr" className="font-mono">${showInvoiceReceipt.changeAmountUSD.toFixed(2)}</span>
                           <span>الباقي المسترجع بالدولار:</span>
                         </div>
                       ) : null}
