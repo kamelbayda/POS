@@ -280,6 +280,8 @@ export function InvoiceReceiptModal({
                       const custName = linkedCust ? linkedCust.name : (lang === 'ar' ? 'زبون نقدي' : 'Cash Customer');
                       let txt = `====================================\n`;
                       txt += `        ${settings.shopName}        \n`;
+                      if (settings.phone?.trim()) txt += `هاتف: ${settings.phone}\n`;
+                      if (settings.address?.trim()) txt += `${settings.address}\n`;
                       txt += `====================================\n`;
                       txt += `رقم الفاتورة: ${showInvoiceReceipt.invoiceNumber}\n`;
                       txt += `التاريخ: ${showInvoiceReceipt.date} | ${showInvoiceReceipt.time}\n`;
@@ -331,6 +333,8 @@ export function InvoiceReceiptModal({
 
                       let txt = `====================================\n`;
                       txt += `        ${settings.shopName}        \n`;
+                      if (settings.phone?.trim()) txt += `هاتف: ${settings.phone}\n`;
+                      if (settings.address?.trim()) txt += `${settings.address}\n`;
                       txt += `====================================\n`;
                       txt += `رقم الفاتورة: ${showInvoiceReceipt.invoiceNumber}\n`;
                       txt += `التاريخ: ${showInvoiceReceipt.date} | ${showInvoiceReceipt.time}\n`;
@@ -488,12 +492,16 @@ export function InvoiceReceiptModal({
                     <h1 className="font-black text-rose-950 md:text-xl text-lg block leading-tight font-sans tracking-tight mt-1.5">
                       {settings.shopName}
                     </h1>
-                    <p className="font-bold text-[10.5px] text-stone-600 block">
-                      نظام نقاط بيع اللبناني الحديث المتكامل للبيع بالجملة والمفرق
-                    </p>
-                    <p className="font-mono text-[9.5px] text-stone-500 font-extrabold block">
-                      هاتف: 08-620250 | بقاع، لبنان
-                    </p>
+                    {settings.businessActivity?.trim() && (
+                      <p className="font-bold text-[10.5px] text-stone-600 block">{settings.businessActivity}</p>
+                    )}
+                    {(settings.phone?.trim() || settings.address?.trim()) && (
+                      <p className="text-[9.5px] text-stone-500 font-extrabold block">
+                        {settings.phone?.trim() && <>هاتف: <span dir="ltr" className="font-mono">{settings.phone}</span></>}
+                        {settings.phone?.trim() && settings.address?.trim() && ' | '}
+                        {settings.address?.trim()}
+                      </p>
+                    )}
                     <div className="text-stone-300 text-[8px] my-1 block select-none">===================================</div>
                   </div>
 
@@ -692,6 +700,8 @@ export function InvoiceReceiptModal({
 
                 let txt = `====================================\n`;
                 txt += `        ${settings.shopName}        \n`;
+                      if (settings.phone?.trim()) txt += `هاتف: ${settings.phone}\n`;
+                      if (settings.address?.trim()) txt += `${settings.address}\n`;
                 txt += `====================================\n`;
                 txt += `رقم الفاتورة: ${showInvoiceReceipt.invoiceNumber}\n`;
                 txt += `التاريخ: ${showInvoiceReceipt.date} | ${showInvoiceReceipt.time}\n`;
@@ -743,6 +753,8 @@ export function InvoiceReceiptModal({
 
                 let txt = `====================================\n`;
                 txt += `        ${settings.shopName}        \n`;
+                      if (settings.phone?.trim()) txt += `هاتف: ${settings.phone}\n`;
+                      if (settings.address?.trim()) txt += `${settings.address}\n`;
                 txt += `====================================\n`;
                 txt += `رقم الفاتورة: ${showInvoiceReceipt.invoiceNumber}\n`;
                 txt += `التاريخ: ${showInvoiceReceipt.date} | ${showInvoiceReceipt.time}\n`;
