@@ -49,7 +49,7 @@ export function InvoiceReceiptModal({
           >
 
             {/* Left Column: Controlling Options */}
-            <div className="lg:col-span-5 space-y-4 text-right no-print overflow-y-auto max-h-[70vh] pr-1">
+            <div className="lg:col-span-5 space-y-4 text-right no-print overflow-y-auto max-h-[70vh] lg:max-h-none lg:h-0 lg:min-h-full pr-1">
               <div className="flex items-center gap-2 justify-end text-white pb-3 border-b border-slate-800 mb-4 h-fit">
                 <span className="font-extrabold text-base">لوحة تنسيق وإعدادات الفاتورة</span>
                 <Printer className="w-5 h-5 text-emerald-500" />
