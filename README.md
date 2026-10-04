@@ -54,6 +54,9 @@
 5. بـ **Settings ← Builds ← Previews Base** طفّي **Builds for Preview branches**.
 6. **Firebase ← Authentication ← Settings ← Authorized domains ← Add domain:** حط رابط البرنامج (بلا `https://`)، حتى يشتغل الدخول بحساب Google.
 
+**الدومين:** البرنامج على `https://beecash.app` (Custom domain على `pos-app`). سيرفر التراخيص بيرد على نفس الدومين عبر الـ service binding `LICENSING` بـ `wrangler.jsonc`:
+صفحة إنشاء أكواد التفعيل `https://beecash.app/admin`، والـ API `https://beecash.app/api/...`. لازم يكون الـ worker `pos-licensing` منشور بنفس الحساب.
+
 كل merge على `main` بينشر نسخة جديدة، والبرنامج عند الزبون بيتحدّث لحالو بأول فتحة بعدها.
 
 **عند الزبون:** بيفتح الرابط بـ Chrome أو Edge ← أيقونة **تثبيت** بشريط العنوان.
