@@ -375,7 +375,9 @@ export default function App() {
       daysSinceLastSale,
       isStagnant
     };
-  });
+  })
+    // Products in stock first, sold-out ones after (stable: keeps the order within each group)
+    .sort((a, b) => Number(a.quantity <= 0) - Number(b.quantity <= 0));
 
   // Toast auto dismiss
   useEffect(() => {
