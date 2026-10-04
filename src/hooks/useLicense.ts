@@ -22,6 +22,8 @@ const LEGACY_GRACE_DAYS = 30;
 
 interface Deps {
   shopName: string;
+  /** Shop owner's email, sent with the activation so the key shows it on the admin page. */
+  ownerEmail?: string;
   lang: 'ar' | 'en';
   showToast: (type: 'success' | 'error' | 'warning', message: string) => void;
   /** Called after a successful activation (e.g. to open the owner setup wizard). */
@@ -32,7 +34,7 @@ interface Deps {
  * Licence state for this installation.
  * `isActivated` is what the rest of the app checks (e.g. to lift the trial invoice limit).
  */
-export function useLicense({ shopName, lang, showToast, onActivated }: Deps) {
+export function useLicense({ shopName, ownerEmail = '', lang, showToast, onActivated }: Deps) {
   const [token, setToken] = useState<string | null>(() => storage.getItem(TOKEN_KEY));
   const [license, setLicense] = useState<LicensePayload | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
@@ -122,7 +124,7 @@ export function useLicense({ shopName, lang, showToast, onActivated }: Deps) {
       return;
     }
     setIsActivating(true);
-    const result = await activateLicense(key, shopName);
+    const result = await activateLicense(key, shopName, ownerEmail);
     setIsActivating(false);
     if ('error' in result) {
       setActivationErrorMsg('❌ ' + message(result.error));
@@ -146,7 +148,7 @@ export function useLicense({ shopName, lang, showToast, onActivated }: Deps) {
     if (isLicensed && license) {
       return license.key === key ? { ok: true } : { ok: false, error: message('invalid_key') };
     }
-    const result = await activateLicense(key, shopName);
+    const result = await activateLicense(key, shopName, ownerEmail);
     if ('error' in result) return { ok: false, error: message(result.error) };
     saveToken(result.token);
     storage.removeItem(LEGACY_KEY);
