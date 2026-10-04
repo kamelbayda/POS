@@ -2,9 +2,14 @@
 // Cloudflare dashboard: Build command "npm run build:web", Deploy command "npx wrangler deploy".
 {
   "name": "pos-app",
+  "main": "edge/worker.js",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+    // The licence server (activation API and the key admin page) answers on the same
+    // domain: beecash.app/api/... and beecash.app/admin.
+    "run_worker_first": ["/api/*", "/admin", "/admin/*"]
+  },
+  "services": [{ "binding": "LICENSING", "service": "pos-licensing" }]
 }
