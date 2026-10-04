@@ -1,9 +1,10 @@
 import { motion } from 'motion/react';
-import { Printer, Trash2, RefreshCw, MessageSquare } from 'lucide-react';
+import { Printer, Trash2, RefreshCw, MessageSquare, Image as ImageIcon } from 'lucide-react';
 import { printElementViaIFrame } from '../lib/print';
 import { Invoice, SystemSettings, Customer } from '../types';
 import React, { useState } from 'react';
 import { useStoredState } from '../lib/storage';
+import { shareReceiptImage } from '../lib/receiptImage';
 
 interface InvoiceReceiptModalProps {
   lang: "ar" | "en";
@@ -39,6 +40,7 @@ export function InvoiceReceiptModal({
   const [showReceiptCalculations, setShowReceiptCalculations] = useStoredState<boolean>('pos_receipt_show_calculations', true);
   const [showReceiptBarcode, setShowReceiptBarcode] = useStoredState<boolean>('pos_receipt_show_barcode', true);
   const [showReceiptFooter, setShowReceiptFooter] = useStoredState<boolean>('pos_receipt_show_footer', true);
+  const [isSharingImage, setIsSharingImage] = useState(false);
 
   return (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs flex justify-center items-start p-4 md:p-8 z-50 overflow-y-auto animate-fade-in font-sans" id="receipt-modal-container">
@@ -428,6 +430,42 @@ export function InvoiceReceiptModal({
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-center font-mono text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
+                <button
+                  type="button"
+                  id="btn-share-receipt-image"
+                  disabled={isSharingImage}
+                  onClick={async () => {
+                    const paper = document.getElementById('thermal-paper-print');
+                    if (!paper) return;
+                    const phoneInput = document.getElementById('wa-client-phone') as HTMLInputElement | null;
+                    setIsSharingImage(true);
+                    try {
+                      const outcome = await shareReceiptImage({
+                        el: paper,
+                        fileName: `${showInvoiceReceipt.invoiceNumber}.png`,
+                        caption: `فاتورة ${showInvoiceReceipt.invoiceNumber} - ${settings.shopName}`,
+                        phone: phoneInput?.value,
+                      });
+                      if (outcome === 'shared') showToast('success', 'تم إرسال صورة الفاتورة ✅');
+                      if (outcome === 'fallback') {
+                        showToast('success', phoneInput?.value.trim()
+                          ? 'نزلت صورة الفاتورة وانتسخت 📋 الصقها (أو أرفقها) بمحادثة الزبون على WhatsApp'
+                          : 'نزلت صورة الفاتورة وانتسخت 📋 فيك تبعتها لأي حدا على WhatsApp');
+                      }
+                    } catch {
+                      showToast('error', 'ما زبط تحويل الفاتورة لصورة، جرّب كمان مرة.');
+                    } finally {
+                      setIsSharingImage(false);
+                    }
+                  }}
+                  className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-60 text-white font-black px-3 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>{isSharingImage ? 'جارٍ تجهيز الصورة…' : '📷 إرسال الفاتورة كصورة'}</span>
+                </button>
+                <span className="block text-[10px] text-slate-400 leading-relaxed">
+                  عالتلفون والتابليت بتفتح قائمة المشاركة: اختار WhatsApp وبعدين الزبون.
+                </span>
               </div>
 
             </div>
