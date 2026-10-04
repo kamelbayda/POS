@@ -41,6 +41,9 @@ export default defineConfig(() => {
           // The app bundle is several MB; cache it whole so the till works offline.
           maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
           navigateFallback: 'index.html',
+          // The licence admin page and API share the domain (see wrangler.jsonc); let them
+          // reach the network instead of opening the app.
+          navigateFallbackDenylist: [/^\/admin(\/|$)/, /^\/api\//],
           cleanupOutdatedCaches: true,
         },
       }),
