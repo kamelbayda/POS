@@ -53,7 +53,7 @@
   },
   "build": {
     "appId": "com.kamelpos.app",
-    "productName": "نظام مبيعات السوبرماركت المطور",
+    "productName": "BeeCash",
     "copyright": "Copyright © 2026",
     "directories": {
       "output": "dist_electron"

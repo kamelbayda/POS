@@ -1,8 +1,9 @@
 import type { LicenseState } from '../hooks/useLicense';
-import { ShoppingCart, Globe, Sun, Moon, Maximize, Monitor, Lock, Clock, MessageCircle, Unlock } from 'lucide-react';
+import { Globe, Sun, Moon, Maximize, Monitor, Lock, Clock, MessageCircle, Unlock } from 'lucide-react';
 import { Invoice, User, SystemSettings } from '../types';
 import React, { useState } from 'react';
 import * as storage from '../lib/storage';
+import { BeeCashMark } from './BeeCashLogo';
 
 interface AppHeaderProps {
   SYS_DATE: string;
@@ -77,9 +78,7 @@ export function AppHeader({
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="bg-[#1D9E75] text-white p-2.5 rounded-xl shrink-0">
-              <ShoppingCart className="w-6 h-6" />
-            </div>
+            <BeeCashMark className="w-11 h-11 shrink-0" />
           )}
           <div className="text-right">
             <h2 className="text-lg font-bold text-slate-900">{settings.shopName}</h2>

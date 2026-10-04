@@ -136,7 +136,11 @@ import { CloudBackupBanner } from './components/CloudBackupBanner';
 import { useCloudSync } from './hooks/useCloudSync';
 import { CloudAlignModal } from './components/CloudAlignModal';
 import { CloudJoinModal } from './components/CloudJoinModal';
+import { BeeCashWordmark } from './components/BeeCashLogo';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
+
+/** localStorage key of the signed-in account and open page, kept across a refresh. */
+const SESSION_KEY = 'pos_session';
 
 // System operational date base
 
@@ -406,6 +410,25 @@ export default function App() {
       storage.setJSON('pos_users', DEFAULT_USERS);
     }
   }, [storeLoaded, users.length]);
+
+  // Keep the signed-in account and open page across a page refresh; only "logout" ends
+  // the session. The account is looked up again so a deleted user cannot come back.
+  const sessionRestored = useRef(false);
+  useEffect(() => {
+    if (!storeLoaded || sessionRestored.current) return;
+    sessionRestored.current = true;
+    const saved = storage.getJSON<{ userId?: string; tab?: string } | null>(SESSION_KEY, null);
+    const user = saved?.userId ? users.find(u => u.id === saved.userId) : undefined;
+    if (user) {
+      setCurrentUser(user);
+      if (saved?.tab) setActiveTab(saved.tab);
+    }
+  }, [storeLoaded, users]);
+  useEffect(() => {
+    if (!sessionRestored.current) return;
+    if (currentUser) storage.setJSON(SESSION_KEY, { userId: currentUser.id, tab: activeTab });
+    else storage.removeItem(SESSION_KEY);
+  }, [currentUser, activeTab]);
 
   // Live sync between every device signed in to the same cloud shop
   const cloudSync = useCloudSync({
@@ -1468,7 +1491,7 @@ export default function App() {
           © {new Date(SYS_DATE).getFullYear()} {settings.shopName}. جميع الحقوق محفوظة لمدير النظام.
         </p>
         <p className="mt-1">
-          تم تصميم ومطابقة نظام الـ POS المتكامل باستخدام الخط Tahoma الموحد لدعم العملة والجرود وتاريخ الصلاحيات.
+          🐝 {lang === 'ar' ? 'يعمل بنظام' : 'Powered by'} <BeeCashWordmark /> {lang === 'ar' ? '· نظام الكاشير والمخزون' : '· checkout & inventory'}
         </p>
       </footer>
     </div>

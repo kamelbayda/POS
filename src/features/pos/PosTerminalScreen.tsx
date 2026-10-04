@@ -2,6 +2,7 @@ import type { PosRegister } from './usePosRegister';
 import { ShoppingCart, Globe, Sun, Moon, Maximize, Menu, Monitor, X, Plus, Check, Lock, Percent, Truck, CreditCard, User, DollarSign, MessageSquare, Save, Trash2, Tag, Search, Home } from 'lucide-react';
 import { Product, Category, CartItem, SystemSettings, Promotion, Customer, CartSession } from '../../types';
 import React, { useState } from 'react';
+import { BeeCashMark, BeeCashWordmark } from '../../components/BeeCashLogo';
 
 interface PosTerminalScreenProps {
   /** Cart, sessions and checkout state from usePosRegister. */
@@ -101,13 +102,11 @@ export function PosTerminalScreen({
 
         {/* Store Brand, Clock, and Price Mode */}
         <div className="flex flex-wrap items-center gap-3 flex-row-reverse">
-          <div className="bg-[#1D9E75] text-white p-2 rounded-xl shrink-0">
-            <ShoppingCart className="w-5 h-5" />
-          </div>
+          <BeeCashMark className="w-9 h-9 shrink-0" />
           <div className="text-right">
             <h2 className="text-sm font-black text-slate-900 dark:text-white leading-tight">{settings.shopName}</h2>
             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-              {lang === 'ar' ? 'نظام مبيعات الكاشير ' : 'Terminal POS System'}
+              <BeeCashWordmark onDark={theme === 'dark'} />
             </p>
           </div>
 

@@ -1,5 +1,6 @@
-import { Globe, ShoppingCart, ShieldAlert, User, Lock } from 'lucide-react';
+import { Globe, ShieldAlert, User, Lock } from 'lucide-react';
 import React from 'react';
+import { BeeCashMark, BeeCashWordmark } from '../components/BeeCashLogo';
 
 interface LoginScreenProps {
   SYS_DATE: string;
@@ -36,7 +37,7 @@ export function LoginScreen({
     <div className="min-h-screen bg-gradient-to-tr from-emerald-50 via-slate-50 to-emerald-100/30 flex items-center justify-center p-4" id="login-screen">
       <div className="bg-white rounded-3xl ltr:shadow-2xl shadow-emerald-950/5 border border-slate-100 w-full max-w-md overflow-hidden animate-fade-in">
         {/* Brand header */}
-        <div className="bg-[#1D9E75] p-8 text-center text-white relative">
+        <div className="bg-[#1E1B16] p-8 text-center text-white relative">
           <div className="absolute top-4 right-4 bg-white/10 text-xs px-2 py-1 rounded backdrop-blur-sm font-mono">
             {lang === 'ar' ? 'التوقيت اليومي' : 'System Time'}: {SYS_DATE}
           </div>
@@ -51,14 +52,13 @@ export function LoginScreen({
             <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
           </button>
 
-          <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md">
-            <ShoppingCart className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold font-sans tracking-tight">
-            {lang === 'ar' ? 'نظام مبيعات السوبرماركت المطور' : 'Advanced Supermarket POS System'}
+          <BeeCashMark className="w-20 h-20 mx-auto mb-3 drop-shadow-lg" />
+          <h1 className="text-3xl font-sans">
+            <BeeCashWordmark onDark />
           </h1>
-          <p className="text-emerald-100 text-sm mt-1">
-            {lang === 'ar' ? 'بوابتك لإدارة البيع، المخزون والجرد بكفاءة' : 'Your gateway for sales, inventory, and stock auditing'}
+          <p className="text-[#FFC21A] text-sm font-bold mt-0.5">{lang === 'ar' ? 'بي كاش' : 'Point of sale'}</p>
+          <p className="text-slate-300 text-sm mt-2">
+            {lang === 'ar' ? 'نظام الكاشير والمخزون للسوبرماركت' : 'Checkout and inventory for supermarkets'}
           </p>
         </div>
 
