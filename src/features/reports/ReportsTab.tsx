@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Calendar, Check, CheckCircle2, DollarSign, FileText, Globe, Hourglass, Layers, Printer, RefreshCw, Search, ShieldAlert, ShoppingBag, Trash2, TrendingUp } from 'lucide-react';
 import { ExpenseRecord, Invoice, Product, Promotion, ReturnRecord, SystemSettings, WasteRecord } from '../../types';
-import { withOperatingCost } from '../../lib/operatingCost';
+import { costOfGoodsSold } from '../../lib/operatingCost';
 
 export type ReportType = 'dashboard' | 'pl' | 'expenses' | 'stock_audit' | 'expiry_report' | 'returns_report' | 'waste_report' | 'reorder_report';
 export type StockAuditLocation = 'shop' | 'warehouse' | 'combined';
@@ -114,20 +114,9 @@ export function ReportsTab({
   }));
 
   // Compute Accounting values
-  const totalCOGS = invoices.reduce((sum, inv) => {
-    const invCOGS = inv.items.reduce((itemSum, item) => {
-      const prod = products.find(p => p.id === item.productId);
-      const baseCost = prod?.costPriceUSD !== undefined && prod?.costPriceUSD !== null
-        ? prod.costPriceUSD 
-        : (prod?.priceWholesale !== undefined && prod?.priceWholesale !== null
-          ? prod.priceWholesale 
-          : item.priceUSD * 0.75);
-      // Cost of goods sold includes the product's operating cost
-      const cost = prod ? withOperatingCost(prod, baseCost) : baseCost;
-      return itemSum + (cost * item.quantity);
-    }, 0);
-    return sum + invCOGS;
-  }, 0);
+  // Cost of goods sold: purchase cost plus the products' operating cost, shown apart
+  const cogs = costOfGoodsSold(invoices, products);
+  const totalCOGS = cogs.total;
 
   const grossProfit = totalSalesUSD - totalCOGS;
   const totalWasteLoss = waste.reduce((sum, item) => sum + (item.estimatedLossUSD || 0), 0);
@@ -1035,7 +1024,9 @@ export function ReportsTab({
             <div className="bg-white rounded-2xl border border-slate-200 p-5 text-right">
               <span className="text-[10px] text-red-500 uppercase font-black block">تكلفة السلع المباعة (COGS)</span>
               <span className="text-2xl font-black font-mono text-red-600 block mt-1">-{totalCOGS.toFixed(2)} $</span>
-              <span className="text-[10px] text-slate-500 font-mono block">تكلفة المنتجات بسعر الشراء الفعلي</span>
+              <span className="text-[10px] text-slate-500 font-mono block" id="cogs-breakdown">
+                شراء: {cogs.purchase.toFixed(2)}${cogs.operating > 0 ? <> | <span className="text-orange-600 font-bold">تشغيلية: {cogs.operating.toFixed(2)}$</span></> : null}
+              </span>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 p-5 text-right">
@@ -1082,7 +1073,16 @@ export function ReportsTab({
                     <span className="font-bold text-slate-700">2. تكلفة بضاعة البيع بسعر التكلفة (COGS)</span>
                     <span className="block text-[10px] text-slate-400">تُحتسب من سعر رأس مال المنتجات المباعة</span>
                   </div>
-                  <span className="font-mono font-bold text-rose-600">-{totalCOGS.toFixed(2)} $</span>
+                  <span className="font-mono font-bold text-rose-600">-{cogs.purchase.toFixed(2)} $</span>
+                </div>
+
+                {/* Row 2b: products' operating cost */}
+                <div className="flex justify-between items-center py-2 border-b border-slate-100 text-sm" id="ledger-operating-cost">
+                  <div className="text-right">
+                    <span className="font-bold text-orange-700">2ب. الكلفة التشغيلية للأصناف المباعة</span>
+                    <span className="block text-[10px] text-slate-400">نقل، تبريد، تغليف... المسجّلة على الأصناف بإدارة المخزن</span>
+                  </div>
+                  <span className="font-mono font-bold text-orange-600">-{cogs.operating.toFixed(2)} $</span>
                 </div>
 
                 {/* Row 3: Gross profit */}
