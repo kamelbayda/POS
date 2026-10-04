@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as storage from '../lib/storage';
 import { User } from '../types';
+import { DEFAULT_USERS } from '../mockData';
 import { hashPassword, verifyPassword, needsRehash } from '../lib/password';
 import { PASSCODES_CHANGED_EVENT } from '../lib/cloudSync';
 
@@ -43,20 +44,21 @@ export function useAccounts({
     return saved ? parseInt(saved) : 5; // default is 5 mins, 0 means disabled
   });
 
-  // Setup wizard states for custom admin/cashier customization after purchase
+  // Password hashes of the built-in admin / cashier accounts. There are no default
+  // passwords: a new shop creates its admin account on the login screen.
   const [adminPasscode, setAdminPasscode] = useState<string>(() => {
-    return storage.getItem('pos_admin_passcode') || 'admin123';
+    return storage.getItem('pos_admin_passcode') || '';
   });
 
   const [cashierPasscode, setCashierPasscode] = useState<string>(() => {
-    return storage.getItem('pos_cashier_passcode') || '1234';
+    return storage.getItem('pos_cashier_passcode') || '';
   });
 
   // Passwords changed on another device arrive through cloud sync
   useEffect(() => {
     const reload = () => {
-      setAdminPasscode(storage.getItem('pos_admin_passcode') || 'admin123');
-      setCashierPasscode(storage.getItem('pos_cashier_passcode') || '1234');
+      setAdminPasscode(storage.getItem('pos_admin_passcode') || '');
+      setCashierPasscode(storage.getItem('pos_cashier_passcode') || '');
     };
     window.addEventListener(PASSCODES_CHANGED_EVENT, reload);
     return () => window.removeEventListener(PASSCODES_CHANGED_EVENT, reload);
@@ -188,6 +190,30 @@ export function useAccounts({
     });
   };
 
+  /**
+   * First run of a new shop: gives the built-in admin account the owner's name, email
+   * and password, then signs in. Returns an error message, or null on success.
+   */
+  const createOwnerAccount = async (name: string, email: string, password: string): Promise<string | null> => {
+    const mail = email.trim().toLowerCase();
+    if (users.some(u => u.username !== 'admin' && u.email === mail)) {
+      return lang === 'ar' ? 'هالإيميل مستعمل لحساب تاني.' : 'That email is already used by another account.';
+    }
+    const base = users.find(u => u.username === 'admin') || DEFAULT_USERS[0];
+    const owner: User = { ...base, name: name.trim(), email: mail };
+    const updated = users.some(u => u.username === 'admin')
+      ? users.map(u => (u.username === 'admin' ? owner : u))
+      : [owner, ...users];
+    setUsers(updated);
+    storage.setJSON('pos_users', updated);
+    storage.setItem('pos_admin_real_name', owner.name);
+    setAdminRealName(owner.name);
+    await setAccountPassword('admin', password);
+    setCurrentUser(owner);
+    showToast('success', lang === 'ar' ? `أهلاً ${owner.name}! حساب المدير جاهز.` : `Welcome ${owner.name}! Your admin account is ready.`);
+    return null;
+  };
+
   /** Checks a password and upgrades a legacy plaintext one to a hash on success. */
   const checkUserPassword = async (user: User, input: string) => {
     const stored = getStoredPassword(user);
@@ -289,6 +315,7 @@ export function useAccounts({
     executeWithAdminAuth,
     saveWizardData,
     setAccountPassword,
+    createOwnerAccount,
     handleUnlock,
     handleLogin,
   };

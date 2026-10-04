@@ -229,7 +229,7 @@ export default function App() {
   // App navigation & session state
   const [activeTab, setActiveTab] = useState<string>('pos');
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-  const [loginUsername, setLoginUsername] = useState<string>('admin');
+  const [loginUsername, setLoginUsername] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string>('');
   
@@ -679,7 +679,8 @@ export default function App() {
         setLoginPassword={setLoginPassword}
         loginError={loginError}
         handleLogin={handleLogin}
-        showDefaultCredentials={!storage.getItem('pos_admin_passcode') && !storage.getItem('pos_cashier_passcode')}
+        needsOwnerSetup={!adminPasscode}
+        onCreateOwner={accounts.createOwnerAccount}
         onForgotPassword={() => setShowForgotPassword(true)}
         onJoinCloud={() => setShowCloudJoin(true)}
       />
