@@ -679,7 +679,7 @@ export default function App() {
         setLoginPassword={setLoginPassword}
         loginError={loginError}
         handleLogin={handleLogin}
-        needsOwnerSetup={!adminPasscode}
+        needsOwnerSetup={!adminPasscode && !accounts.cashierPasscode && !users.some(u => u.password)}
         onCreateOwner={accounts.createOwnerAccount}
         onForgotPassword={() => setShowForgotPassword(true)}
         onJoinCloud={() => setShowCloudJoin(true)}

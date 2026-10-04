@@ -298,6 +298,7 @@ export function useAccounts({
     setLockError,
     isLockShaking,
     adminPasscode,
+    cashierPasscode,
     adminRealName,
     setAdminRealName,
     cashierRealName,
