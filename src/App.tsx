@@ -718,7 +718,7 @@ export default function App() {
 
   // MAIN SYSTEM PAGE
   return (
-    <div className={`bg-[#F8FAFC] flex flex-col font-sans text-slate-800 w-full max-w-none overflow-x-hidden ${activeTab === 'pos' ? 'h-screen overflow-hidden' : 'min-h-screen'}`} id="main-system" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`bg-[#F8FAFC] flex flex-col font-sans text-slate-800 w-full max-w-none overflow-x-hidden ${activeTab === 'pos' ? 'h-screen overflow-hidden' : 'min-h-screen md:h-screen md:overflow-hidden'}`} id="main-system" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Global CSS Style tag for dynamic font and button scale */}
       <style>{`
         html {
@@ -882,7 +882,8 @@ export default function App() {
           ? 'px-0 py-0 gap-0 h-full min-h-0 overflow-hidden max-w-none w-full'
           : activeTab === 'pos'
           ? 'px-2 sm:px-4 py-3 gap-3.5 flex-1 h-full min-h-0 overflow-hidden max-w-none w-full'
-          : 'px-2 sm:px-4 lg:px-4 py-4 gap-4 max-w-none w-full'
+          // Tablets and computers: only the page content scrolls; header and sidebar stay put
+          : 'px-2 sm:px-4 lg:px-4 py-4 gap-4 max-w-none w-full md:min-h-0 md:overflow-hidden'
       }`}>
         
         {/* RIGHT SIDEBAR MODULES */}
@@ -899,7 +900,7 @@ export default function App() {
         <main className={`flex-1 min-w-0 w-full ${
           activeTab === 'pos'
             ? 'h-full flex flex-col min-h-0 overflow-hidden'
-            : 'flex flex-col min-h-0'
+            : 'flex flex-col min-h-0 md:h-full md:overflow-y-auto md:pe-1'
         }`} id="main-content-workspace">
 
           {/* ACTIVE TERMINAL TAB WRAPPER */}
@@ -1491,7 +1492,7 @@ export default function App() {
       </div>
 
       {/* --- SYSTEM STATS & FOOTER CREDITS --- */}
-      <footer className={`w-full max-w-none bg-white border-t border-slate-200 text-center text-xs text-slate-400 ${activeTab === 'pos' ? 'py-2 mt-auto shrink-0' : 'py-6 mt-12'}`} id="system-footer">
+      <footer className={`w-full max-w-none bg-white border-t border-slate-200 text-center text-xs text-slate-400 ${activeTab === 'pos' ? 'py-2 mt-auto shrink-0' : 'py-6 mt-12 md:py-2 md:mt-0 md:shrink-0'}`} id="system-footer">
         <p className="font-bold text-slate-500">
           © {new Date(SYS_DATE).getFullYear()} {settings.shopName}. جميع الحقوق محفوظة لمدير النظام.
         </p>
