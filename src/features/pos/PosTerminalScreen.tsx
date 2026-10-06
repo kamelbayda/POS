@@ -101,7 +101,7 @@ export function PosTerminalScreen({
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={`flex-1 h-full min-h-0 flex flex-col w-full font-sans overflow-hidden select-none no-print ${theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-slate-50 text-slate-800'}`} id="tab-pos-terminal">
 
       {/* Terminal Quick Actions Top Bar */}
-      <div className={`px-4 py-2.5 flex flex-col md:flex-row items-center justify-between gap-3 select-none shrink-0 border-b ${theme === 'dark' ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-slate-200'}`}>
+      <div className={`px-4 py-2.5 flex flex-col md:flex-row-reverse items-center justify-between gap-3 select-none shrink-0 border-b ${theme === 'dark' ? 'bg-[#1C1C1E] border-[#2C2C2E]' : 'bg-white border-slate-200'}`}>
 
         {/* Store Brand, Clock, and Price Mode */}
         <div className="flex flex-wrap items-center gap-3 flex-row-reverse">
@@ -148,45 +148,7 @@ export function PosTerminalScreen({
         </div>
 
         {/* Left side (Action Controls) */}
-        <div className="flex items-center gap-2 flex-row-reverse">
-
-          {/* Language switch */}
-          <button 
-            onClick={() => {
-              const nextLang = lang === 'ar' ? 'en' : 'ar';
-              setLang(nextLang);
-              showToast('success', nextLang === 'ar' ? 'تم تحويل الواجهة للغة العربية' : 'Language switched to English');
-            }}
-            className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-bold border flex items-center gap-1.5 flex-row-reverse ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-350 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs'}`}
-            title={lang === 'ar' ? 'تغيير لغة الواجهة' : 'Switch System Language'}
-          >
-            <Globe className="w-3.5 h-3.5 text-stone-400" />
-            <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
-          </button>
-
-          {/* Theme Switch */}
-          <button 
-            onClick={() => {
-              const nextTheme = theme === 'dark' ? 'light' : 'dark';
-              setTheme(nextTheme);
-              showToast('success', lang === 'ar' ? '✓ تم تغيير المظهر المفضل' : `Theme changed to ${nextTheme}`);
-            }}
-            className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-bold border flex items-center gap-1.5 flex-row-reverse ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-300 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs'}`}
-            title={lang === 'ar' ? 'تبديل المظهر الليلي/النهاري' : 'Toggle Dark/Light Mode'}
-          >
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-stone-400" />}
-            <span>{theme === 'dark' ? (lang === 'ar' ? 'وضع نهاري' : 'Light') : (lang === 'ar' ? 'وضع ليلي' : 'Dark')}</span>
-          </button>
-
-          {/* Fullscreen Toggle */}
-          <button 
-            onClick={toggleFullScreen}
-            className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-bold border flex items-center gap-1.5 flex-row-reverse ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-350 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs'}`}
-            title={lang === 'ar' ? 'تبديل ملء الشاشة' : 'Toggle Fullscreen'}
-          >
-            <Maximize className="w-3.5 h-3.5 text-stone-400" />
-            <span>{lang === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
 
           {/* Toggle Sidebar Navigation */}
           <button 
@@ -212,6 +174,44 @@ export function PosTerminalScreen({
           >
             <Monitor className="w-3.5 h-3.5" />
             <span>{lang === 'ar' ? 'الانتقال للشاشة العادية' : 'Switch to Standard Screen'}</span>
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button 
+            onClick={toggleFullScreen}
+            className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-bold border flex items-center gap-1.5 flex-row-reverse ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-350 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs'}`}
+            title={lang === 'ar' ? 'تبديل ملء الشاشة' : 'Toggle Fullscreen'}
+          >
+            <Maximize className="w-3.5 h-3.5 text-stone-400" />
+            <span>{lang === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}</span>
+          </button>
+
+          {/* Theme Switch */}
+          <button 
+            onClick={() => {
+              const nextTheme = theme === 'dark' ? 'light' : 'dark';
+              setTheme(nextTheme);
+              showToast('success', lang === 'ar' ? '✓ تم تغيير المظهر المفضل' : `Theme changed to ${nextTheme}`);
+            }}
+            className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-bold border flex items-center gap-1.5 flex-row-reverse ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-300 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs'}`}
+            title={lang === 'ar' ? 'تبديل المظهر الليلي/النهاري' : 'Toggle Dark/Light Mode'}
+          >
+            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-stone-400" />}
+            <span>{theme === 'dark' ? (lang === 'ar' ? 'وضع نهاري' : 'Light') : (lang === 'ar' ? 'وضع ليلي' : 'Dark')}</span>
+          </button>
+
+          {/* Language switch */}
+          <button 
+            onClick={() => {
+              const nextLang = lang === 'ar' ? 'en' : 'ar';
+              setLang(nextLang);
+              showToast('success', nextLang === 'ar' ? 'تم تحويل الواجهة للغة العربية' : 'Language switched to English');
+            }}
+            className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-bold border flex items-center gap-1.5 flex-row-reverse ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-350 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs'}`}
+            title={lang === 'ar' ? 'تغيير لغة الواجهة' : 'Switch System Language'}
+          >
+            <Globe className="w-3.5 h-3.5 text-stone-400" />
+            <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
           </button>
 
           <button
