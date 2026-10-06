@@ -43,7 +43,7 @@ export function Sidebar({
   setSidebarCollapsed,
 }: SidebarProps) {
   return (
-    <aside className={`w-full ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} shrink-0 flex flex-col gap-2 h-full overflow-y-auto pr-1 transition-all duration-300 ${activeTab === 'pos' && posLayoutMode === 'terminal' ? 'hidden' : ''}`} id="sidebar-navigation">
+    <aside className={`w-full ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} shrink-0 flex flex-col gap-2 h-full overflow-y-auto pr-1 transition-all duration-300 ${activeTab === 'pos' && posLayoutMode === 'terminal' ? 'hidden' : ''} ${activeTab !== 'pos' ? 'md:sticky md:top-2 md:self-start md:h-auto md:max-h-[calc(100vh-1rem)]' : ''}`} id="sidebar-navigation">
       <div className={`bg-white ${sidebarCollapsed ? 'p-2' : 'p-4'} rounded-2xl shadow-xs border border-slate-200 transition-all duration-300`}>
         <div className={`flex items-center justify-between mb-3 px-2 text-right uppercase tracking-wider ${sidebarCollapsed ? 'flex-col gap-2' : ''}`}>
           {!sidebarCollapsed ? (
