@@ -128,6 +128,7 @@ export function InventoryTab({
   const [newProdCostPriceUSD, setNewProdCostPriceUSD] = useState<string>('');
   const [newProdOpCostUSD, setNewProdOpCostUSD] = useState<string>('');
   const [newProdOpCostPct, setNewProdOpCostPct] = useState<string>('');
+  const [newProdUnitsPerCarton, setNewProdUnitsPerCarton] = useState<string>('');
   const [newProdMinWholesaleQty, setNewProdMinWholesaleQty] = useState<string>('5');
   const [newProdSku, setNewProdSku] = useState<string>('');
   const [newProdQuantity, setNewProdQuantity] = useState<string>('10');
@@ -205,6 +206,7 @@ export function InventoryTab({
             costPriceUSD: cost,
             operatingCostUSD: formOpCost.operatingCostUSD || undefined,
             operatingCostPercent: formOpCost.operatingCostPercent || undefined,
+            unitsPerCarton: parseInt(newProdUnitsPerCarton) || undefined,
             image: newProdImage,
             isWeighed: newProdIsWeighed,
             plu: newProdPlu.trim(),
@@ -233,6 +235,7 @@ export function InventoryTab({
         costPriceUSD: cost,
         operatingCostUSD: formOpCost.operatingCostUSD || undefined,
         operatingCostPercent: formOpCost.operatingCostPercent || undefined,
+        unitsPerCarton: parseInt(newProdUnitsPerCarton) || undefined,
         image: newProdImage,
         isWeighed: newProdIsWeighed,
         plu: newProdPlu.trim(),
@@ -252,6 +255,7 @@ export function InventoryTab({
     setNewProdCostPriceUSD('');
     setNewProdOpCostUSD('');
     setNewProdOpCostPct('');
+    setNewProdUnitsPerCarton('');
     setNewProdMinWholesaleQty('5');
     setNewProdSku('');
     setNewProdQuantity('10');
@@ -275,6 +279,7 @@ export function InventoryTab({
     setNewProdCostPriceUSD(p.costPriceUSD ? p.costPriceUSD.toString() : (p.priceUSD * 0.75).toFixed(2));
     setNewProdOpCostUSD(p.operatingCostUSD ? p.operatingCostUSD.toString() : '');
     setNewProdOpCostPct(p.operatingCostPercent ? p.operatingCostPercent.toString() : '');
+    setNewProdUnitsPerCarton(p.unitsPerCarton ? p.unitsPerCarton.toString() : '');
     setNewProdMinWholesaleQty(p.minWholesaleQty ? p.minWholesaleQty.toString() : '5');
     setNewProdSku(p.sku || '');
     setNewProdQuantity(p.quantity.toString());
@@ -592,6 +597,18 @@ export function InventoryTab({
                     الكلفة الكاملة: {numCost.toFixed(2)} $
                   </span>
                 )}
+              </div>
+              <div>
+                <label className="block text-indigo-800 mb-1 text-xs font-black" title="لما تشتري بالكرتونة، فاتورة المشتريات بتحوّل الكراتين لحبّات لحالها">📦 عدد الحبّات بالكرتونة:</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  id="prod-units-per-carton"
+                  value={newProdUnitsPerCarton}
+                  onChange={e => setNewProdUnitsPerCarton(e.target.value.replace(/[^0-9]/g, ''))}
+                  className="w-full bg-indigo-50/50 border border-indigo-200 rounded-lg py-2 px-3 text-sm text-center font-mono focus:ring-1 focus:ring-indigo-400 font-bold text-indigo-900"
+                  placeholder="مثلاً: 12"
+                />
               </div>
               <div>
                 <label className="block text-slate-600 mb-1 text-xs font-bold">حد أدنى للجملة:</label>
