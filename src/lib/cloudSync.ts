@@ -37,6 +37,7 @@ export const SYNCED_COLLECTIONS: SyncedCollection[] = [
   { name: 'expenses', storageKey: 'pos_expenses', log: true },
   { name: 'purchaseInvoices', storageKey: 'pos_purchases', log: true },
   { name: 'repairs', storageKey: 'pos_repairs' },
+  { name: 'tradeIns', storageKey: 'pos_tradeins' },
 ];
 
 /** Settings that belong to one machine (its printers and cash drawer), never synced. */

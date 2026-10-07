@@ -74,7 +74,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
-import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier, CartSession, RepairTicket } from './types';
+import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier, CartSession, RepairTicket, TradeIn } from './types';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, DEFAULT_USERS, getSeededProducts, getSeededInvoices, DEFAULT_CUSTOMERS, DEFAULT_SUPPLIERS, DEFAULT_PROMOTIONS, DEFAULT_EXPENSES } from './mockData';
 import { CustomersTab } from './features/customers/CustomersTab';
 import { SuppliersTab } from './features/suppliers/SuppliersTab';
@@ -142,6 +142,7 @@ import { SubscribeModal } from './modals/SubscribeModal';
 import { BusinessType, StoredRequest, getStoredRequest, clearStoredRequest, checkRequest } from './lib/subscription';
 import { SerialPickerModal } from './modals/SerialPickerModal';
 import { RepairsTab } from './features/repairs/RepairsTab';
+import { TradeInsTab } from './features/tradeins/TradeInsTab';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -438,6 +439,11 @@ export default function App() {
 
   // Live sync between every device signed in to the same cloud shop
   // Phone shops: devices left for repair (synced like the other lists)
+  const [tradeIns, setTradeInsState] = useState<TradeIn[]>(() => storage.getJSON<TradeIn[]>('pos_tradeins', []));
+  const setTradeIns = (rows: TradeIn[]) => {
+    setTradeInsState(rows);
+    storage.setJSON('pos_tradeins', rows);
+  };
   const [repairs, setRepairsState] = useState<RepairTicket[]>(() => storage.getJSON<RepairTicket[]>('pos_repairs', []));
   const setRepairs = (rows: RepairTicket[]) => {
     setRepairsState(rows);
@@ -505,6 +511,7 @@ export default function App() {
       expenses: { items: expenses, set: setExpenses },
       purchaseInvoices: { items: purchaseInvoices, set: setPurchaseInvoices },
       repairs: { items: repairs, set: setRepairs },
+      tradeIns: { items: tradeIns, set: setTradeIns },
     },
     settings,
     setSettings,
@@ -1100,6 +1107,25 @@ export default function App() {
               customers={customers}
               showToast={showToast}
               onDeliver={deliverRepair}
+            />
+          )}
+
+          {activeTab === 'tradeins' && (
+            <TradeInsTab
+              lang={lang}
+              sysDate={SYS_DATE}
+              settings={settings}
+              tradeIns={tradeIns}
+              setTradeIns={setTradeIns}
+              products={products}
+              setProducts={setProducts}
+              categories={categories}
+              setCategories={setCategories}
+              purchaseInvoices={purchaseInvoices}
+              setPurchaseInvoices={setPurchaseInvoices}
+              customers={customers}
+              setCustomers={setCustomers}
+              showToast={showToast}
             />
           )}
 

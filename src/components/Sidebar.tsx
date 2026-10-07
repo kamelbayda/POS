@@ -1,4 +1,4 @@
-import { Wrench, Archive, ArrowLeftRight, Barcode, BadgeDollarSign, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, Truck, User, Users } from 'lucide-react';
+import { Wrench, Smartphone, Archive, ArrowLeftRight, Barcode, BadgeDollarSign, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, Truck, User, Users } from 'lucide-react';
 import { CartItem } from '../types';
 import React from 'react';
 
@@ -7,6 +7,7 @@ import React from 'react';
 const menuItems = [
   { id: 'btn-nav-pos', tab: 'pos', labelAr: 'شاشة البيع المباشر', labelEn: 'Direct POS Screen', icon: ShoppingCart },
   { id: 'btn-nav-repairs', tab: 'repairs', labelAr: 'قسم التصليح', labelEn: 'Repairs', icon: Wrench, phonesOnly: true },
+  { id: 'btn-nav-tradeins', tab: 'tradeins', labelAr: 'شرا مستعمل', labelEn: 'Buy used', icon: Smartphone, phonesOnly: true },
   { id: 'btn-nav-inventory', tab: 'inventory', labelAr: 'إدارة المخزن', labelEn: 'Inventory & Stock', icon: Layers },
   { id: 'btn-nav-suppliers', tab: 'suppliers', labelAr: 'الموردين', labelEn: 'Suppliers', icon: Truck },
   { id: 'btn-nav-customers', tab: 'customers', labelAr: 'حسابات الزبائن والديون', labelEn: 'Customers & Debts', icon: Users },
