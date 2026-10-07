@@ -97,7 +97,7 @@ export function useLicense({ shopName, ownerEmail = '', lang, showToast, onActiv
       // (this also un-sticks a device whose date was once set too far ahead and then corrected)
       storage.setItem(CLOCK_KEY, Date.now());
       setNow(Date.now());
-    } else if (['revoked', 'expired', 'device_mismatch', 'invalid_key'].includes(result.error)) {
+    } else if (['revoked', 'expired', 'device_mismatch', 'invalid_key', 'other_shop'].includes(result.error)) {
       saveToken(null);
       showToast('error', message(result.error));
     }
