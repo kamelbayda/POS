@@ -622,12 +622,13 @@ export default function App() {
   });
   const { isActivated } = licenseState;
 
-  // A key sold for a kind of shop sets it on this install
+  // A key is sold for one kind of shop: it sets that kind and keeps it (settings, cloud sync or
+  // edited storage can't switch a supermarket key to the phone-shop sections)
   const licensedBusinessType = licenseState.license?.businessType;
   useEffect(() => {
     if (licensedBusinessType && licensedBusinessType !== (settings.businessType || 'supermarket')) saveBusinessType(licensedBusinessType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [licensedBusinessType]);
+  }, [licensedBusinessType, settings.businessType]);
 
   // --- SUBSCRIPTION REQUEST: once approved on the admin page, activate with the key it carries ---
   const [showSubscribe, setShowSubscribe] = useState(false);
@@ -1390,6 +1391,7 @@ export default function App() {
                 <AdminOnlyNotice userName={currentUser?.name} />
               ) : (
                 <SettingsTab
+                  licensedBusinessType={licensedBusinessType}
                   settings={settings}
                   setSettings={setSettings}
                   invoices={invoices}

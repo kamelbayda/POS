@@ -19,6 +19,8 @@ export interface PrintJob {
 type Setter<T> = (value: T) => void;
 
 interface SettingsTabProps {
+  /** Kind of shop the active subscription was sold for; locks the shop type. */
+  licensedBusinessType?: 'supermarket' | 'phones';
   settings: SystemSettings;
   setSettings: Setter<SystemSettings>;
   invoices: Invoice[];
@@ -58,6 +60,7 @@ interface SettingsTabProps {
 }
 
 export function SettingsTab({
+  licensedBusinessType,
   settings,
   setSettings,
   invoices,
@@ -894,13 +897,19 @@ export function SettingsTab({
             </label>
             <select
               id="settings-business-type"
-              value={settings.businessType || 'supermarket'}
+              value={licensedBusinessType || settings.businessType || 'supermarket'}
+              disabled={!!licensedBusinessType}
               onChange={e => setSettings({ ...settings, businessType: e.target.value as 'supermarket' | 'phones' })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-sm text-right font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-sm text-right font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <option value="supermarket">🛒 {lang === 'ar' ? 'سوبرماركت' : 'Supermarket'}</option>
               <option value="phones">📱 {lang === 'ar' ? 'محل تلفونات' : 'Phone shop'}</option>
             </select>
+            {licensedBusinessType && (
+              <p className="text-[11px] text-slate-500 mt-1 text-right" id="settings-business-type-locked">
+                🔒 {lang === 'ar' ? 'نوع المحل محدّد باشتراكك. لتغييره لازم اشتراك جديد للنوع التاني.' : 'Set by your subscription. Changing it needs a new subscription.'}
+              </p>
+            )}
           </div>
 
           <div>
