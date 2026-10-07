@@ -5,6 +5,7 @@ import { Invoice, PrinterConfig, SystemSettings } from '../../types';
 import * as storage from '../../lib/storage';
 import { printElementViaIFrame } from '../../lib/print';
 import type { usePrinterHardware } from '../../hooks/usePrinterHardware';
+import { trialInvoicesUsed, TRIAL_LIMIT } from '../../lib/trial';
 
 export interface PrintJob {
   id: string;
@@ -1861,12 +1862,12 @@ export function SettingsTab({
                     <div className="space-y-1 pt-1.5 text-right">
                       <div className="flex justify-between text-[10px] text-amber-800 font-black flex-row-reverse">
                         <span>{lang === 'ar' ? 'التقدم:' : 'Invoices Progress:'}</span>
-                        <span className="font-mono">{invoices.length} / 15 فواتير</span>
+                        <span className="font-mono">{trialInvoicesUsed(invoices)} / 15 فواتير</span>
                       </div>
                       <div className="w-full bg-amber-200/50 h-2.5 rounded-full overflow-hidden border border-amber-200">
                         <div 
-                          className={`h-full rounded-full transition-all duration-500 ${invoices.length >= 15 ? 'bg-rose-500' : 'bg-amber-500'}`}
-                          style={{ width: `${Math.min(100, (invoices.length / 15) * 100)}%` }}
+                          className={`h-full rounded-full transition-all duration-500 ${trialInvoicesUsed(invoices) >= TRIAL_LIMIT ? 'bg-rose-500' : 'bg-amber-500'}`}
+                          style={{ width: `${Math.min(100, (trialInvoicesUsed(invoices) / TRIAL_LIMIT) * 100)}%` }}
                         />
                       </div>
                     </div>

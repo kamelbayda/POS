@@ -3,6 +3,7 @@ import { CartItem, CartSession, Product, Invoice, User, SystemSettings, Promotio
 import { auth } from '../../firebase';
 import * as storage from '../../lib/storage';
 import { addMonths, normalizeSerial } from '../../lib/serials';
+import { trialInvoicesUsed, TRIAL_LIMIT } from '../../lib/trial';
 
 export interface UsePosRegisterDeps {
   SYS_DATE: string;
@@ -728,7 +729,7 @@ export function usePosRegister({
   const handleCheckout = (overrideMethod?: 'cash' | 'card' | 'transfer' | 'debt') => {
     const activePaymentMethod = overrideMethod || paymentMethod;
     // Check if trial is expired
-    if (!isActivated && invoices.length >= 15) {
+    if (!isActivated && trialInvoicesUsed(invoices) >= TRIAL_LIMIT) {
       showToast('error', lang === 'ar' 
         ? '🚨 انتهت الفترة التجريبية للنظام (الحد الأقصى 15 فاتورة)! تم فتح نموذج التواصل لتفعيل الاشتراك السنوي.' 
         : '🚨 System Trial period expired (Max 15 invoices)! Opening contact form for annual subscription.'
