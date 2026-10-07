@@ -39,9 +39,20 @@ export function printTradeInReceipt(t: TradeIn, settings: SystemSettings) {
       ${row('ملاحظات', esc(t.notes || ''))}
     </table>
     <hr>
-    <table>${row('المبلغ', `<span class="big ltr">${t.pricePaidUSD.toFixed(2)} $</span>`)}${row('الدفع', t.payment === 'cash' ? 'نقداً' : 'رصيد على حساب الزبون')}</table>
+    <table>${row('قيمة الجهاز', `<span class="big ltr">${t.pricePaidUSD.toFixed(2)} $</span>`)}${row('الدفع', t.payment === 'cash' ? 'نقداً' : t.payment === 'exchange' ? 'مقايضة بجهاز من المحل' : 'رصيد على حساب الزبون')}</table>
+    ${t.exchange ? `<hr><table>
+      ${row('استلم', esc(t.exchange.productName))}
+      ${t.exchange.imei ? row('IMEI', `<span class="ltr">${esc(t.exchange.imei)}</span>`) : ''}
+      ${row('سعر الجديد', `<span class="ltr">${t.exchange.priceUSD.toFixed(2)} $</span>`)}
+      ${t.exchange.differenceUSD > 0
+        ? row('الزبون دفع فرق', `<span class="big ltr">${t.exchange.differenceUSD.toFixed(2)} $</span> ${t.exchange.differenceMethod === 'debt' ? '(دين على الحساب)' : '(كاش)'}`)
+        : t.exchange.differenceUSD < 0
+          ? row('المحل دفع فرق', `<span class="big ltr">${(-t.exchange.differenceUSD).toFixed(2)} $</span> (كاش)`)
+          : row('الفرق', 'لا يوجد')}
+      ${row('فاتورة البيع', `<span class="ltr">${esc(t.exchange.invoiceNumber)}</span>`)}
+    </table>` : ''}
     <hr>
-    <div class="decl">أنا الموقّع أدناه أقرّ بأنّ الجهاز المذكور ملكي الشخصي، وغير مسروق أو مرهون أو مقفول على أي حساب، وأتحمّل كامل المسؤولية القانونية بخلاف ذلك، وقد استلمت المبلغ المذكور أعلاه.</div>
+    <div class="decl">أنا الموقّع أدناه أقرّ بأنّ الجهاز المذكور ملكي الشخصي، وغير مسروق أو مرهون أو مقفول على أي حساب، وأتحمّل كامل المسؤولية القانونية بخلاف ذلك، وقد استلمت قيمته المذكورة أعلاه.</div>
     <div class="sign"><div>توقيع البائع</div><div>توقيع المحل</div></div>
   </div>`;
   printInPage(body, css);

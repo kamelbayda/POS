@@ -491,6 +491,18 @@ export default function App() {
     return inv;
   };
 
+  /** Saves a sales invoice built outside the till (e.g. a trade-in exchange); false when the trial is used up. */
+  const recordInvoice = (inv: Invoice): boolean => {
+    if (!isActivated && invoices.length >= 15) {
+      showToast('error', lang === 'ar' ? '🚨 انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : '🚨 Trial ended (15 invoices). Subscribe to continue.');
+      return false;
+    }
+    const updatedInvoices = [inv, ...invoices];
+    setInvoices(updatedInvoices);
+    storage.setJSON('pos_invoices', updatedInvoices);
+    return true;
+  };
+
   /** A repaired device handed back: its price becomes a sales invoice (parts cost counts in profit). */
   const deliverRepair = (t: RepairTicket, finalCostUSD: number, partsCostUSD: number, paymentMethod: 'cash' | 'debt'): string | null => {
     const remaining = Math.max(0, finalCostUSD - t.depositUSD);
@@ -1240,6 +1252,9 @@ export default function App() {
               customers={customers}
               setCustomers={setCustomers}
               showToast={showToast}
+              onSaleInvoice={recordInvoice}
+              cashierName={currentUser?.name || ''}
+              exchangeRate={settings.exchangeRate}
             />
           )}
 

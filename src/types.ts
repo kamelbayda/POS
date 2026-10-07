@@ -83,9 +83,20 @@ export interface TradeIn {
   notes?: string;
   pricePaidUSD: number;
   sellPriceUSD: number;
-  payment: 'cash' | 'credit'; // credit = goes to the customer's account (trade-in towards a purchase)
+  payment: 'cash' | 'credit' | 'exchange'; // credit = kept on the customer's account; exchange = swapped for a device from stock
   productId: string; // the used phone put on sale
   purchaseInvoiceId?: string;
+  /** Exchange: the device the customer took instead, and who paid the difference. */
+  exchange?: {
+    productId: string;
+    productName: string;
+    imei?: string;
+    priceUSD: number;
+    invoiceId: string;
+    invoiceNumber: string;
+    differenceUSD: number; // > 0 the customer paid it, < 0 the shop paid it
+    differenceMethod: 'cash' | 'debt';
+  };
 }
 
 /** Phone shops: a device left for repair. */
