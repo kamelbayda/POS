@@ -28,6 +28,7 @@ export type LicenseError =
   | 'revoked'
   | 'expired'
   | 'device_mismatch'
+  | 'other_shop'
   | 'rate_limited'
   | 'bad_request'
   | 'network'
@@ -101,18 +102,28 @@ async function callServer(path: 'activate' | 'refresh', body: Record<string, str
   return { ok: true, token: data.token, payload };
 }
 
+/**
+ * This shop's id, kept in its settings (so the shop's other computers share it through cloud sync,
+ * and every shop on a browser has its own). The licence server lets a key serve one shop only.
+ */
+export function getShopUid(): string {
+  const settings = storage.getJSON<{ shopUid?: string }>('pos_settings', {});
+  return settings.shopUid || '';
+}
+
 /** `ownerEmail` lets the licence admin page show which customer a key belongs to. */
 export const activateLicense = (key: string, shopName: string, ownerEmail = '') =>
-  callServer('activate', { key: key.trim().toUpperCase(), deviceId: getDeviceId(), shopName, email: ownerEmail });
+  callServer('activate', { key: key.trim().toUpperCase(), deviceId: getDeviceId(), shopName, email: ownerEmail, shopUid: getShopUid() });
 
 export const refreshLicense = (key: string) =>
-  callServer('refresh', { key, deviceId: getDeviceId() });
+  callServer('refresh', { key, deviceId: getDeviceId(), shopUid: getShopUid() });
 
 export const LICENSE_ERROR_MESSAGES: Record<LicenseError, { ar: string; en: string }> = {
   invalid_key: { ar: 'كود التفعيل غير صحيح.', en: 'Invalid activation key.' },
   revoked: { ar: 'تم إيقاف هذا الترخيص. تواصل معنا.', en: 'This licence has been revoked. Please contact us.' },
   expired: { ar: 'انتهت صلاحية هذا الاشتراك. جدّد الاشتراك للمتابعة.', en: 'This subscription has expired. Please renew.' },
   device_mismatch: { ar: 'هذا الكود مفعّل على جهاز آخر. تواصل معنا لنقله لهذا الجهاز.', en: 'This key is already active on another computer. Contact us to move it.' },
+  other_shop: { ar: 'هالكود مفعّل على محل تاني. كل محل بدّو كود تفعيل خاص فيه — اطلب اشتراك جديد لهالمحل.', en: 'This key is already used by another shop. Each shop needs its own key.' },
   rate_limited: { ar: 'محاولات كثيرة، حاول بعد قليل.', en: 'Too many attempts, try again shortly.' },
   bad_request: { ar: 'الرجاء كتابة كود التفعيل.', en: 'Please enter an activation key.' },
   network: { ar: 'تعذّر الاتصال بخادم التفعيل. تأكد من الإنترنت وحاول مجدداً.', en: 'Could not reach the activation server. Check your internet connection.' },

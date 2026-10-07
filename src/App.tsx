@@ -671,6 +671,18 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeLoaded, settings.businessType]);
 
+  // Every shop gets a permanent id once (synced to its other computers); licence keys are tied to it
+  useEffect(() => {
+    if (!storeLoaded || settings.shopUid) return;
+    setSettings(prev => {
+      if (prev.shopUid) return prev;
+      const next = { ...prev, shopUid: crypto.randomUUID() };
+      storage.setJSON('pos_settings', next);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeLoaded, settings.shopUid]);
+
   // Several shops on one browser: the shop list shows each one's name and kind
   const [showShopSwitcher, setShowShopSwitcher] = useState(false);
   const hasOtherShops = listShops().length > 1;
