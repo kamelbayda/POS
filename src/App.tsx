@@ -147,6 +147,7 @@ import { TopupsTab, DEFAULT_TOPUP_WALLETS } from './features/topups/TopupsTab';
 import { InstallmentsTab } from './features/installments/InstallmentsTab';
 import { ShopSwitcherModal } from './modals/ShopSwitcherModal';
 import { listShops, updateActiveShop } from './lib/shops';
+import { demoSwap } from './lib/demoData';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -631,6 +632,31 @@ export default function App() {
     if (licensedBusinessType && licensedBusinessType !== (settings.businessType || 'supermarket')) saveBusinessType(licensedBusinessType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [licensedBusinessType, settings.businessType]);
+
+  // Phone shops get their own look (blue, white and green; see index.css). The first time a shop
+  // becomes a phone shop it switches to the light look, which is where that theme is designed.
+  const isPhoneShop = settings.businessType === 'phones';
+  useEffect(() => {
+    document.documentElement.classList.toggle('biz-phones', isPhoneShop);
+    if (isPhoneShop && storage.getItem('pos_phone_theme_set') !== 'true') {
+      storage.setItem('pos_phone_theme_set', 'true');
+      setTheme('light');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPhoneShop]);
+
+  // The demo data follows the kind of shop (a phone shop shouldn't start with milk and bread)
+  useEffect(() => {
+    if (!storeLoaded || !settings.businessType) return;
+    const swap = demoSwap(settings.businessType, { products, categories, suppliers, customers, invoices }, SYS_DATE);
+    if (!swap) return;
+    if (swap.products) { setProducts(swap.products); storage.setJSON('pos_products', swap.products); }
+    if (swap.categories) { setCategories(swap.categories); storage.setJSON('pos_categories', swap.categories); }
+    if (swap.suppliers) { setSuppliers(swap.suppliers); storage.setJSON('pos_suppliers', swap.suppliers); }
+    if (swap.customers) { setCustomers(swap.customers); storage.setJSON('pos_customers', swap.customers); }
+    if (swap.invoices) { setInvoices(swap.invoices); storage.setJSON('pos_invoices', swap.invoices); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeLoaded, settings.businessType]);
 
   // Several shops on one browser: the shop list shows each one's name and kind
   const [showShopSwitcher, setShowShopSwitcher] = useState(false);

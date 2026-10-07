@@ -309,6 +309,93 @@ html.dark .glow-gold {
   box-shadow: 0 0 10px rgba(212, 175, 55, 0.2) !important;
 }
 
+/* --- PHONE SHOP THEME: blue, white and green (html.biz-phones, set from the shop type) --- */
+/* Gold and navy accents become blue, money / confirm actions stay green. Exact class tokens (~=)
+   so `dark:` / `hover:` variants are only touched where meant. */
+html.biz-phones:not(.dark), html.biz-phones:not(.dark) body { background-color: #F3F7FF; }
+html.biz-phones:not(.dark) #system-header { border-bottom: 3px solid #2563EB !important; }
+html.biz-phones #sidebar-navigation nav button[class~="bg-[#1D9E75]"] {
+  background: linear-gradient(90deg, #1D4ED8, #2563EB) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+}
+html.biz-phones #sidebar-navigation nav button[class~="bg-[#1D9E75]"] * { color: #fff !important; }
+
+html.biz-phones [class~="text-[#d4af37]"], html.biz-phones [class~="text-[#D4AF37]"],
+html.biz-phones [class~="hover:text-[#d4af37]"]:hover { color: #2563EB !important; }
+html.biz-phones [class*="text-[#d4af37]/"] { color: rgba(37, 99, 235, 0.8) !important; }
+html.biz-phones [class~="border-[#b89524]"], html.biz-phones [class*="border-[#d4af37]"],
+html.biz-phones [class*="hover:border-[#d4af37]"]:hover { border-color: rgba(37, 99, 235, 0.45) !important; }
+html.biz-phones [class*="bg-[#d4af37]/"], html.biz-phones [class*="hover:bg-[#d4af37]/"]:hover { background-color: rgba(37, 99, 235, 0.12) !important; }
+
+html.biz-phones [class~="bg-[#01002e]"], html.biz-phones [class~="bg-[#020069]"] {
+  background: linear-gradient(135deg, #1E40AF, #2563EB) !important;
+}
+html.biz-phones [class*="bg-[#01002e]/"], html.biz-phones [class*="bg-[#020069]/"] { background-color: rgba(37, 99, 235, 0.12) !important; }
+html.biz-phones [class~="text-[#01002e]"], html.biz-phones [class~="text-[#020069]"],
+html.biz-phones [class~="hover:text-[#01002e]"]:hover { color: #1E3A8A !important; }
+html.biz-phones [class*="text-[#01002e]/"] { color: rgba(30, 58, 138, 0.75) !important; }
+html.biz-phones [class*="border-[#01002e]"] { border-color: rgba(37, 99, 235, 0.2) !important; }
+
+/* gold buttons -> blue with white text; on the blue panels they turn white with blue text */
+html.biz-phones [class~="bg-[#d4af37]"], html.biz-phones [class~="bg-[#D4AF37]"],
+html.biz-phones [class~="bg-[#d4af37]"] *, html.biz-phones [class~="bg-[#D4AF37]"] * {
+  background-color: #2563EB; color: #fff !important;
+}
+html.biz-phones [class~="bg-[#d4af37]"], html.biz-phones [class~="bg-[#D4AF37]"] { background-color: #2563EB !important; }
+html.biz-phones [class~="hover:bg-[#c29d2c]"]:hover { background-color: #1D4ED8 !important; }
+html.biz-phones [class~="bg-[#d4af37]"] * { background-color: transparent; }
+html.biz-phones [class~="bg-[#01002e]"] [class~="bg-[#d4af37]"] { background-color: #fff !important; }
+html.biz-phones [class~="bg-[#01002e]"] [class~="bg-[#d4af37]"],
+html.biz-phones [class~="bg-[#01002e]"] [class~="bg-[#d4af37]"] * { color: #1D4ED8 !important; }
+html.biz-phones [class~="bg-[#01002e]"] [class~="text-[#d4af37]"],
+html.biz-phones [class~="bg-[#01002e]"] [class*="text-[#d4af37]/"],
+html.biz-phones [class~="bg-[#020069]"] [class~="text-[#d4af37]"],
+html.biz-phones [class~="bg-[#020069]"] [class*="text-[#d4af37]/"],
+html.biz-phones [class~="bg-[#01002e]"][class~="text-[#d4af37]"],
+html.biz-phones [class~="bg-[#01002e]"][class*="text-[#d4af37]/"] { color: #E0ECFF !important; }
+html.biz-phones [class~="bg-[#020069]"] [class~="bg-[#d4af37]"] { background-color: #6EE7B7 !important; }
+
+/* brand header (login) */
+html.biz-phones [class~="bg-[#1E1B16]"] { background: linear-gradient(135deg, #1E3A8A, #2563EB) !important; }
+html.biz-phones [class~="text-[#FFC21A]"] { color: #6EE7B7 !important; }
+
+/* night mode for phone shops: navy instead of black, blue instead of gold */
+html.dark.biz-phones, html.dark.biz-phones body, html.dark.biz-phones #main-system { background-color: #06122B !important; }
+html.dark.biz-phones #system-header { background-color: #0A1A3D !important; border-bottom: 1px solid #1E3A8A !important; }
+html.dark.biz-phones #sidebar-navigation > div { background-color: #0A1838 !important; border-color: #1E3A8A !important; }
+html.dark.biz-phones #sidebar-navigation nav button:not(.bg-\[\#1D9E75\]):hover { background-color: #12285A !important; }
+html.dark.biz-phones .bg-white, html.dark.biz-phones [class*="bg-white"] { background-color: #0E2149 !important; }
+html.dark.biz-phones .bg-slate-50, html.dark.biz-phones .bg-slate-100,
+html.dark.biz-phones [class*="bg-slate-50"], html.dark.biz-phones [class*="bg-slate-100"] { background-color: #0B1C40 !important; }
+html.dark.biz-phones .border-slate-200, html.dark.biz-phones .border-slate-100,
+html.dark.biz-phones [class*="border-slate-200"], html.dark.biz-phones [class*="border-slate-100"] { border-color: #1E3A8A !important; }
+html.dark.biz-phones .text-slate-500, html.dark.biz-phones .text-slate-400,
+html.dark.biz-phones [class*="text-slate-500"], html.dark.biz-phones [class*="text-slate-400"] { color: #8DA2C8 !important; }
+html.dark.biz-phones .hover\:bg-slate-50:hover, html.dark.biz-phones .hover\:bg-slate-100:hover { background-color: #16306A !important; }
+html.dark.biz-phones input, html.dark.biz-phones select, html.dark.biz-phones textarea { background-color: #0B1C40 !important; border-color: #1E3A8A !important; }
+html.dark.biz-phones input:focus, html.dark.biz-phones select:focus, html.dark.biz-phones textarea:focus { border-color: #3B82F6 !important; }
+html.dark.biz-phones .focus\:ring-\[\#1D9E75\]:focus { --tw-ring-color: #3B82F6 !important; }
+html.dark.biz-phones .bg-\[\#1D9E75\], html.dark.biz-phones [class*="bg-[#1D9E75]"],
+html.dark.biz-phones button.bg-\[\#1D9E75\], html.dark.biz-phones #login-screen .bg-\[\#1D9E75\] {
+  background-color: #059669 !important; color: #fff !important; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2) !important;
+}
+html.dark.biz-phones .bg-\[\#1D9E75\]:hover, html.dark.biz-phones [class*="bg-[#1D9E75]"]:hover { background-color: #047857 !important; }
+html.dark.biz-phones .bg-\[\#1D9E75\] * { color: #fff !important; }
+html.dark.biz-phones .text-\[\#1D9E75\], html.dark.biz-phones [class*="text-[#1D9E75]"] { color: #60A5FA !important; }
+html.dark.biz-phones .bg-\[\#EAF6ED\]\/60 { background-color: rgba(37, 99, 235, 0.08) !important; border-color: rgba(37, 99, 235, 0.25) !important; }
+html.dark.biz-phones svg path[stroke="\#1D9E75"], html.dark.biz-phones svg path[stroke="url\(\#lineGradient\)"] { stroke: #3B82F6 !important; }
+html.dark.biz-phones svg circle[fill="\#1D9E75"] { fill: #3B82F6 !important; }
+html.dark.biz-phones #login-screen { background: radial-gradient(circle at center, #0E2149 0%, #06122B 100%) !important; }
+html.dark.biz-phones .glow-gold { box-shadow: 0 0 10px rgba(59, 130, 246, 0.25) !important; }
+html.dark.biz-phones [class~="bg-[#121213]"], html.dark.biz-phones [class~="dark:bg-[#121213]"],
+html.dark.biz-phones [class~="bg-[#18181b]"], html.dark.biz-phones [class~="bg-[#18181A]"] { background-color: #0A1838 !important; }
+html.dark.biz-phones [class~="bg-[#1C1C1E]"], html.dark.biz-phones [class~="bg-[#1E1E20]"] { background-color: #0E2149 !important; }
+html.dark.biz-phones [class~="bg-[#2C2C2E]"], html.dark.biz-phones [class~="dark:bg-[#2C2C2E]"], html.dark.biz-phones [class~="bg-[#2C2C30]"],
+html.dark.biz-phones [class~="bg-[#252528]"], html.dark.biz-phones [class~="bg-[#242426]"], html.dark.biz-phones [class~="bg-[#2F2F32]"],
+html.dark.biz-phones [class~="bg-[#343438]"] { background-color: #16306A !important; }
+html.dark.biz-phones [class~="border-[#2C2C2E]"], html.dark.biz-phones [class~="border-[#242426]"] { border-color: #1E3A8A !important; }
+
 /* --- PRINT / PDF EXPORT OVERRIDES --- */
 @media print {
   /* Dynamic resets to force white backgrounds and solid black text under any circumstances (including Dark Theme) */
