@@ -22,7 +22,7 @@ export function withOperatingCost(p: Pick<Product, 'operatingCostUSD' | 'operati
  * then to 75% of the sale price.
  */
 export function costOfGoodsSold(
-  invoices: Array<{ items: Array<{ productId: string; priceUSD: number; quantity: number }> }>,
+  invoices: Array<{ items: Array<{ productId: string; priceUSD: number; quantity: number; unitCostUSD?: number }> }>,
   products: Product[],
 ): { purchase: number; operating: number; total: number } {
   const byId = new Map(products.map((p) => [p.id, p]));
@@ -31,7 +31,8 @@ export function costOfGoodsSold(
   for (const inv of invoices) {
     for (const item of inv.items) {
       const prod = byId.get(item.productId);
-      const base = prod?.costPriceUSD ?? prod?.priceWholesale ?? item.priceUSD * 0.75;
+      // Lines that are not stock products (repairs) carry their own cost
+      const base = item.unitCostUSD ?? prod?.costPriceUSD ?? prod?.priceWholesale ?? item.priceUSD * 0.75;
       purchase += base * item.quantity;
       if (prod) operating += operatingCostPerUnit(prod, base) * item.quantity;
     }

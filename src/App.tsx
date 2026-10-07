@@ -74,7 +74,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
-import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier, CartSession } from './types';
+import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier, CartSession, RepairTicket } from './types';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, DEFAULT_USERS, getSeededProducts, getSeededInvoices, DEFAULT_CUSTOMERS, DEFAULT_SUPPLIERS, DEFAULT_PROMOTIONS, DEFAULT_EXPENSES } from './mockData';
 import { CustomersTab } from './features/customers/CustomersTab';
 import { SuppliersTab } from './features/suppliers/SuppliersTab';
@@ -141,6 +141,7 @@ import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 import { SubscribeModal } from './modals/SubscribeModal';
 import { BusinessType, StoredRequest, getStoredRequest, clearStoredRequest, checkRequest } from './lib/subscription';
 import { SerialPickerModal } from './modals/SerialPickerModal';
+import { RepairsTab } from './features/repairs/RepairsTab';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -436,6 +437,57 @@ export default function App() {
   }, [currentUser, activeTab]);
 
   // Live sync between every device signed in to the same cloud shop
+  // Phone shops: devices left for repair (synced like the other lists)
+  const [repairs, setRepairsState] = useState<RepairTicket[]>(() => storage.getJSON<RepairTicket[]>('pos_repairs', []));
+  const setRepairs = (rows: RepairTicket[]) => {
+    setRepairsState(rows);
+    storage.setJSON('pos_repairs', rows);
+  };
+
+  /** A repaired device handed back: its price becomes a sales invoice (parts cost counts in profit). */
+  const deliverRepair = (t: RepairTicket, finalCostUSD: number, partsCostUSD: number, paymentMethod: 'cash' | 'debt'): string | null => {
+    if (!isActivated && invoices.length >= 15) {
+      showToast('error', lang === 'ar' ? '🚨 انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : '🚨 Trial ended (15 invoices). Subscribe to continue.');
+      return null;
+    }
+    const remaining = Math.max(0, finalCostUSD - t.depositUSD);
+    const now = new Date();
+    const inv: Invoice = {
+      id: `inv-${Date.now()}`,
+      invoiceNumber: `INV-${Date.now().toString().slice(-6)}-${(invoices.length + 1).toString().padStart(4, '0')}`,
+      date: SYS_DATE,
+      time: now.toTimeString().slice(0, 5),
+      items: [{
+        productId: `repair-${t.id}`,
+        productName: `${lang === 'ar' ? 'تصليح' : 'Repair'}: ${t.device} (${t.ticketNumber})`,
+        priceUSD: finalCostUSD,
+        quantity: 1,
+        totalUSD: finalCostUSD,
+        unitCostUSD: partsCostUSD,
+      }],
+      subtotalUSD: finalCostUSD,
+      discountUSD: 0,
+      totalUSD: finalCostUSD,
+      totalLBP: finalCostUSD * settings.exchangeRate,
+      paymentMethod,
+      cashier: currentUser?.name || '',
+      exchangeRate: settings.exchangeRate,
+      paidAmountUSD: paymentMethod === 'cash' ? remaining : 0,
+      ...(t.customerId ? { customerId: t.customerId } : {}),
+      ...(t.depositUSD > 0 ? { note: lang === 'ar' ? `عربون ${t.depositUSD.toFixed(2)}$ انقبض عند استلام الجهاز` : `Deposit ${t.depositUSD.toFixed(2)}$ taken at intake` } : {}),
+    };
+    const updatedInvoices = [inv, ...invoices];
+    setInvoices(updatedInvoices);
+    storage.setJSON('pos_invoices', updatedInvoices);
+    if (paymentMethod === 'debt' && t.customerId && remaining > 0) {
+      const updatedCustomers = customers.map(c => (c.id === t.customerId ? { ...c, creditBalance: c.creditBalance + remaining } : c));
+      setCustomers(updatedCustomers);
+      storage.setJSON('pos_customers', updatedCustomers);
+    }
+    showToast('success', lang === 'ar' ? `انسلّم الجهاز وانسجّلت فاتورة ${inv.invoiceNumber} (${finalCostUSD.toFixed(2)}$).` : `Delivered; invoice ${inv.invoiceNumber} recorded.`);
+    return inv.id;
+  };
+
   const cloudSync = useCloudSync({
     loaded: storeLoaded,
     SYS_DATE,
@@ -452,6 +504,7 @@ export default function App() {
       waste: { items: waste, set: setWaste },
       expenses: { items: expenses, set: setExpenses },
       purchaseInvoices: { items: purchaseInvoices, set: setPurchaseInvoices },
+      repairs: { items: repairs, set: setRepairs },
     },
     settings,
     setSettings,
@@ -959,6 +1012,7 @@ export default function App() {
           posLayoutMode={posLayoutMode}
           sidebarCollapsed={sidebarCollapsed}
           setSidebarCollapsed={setSidebarCollapsed}
+          businessType={settings.businessType}
         />
 
         <main className={`flex-1 min-w-0 w-full ${
@@ -1036,6 +1090,19 @@ export default function App() {
           {/* ==========================================
               SUPPLIERS AND ACCOUNTS PAYABLE (🏢)
               ========================================== */}
+          {activeTab === 'repairs' && (
+            <RepairsTab
+              lang={lang}
+              sysDate={SYS_DATE}
+              settings={settings}
+              repairs={repairs}
+              setRepairs={setRepairs}
+              customers={customers}
+              showToast={showToast}
+              onDeliver={deliverRepair}
+            />
+          )}
+
           {activeTab === 'suppliers' && (
             <SuppliersTab
               suppliers={suppliers}
