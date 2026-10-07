@@ -30,6 +30,10 @@ interface AppHeaderProps {
   setLockError: React.Dispatch<React.SetStateAction<string>>;
   license: LicenseState;
   setShowPurchaseContactModal: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Opens the subscription picker (shop type, plan, request). */
+  onSubscribe: () => void;
+  /** A subscription request was sent and is waiting for approval. */
+  subscriptionPending: boolean;
   handleLogout: () => void;
   showToast: (type: "success" | "error" | "warning", message: string) => void;
 }
@@ -59,6 +63,8 @@ export function AppHeader({
   setLockError,
   license,
   setShowPurchaseContactModal,
+  onSubscribe,
+  subscriptionPending,
   handleLogout,
   showToast,
 }: AppHeaderProps) {
@@ -344,6 +350,16 @@ export function AppHeader({
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              id="btn-subscribe"
+              onClick={onSubscribe}
+              className={`${subscriptionPending ? 'bg-amber-500 hover:bg-amber-600' : 'bg-[#1E1B16] hover:bg-black'} text-white font-extrabold text-[10px] py-1 px-3 rounded-lg transition duration-150 cursor-pointer shadow-sm`}
+            >
+              {subscriptionPending
+                ? (lang === 'ar' ? '⏳ طلب الاشتراك قيد المراجعة' : '⏳ Subscription pending')
+                : (lang === 'ar' ? '⭐ اشترك الآن' : '⭐ Subscribe')}
+            </button>
             <button
               type="button"
               onClick={() => setShowPurchaseContactModal(true)}

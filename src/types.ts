@@ -128,6 +128,7 @@ export interface PrinterAssignments {
 
 export interface SystemSettings {
   shopName: string;
+  businessType?: 'supermarket' | 'phones'; // kind of shop; missing = supermarket
   exchangeRate: number; // e.g. 89000 LBP per 1 USD
   lowStockThreshold: number; // alarm when stock is less than this
   expiryAlertDays: number; // alarm when product expires in N days
