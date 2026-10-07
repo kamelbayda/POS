@@ -37,6 +37,8 @@ interface Deps {
 export function useLicense({ shopName, ownerEmail = '', lang, showToast, onActivated }: Deps) {
   const [token, setToken] = useState<string | null>(() => storage.getItem(TOKEN_KEY));
   const [license, setLicense] = useState<LicensePayload | null>(null);
+  // The token from the last session is verified asynchronously: until then the licence is unknown
+  const [checkedToken, setCheckedToken] = useState<string | null | undefined>(undefined);
   const [now, setNow] = useState<number>(() => Date.now());
   const [isActivating, setIsActivating] = useState(false);
   const [activationErrorMsg, setActivationErrorMsg] = useState('');
@@ -57,7 +59,9 @@ export function useLicense({ shopName, ownerEmail = '', lang, showToast, onActiv
   useEffect(() => {
     let cancelled = false;
     verifyLicenseToken(token).then((payload) => {
-      if (!cancelled) setLicense(payload && payload.deviceId === getDeviceId() ? payload : null);
+      if (cancelled) return;
+      setLicense(payload && payload.deviceId === getDeviceId() ? payload : null);
+      setCheckedToken(token);
     });
     return () => { cancelled = true; };
   }, [token]);
@@ -171,6 +175,8 @@ export function useLicense({ shopName, ownerEmail = '', lang, showToast, onActiv
     inGracePeriod,
     graceDaysLeft,
     clockTampered,
+    /** False while the saved licence is still being verified (screens that depend on it can wait). */
+    checked: !token || checkedToken === token,
     isActivating,
     activationErrorMsg,
     setActivationErrorMsg,

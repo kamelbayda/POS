@@ -136,7 +136,7 @@ import { CloudBackupBanner } from './components/CloudBackupBanner';
 import { useCloudSync } from './hooks/useCloudSync';
 import { CloudAlignModal } from './components/CloudAlignModal';
 import { CloudJoinModal } from './components/CloudJoinModal';
-import { BeeCashWordmark } from './components/BeeCashLogo';
+import { BeeCashMark, BeeCashWordmark } from './components/BeeCashLogo';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 import { SubscribeModal } from './modals/SubscribeModal';
 import { BusinessType, StoredRequest, getStoredRequest, clearStoredRequest, checkRequest } from './lib/subscription';
@@ -805,6 +805,14 @@ export default function App() {
 
   // IF NOT LOGGED IN, SHOW BEAUTIFUL LOGIN SCREEN (after the kind of shop is chosen)
   if (!currentUser) {
+    // Wait for the saved licence: it decides the kind of shop (no flash of the business chooser)
+    if (!licenseState.checked) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-emerald-50 via-slate-50 to-emerald-100/30" id="app-loading">
+          <BeeCashMark className="w-16 h-16 animate-pulse" />
+        </div>
+      );
+    }
     const storedType = storeLoaded ? settings.businessType : storage.getJSON<Partial<SystemSettings>>('pos_settings', {}).businessType;
     const chosenBusinessType: BusinessType | null = licensedBusinessType || storedType || null;
     return (
