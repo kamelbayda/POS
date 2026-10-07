@@ -25,7 +25,9 @@ export function buildPurchaseInvoice(inv: PurchaseInvoice, shop: ShopIdentity, l
   const discount = inv.discountUSD ?? sumLines(items, lineDiscount);
   const tax = inv.taxUSD ?? sumLines(items, lineTax);
   const transport = inv.transportationCostUSD || 0;
-  const units = items.reduce((a, i) => a + i.qty + (i.freeQty || 0), 0);
+  const offer = inv.offerFreeItems || [];
+  const offerValue = inv.offerFreeValueUSD ?? offer.reduce((a, o) => a + o.qty * o.unitValueUSD, 0);
+  const units = items.reduce((a, i) => a + i.qty + (i.freeQty || 0), 0) + offer.reduce((a, o) => a + o.qty, 0);
 
   const head = [
     '#',
@@ -87,6 +89,8 @@ export function buildPurchaseInvoice(inv: PurchaseInvoice, shop: ShopIdentity, l
   #in-page-print-root .b { font-weight: 800; }
   #in-page-print-root .name { font-weight: 600; }
   #in-page-print-root .sub { font-size: 8pt; color: #555; font-weight: 400; }
+  #in-page-print-root .offer { margin-top: 10px; }
+  #in-page-print-root .offer th { background: #e0f2fe; }
   #in-page-print-root .bottom { display: flex; justify-content: space-between; gap: 16px; margin-top: 12px; page-break-inside: avoid; }
   #in-page-print-root .note { flex: 1; font-size: 9.5pt; border: 1px dashed #999; padding: 6px 8px; min-height: 40px; }
   #in-page-print-root .totals { width: 46%; }
@@ -115,6 +119,13 @@ export function buildPurchaseInvoice(inv: PurchaseInvoice, shop: ShopIdentity, l
     <thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${rows}</tbody>
   </table>
+${offer.length ? `
+  <table class="items offer">
+    <thead><tr><th colspan="3">🎁 ${t('بضاعة مجانية من عرض الفاتورة', 'Free goods from the invoice offer')}</th></tr>
+      <tr><th>${t('الصنف', 'Item')}</th><th>${t('الكمية', 'Qty')}</th><th>${t('القيمة', 'Value')}</th></tr></thead>
+    <tbody>${offer.map((o) => `<tr><td class="name">${esc(o.productName)}</td><td class="c">${num(o.qty)}</td><td class="n">${money(o.qty * o.unitValueUSD)}</td></tr>`).join('')}</tbody>
+  </table>
+  <div class="sub" style="margin-top:3px">${t(`قيمة الهدية ${money(offerValue)} وُزّعت كحسم على كلفة كل البضاعة.`, `Gift value ${money(offerValue)} spread as a discount over every item's cost.`)}</div>` : ''}
 
   <div class="bottom">
     <div class="note">

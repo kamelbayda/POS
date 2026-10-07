@@ -28,7 +28,7 @@ import { Product, PurchaseInvoice, PurchaseItem, Category } from '../../types';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import * as storage from '../../lib/storage';
 
-import { VAT_PRESETS, lineGross, lineDiscount, lineTax, lineTotal, landedCost, bonusFor, sumLines } from './purchaseMath';
+import { VAT_PRESETS, lineGross, lineDiscount, lineTax, lineTotal, landedCost, bonusFor, sumLines, costFactor, landedCostWithOffer, offerFreeValue } from './purchaseMath';
 import { printPurchaseInvoice } from './purchaseInvoicePrint';
 
 interface PurchasesTabProps {
@@ -84,7 +84,15 @@ export function PurchasesTab({
     freeQty: number;
     bonusEvery: number; // "for every bonusEvery bought, bonusFree free"; 0 = no bonus
     bonusFree: number;
+    unitsPerCarton: number; // 0 = not sold by the carton
   }>>([]);
+
+  // Free goods given for the whole invoice (e.g. "5 of each of these 4 products -> 4 cartons free")
+  const [offerItems, setOfferItems] = useState<Array<{ product: Product; qty: number; unitValueUSD: number }>>([]);
+  const [offerSearch, setOfferSearch] = useState<string>('');
+  const [offerQty, setOfferQty] = useState<string>('');
+  const [offerInCartons, setOfferInCartons] = useState<boolean>(true);
+  const [offerUnitValue, setOfferUnitValue] = useState<string>('');
 
   // Product Selector search states
   const [prodSearchQuery, setProdSearchQuery] = useState<string>('');
@@ -222,7 +230,8 @@ export function PurchasesTab({
         discountPercent: prod.purchaseDiscountPercent || 0,
         freeQty: 0,
         bonusEvery: prod.bonusEvery || 0,
-        bonusFree: prod.bonusFree || 0
+        bonusFree: prod.bonusFree || 0,
+        unitsPerCarton: prod.unitsPerCarton || 0
       },
       ...prev
     ]);
@@ -298,7 +307,8 @@ export function PurchasesTab({
         discountPercent: quickDiscount,
         freeQty: quickLine.freeQty,
         bonusEvery: quickBonusEvery,
-        bonusFree: quickBonusFree
+        bonusFree: quickBonusFree,
+        unitsPerCarton: 0
       },
       ...prev
     ]);
@@ -324,6 +334,9 @@ export function PurchasesTab({
   const handleUpdateDraftField = (index: number, field: string, val: any) => {
     setDraftItems(prev => prev.map((item, i) => {
       if (i !== index) return item;
+      // Cartons and carton price are typed for convenience; the line keeps units and unit cost
+      if (field === 'cartons') field = 'qty', val = val * (item.unitsPerCarton || 1);
+      else if (field === 'cartonPrice') field = 'costPriceUSD', val = Number((val / (item.unitsPerCarton || 1)).toFixed(4));
       const next = { ...item, [field]: val };
       // A bonus rule fills in the free units from the bought quantity
       if ((field === 'qty' || field === 'bonusEvery' || field === 'bonusFree') && next.bonusEvery > 0 && next.bonusFree > 0) {
@@ -382,6 +395,48 @@ export function PurchasesTab({
     );
   };
 
+  // --- Invoice offer (free goods for the whole invoice) ---
+  const offerForMath = offerItems.map(o => ({ productId: o.product.id, qty: o.qty, unitValueUSD: o.unitValueUSD }));
+  const offerFactor = costFactor(draftItems, offerForMath);
+  const offerShare = (productId: string) => offerItems
+    .filter(o => o.product.id === productId)
+    .reduce((acc, o) => ({ units: acc.units + o.qty, value: acc.value + o.qty * o.unitValueUSD }), { units: 0, value: 0 });
+  /** Real unit cost of a draft line: discount, VAT, line bonus and the invoice offer included. */
+  const effectiveCost = (item: (typeof draftItems)[number]) => {
+    const share = offerShare(item.product.id);
+    return landedCostWithOffer(item, offerFactor, share.units, share.value);
+  };
+  /** Default value of one free unit: what the same product costs on this invoice, else its last cost. */
+  const offerDefaultUnitValue = (prod: Product) => {
+    const line = draftItems.find(d => d.product.id === prod.id);
+    if (line) return Number(landedCost(line).toFixed(4));
+    return Number((prod.costPriceUSD ?? prod.priceUSD * 0.75).toFixed(4));
+  };
+  const findOfferProduct = (text: string) => {
+    const t = text.trim().toLowerCase();
+    if (!t) return undefined;
+    return products.find(p => p.name.toLowerCase() === t || p.barcode === text.trim() || (p.barcodes || []).includes(text.trim()));
+  };
+  const handleAddOfferItem = () => {
+    const prod = findOfferProduct(offerSearch);
+    if (!prod) {
+      showToast('error', isAr ? 'اختار الصنف المجاني من القائمة (بالاسم أو الباركود).' : 'Pick the free product from the list (name or barcode).');
+      return;
+    }
+    const upc = draftItems.find(d => d.product.id === prod.id)?.unitsPerCarton || prod.unitsPerCarton || 0;
+    const typed = parseFloat(offerQty) || 0;
+    const units = offerInCartons && upc > 0 ? typed * upc : typed;
+    if (units <= 0) {
+      showToast('error', isAr ? 'اكتب كمية البضاعة المجانية.' : 'Enter the free quantity.');
+      return;
+    }
+    const unitValue = parseFloat(offerUnitValue);
+    setOfferItems(prev => [...prev, { product: prod, qty: units, unitValueUSD: unitValue > 0 ? unitValue : offerDefaultUnitValue(prod) }]);
+    setOfferSearch('');
+    setOfferQty('');
+    setOfferUnitValue('');
+  };
+
   // Submit and Save the whole purchase invoice
   const handleSavePurchaseInvoice = () => {
     if (draftItems.length === 0) {
@@ -432,20 +487,27 @@ export function PurchasesTab({
       destination: purchaseDestination,
       transportationCostUSD: transCostNum,
       taxUSD: Number(totalTax.toFixed(2)),
-      discountUSD: Number(totalDiscount.toFixed(2))
+      discountUSD: Number(totalDiscount.toFixed(2)),
+      ...(offerItems.length > 0 ? {
+        offerFreeItems: offerItems.map(o => ({ productId: o.product.id, productName: o.product.name, qty: o.qty, unitValueUSD: Number(o.unitValueUSD.toFixed(4)) })),
+        offerFreeValueUSD: Number(offerFreeValue(offerForMath).toFixed(2)),
+      } : {})
     };
 
     // 2. Update Master Products: increments stock quantities (to shop or warehouse), set new cost prices, retail prices, wholesale prices, and expiry dates!
+    const isToWarehouse = purchaseDestination === 'warehouse';
     const updatedProducts = products.map(prod => {
       const draftVal = draftItems.find(d => d.product.id === prod.id);
+      const share = offerShare(prod.id);
       if (draftVal) {
-        const isToWarehouse = purchaseDestination === 'warehouse';
-        const received = draftVal.qty + (draftVal.freeQty || 0); // bonus units go on the shelf too
+        // bonus units and the invoice offer's free units go on the shelf too
+        const received = draftVal.qty + (draftVal.freeQty || 0) + share.units;
         return {
           ...prod,
+          unitsPerCarton: draftVal.unitsPerCarton || prod.unitsPerCarton,
           quantity: isToWarehouse ? prod.quantity : (prod.quantity + received), // add to retail shop if not to warehouse
           warehouseQuantity: isToWarehouse ? ((prod.warehouseQuantity || 0) + received) : (prod.warehouseQuantity || 0), // add to warehouse if selected
-          costPriceUSD: Number(landedCost(draftVal).toFixed(2)), // real unit cost: after discount, VAT included, spread over free units
+          costPriceUSD: Number(effectiveCost(draftVal).toFixed(2)), // real unit cost: after discount, VAT included, spread over free units and the invoice offer
           purchaseTaxRate: draftVal.taxRate,
           lastPurchaseCostUSD: draftVal.costPriceUSD,
           purchaseDiscountPercent: draftVal.discountPercent,
@@ -454,6 +516,15 @@ export function PurchasesTab({
           priceUSD: draftVal.newPriceUSD, // update retail price as requested
           priceWholesale: draftVal.newPriceWholesale, // update wholesale selling price
           expiryDate: draftVal.expiryDate || prod.expiryDate // update expiry date
+        };
+      }
+      if (share.units > 0) {
+        // A free product that is not otherwise on the invoice: stock in, cost = its share of what was paid
+        return {
+          ...prod,
+          quantity: isToWarehouse ? prod.quantity : prod.quantity + share.units,
+          warehouseQuantity: isToWarehouse ? (prod.warehouseQuantity || 0) + share.units : (prod.warehouseQuantity || 0),
+          costPriceUSD: Number(((share.value / share.units) * offerFactor).toFixed(2)),
         };
       }
       return prod;
@@ -473,6 +544,7 @@ export function PurchasesTab({
     setInvoiceNumber(`PUR-${Math.floor(100000 + Math.random() * 900000)}`);
     setNote('');
     setDraftItems([]);
+    setOfferItems([]);
     setTransportationCost('0');
     setSubTab('ledger'); // switch to ledger to view past submissions
 
@@ -531,6 +603,7 @@ export function PurchasesTab({
           freeQty: number;
           bonusEvery: number;
           bonusFree: number;
+          unitsPerCarton: number;
         }> = [];
 
         scannedItemsList.forEach(item => {
@@ -551,7 +624,8 @@ export function PurchasesTab({
               discountPercent: matchedProd.purchaseDiscountPercent || 0,
               freeQty: bonusFor(item.qty, matchedProd.bonusEvery, matchedProd.bonusFree),
               bonusEvery: matchedProd.bonusEvery || 0,
-              bonusFree: matchedProd.bonusFree || 0
+              bonusFree: matchedProd.bonusFree || 0,
+              unitsPerCarton: matchedProd.unitsPerCarton || 0
             });
           }
         });
@@ -808,6 +882,12 @@ export function PurchasesTab({
                       <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-emerald-300" id="purchase-draft-discount">
                         <span className="font-mono">- {totalDiscount.toFixed(2)} $</span>
                         <span>{isAr ? 'الحسم:' : 'Discount:'}</span>
+                      </div>
+                    )}
+                    {offerItems.length > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-sky-300" id="purchase-draft-offer">
+                        <span className="font-mono">{offerItems.reduce((a, o) => a + o.qty, 0)} ({offerFreeValue(offerForMath).toFixed(2)} $)</span>
+                        <span>{isAr ? '🎁 هدية عرض الفاتورة:' : '🎁 Invoice offer gift:'}</span>
                       </div>
                     )}
                     {totalFree > 0 && (
@@ -1538,6 +1618,47 @@ export function PurchasesTab({
 
                         {/* Supplier discount and bonus (free units) */}
                         <div className="flex flex-wrap items-end gap-3 font-sans text-xs bg-white/60 border border-slate-150 rounded-lg p-2.5">
+                          <div className="w-24">
+                            <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-upc-${item.product.id}`}>{isAr ? '📦 حبّة بالكرتونة:' : '📦 Units/carton:'}</label>
+                            <input
+                              id={`draft-upc-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              placeholder="12"
+                              value={item.unitsPerCarton || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'unitsPerCarton', Math.max(0, parseInt(e.target.value) || 0))}
+                              className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-bold text-indigo-800"
+                            />
+                          </div>
+                          {item.unitsPerCarton > 0 && (
+                            <>
+                              <div className="w-24">
+                                <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-cartons-${item.product.id}`}>{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
+                                <input
+                                  id={`draft-cartons-${item.product.id}`}
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  placeholder="0"
+                                  value={item.qty > 0 ? Number((item.qty / item.unitsPerCarton).toFixed(3)) : ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'cartons', Math.max(0, parseFloat(e.target.value) || 0))}
+                                  className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-black text-indigo-800"
+                                />
+                              </div>
+                              <div className="w-28">
+                                <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-carton-price-${item.product.id}`}>{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
+                                <input
+                                  id={`draft-carton-price-${item.product.id}`}
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={Number((item.costPriceUSD * item.unitsPerCarton).toFixed(2))}
+                                  onChange={e => handleUpdateDraftField(idx, 'cartonPrice', Math.max(0, parseFloat(e.target.value) || 0))}
+                                  className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-bold text-indigo-800"
+                                />
+                              </div>
+                            </>
+                          )}
                           <div className="w-28">
                             <label className="block text-slate-500 font-bold mb-1 text-[10px]" htmlFor={`draft-discount-${item.product.id}`}>{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
                             <input
@@ -1590,18 +1711,18 @@ export function PurchasesTab({
                               className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
                             />
                           </div>
-                          {(item.freeQty > 0 || item.discountPercent > 0) && item.qty > 0 && (
-                            <span className="text-[10px] text-slate-500 font-semibold pb-2">
+                          {(item.freeQty > 0 || item.discountPercent > 0 || offerFactor < 1) && item.qty > 0 && (
+                            <span className="text-[10px] text-slate-500 font-semibold pb-2" id={`draft-real-cost-${item.product.id}`}>
                               {isAr
-                                ? `بينضاف للمخزن ${item.qty + item.freeQty} • كلفة القطعة الفعلية ${landedCost(item).toFixed(3)}$`
-                                : `${item.qty + item.freeQty} into stock • real unit cost ${landedCost(item).toFixed(3)}$`}
+                                ? `بينضاف للمخزن ${item.qty + item.freeQty + offerShare(item.product.id).units} • كلفة القطعة الفعلية ${effectiveCost(item).toFixed(3)}$`
+                                : `${item.qty + item.freeQty + offerShare(item.product.id).units} into stock • real unit cost ${effectiveCost(item).toFixed(3)}$`}
                             </span>
                           )}
                         </div>
 
                         {/* --- INLINE DYNAMIC PRICING MARGIN ASSISTANT FOR DRAFT ITEM --- */}
                         {(() => {
-                          const dCost = landedCost(item); // margins on the real cost, VAT included
+                          const dCost = effectiveCost(item); // margins on the real cost, VAT and offers included
                           const dPrice = item.newPriceUSD;
                           const dProfit = dPrice - dCost;
                           const dMargin = dPrice > 0 ? (dProfit / dPrice) * 100 : 0;
@@ -1772,6 +1893,86 @@ export function PurchasesTab({
                       </div>
                     );
                   })}
+
+                  {/* --- INVOICE OFFER: free goods for the whole invoice --- */}
+                  {(() => {
+                    const freeValue = offerFreeValue(offerForMath);
+                    const pickedProd = findOfferProduct(offerSearch);
+                    const pickedUpc = pickedProd ? (draftItems.find(d => d.product.id === pickedProd.id)?.unitsPerCarton || pickedProd.unitsPerCarton || 0) : 0;
+                    return (
+                      <div className="bg-sky-50/60 border-2 border-dashed border-sky-200 rounded-xl p-4 space-y-3 text-xs" id="purchase-offer-box">
+                        <div>
+                          <h5 className="font-black text-sky-900 text-sm">{isAr ? '🎁 بضاعة مجانية من عرض الفاتورة' : '🎁 Free goods from an invoice offer'}</h5>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {isAr
+                              ? 'للعروض على الطلبية كلّها (متلاً: 5 كراتين من كل صنف = 4 كراتين مجاناً). البضاعة بتفوت عالمخزن، وقيمتها بتتوزّع حسم على كل أصناف الفاتورة.'
+                              : 'For offers on the whole order. The goods go into stock and their value is spread as a discount over every item.'}
+                          </p>
+                        </div>
+                        <datalist id="offer-products-list">
+                          {products.map(p => <option key={p.id} value={p.name}>{p.barcode}</option>)}
+                        </datalist>
+                        <div className="flex flex-wrap items-end gap-2">
+                          <div className="flex-1 min-w-[180px]">
+                            <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-product">{isAr ? 'الصنف المجاني:' : 'Free product:'}</label>
+                            <input
+                              id="offer-product"
+                              list="offer-products-list"
+                              value={offerSearch}
+                              onChange={e => { setOfferSearch(e.target.value); setOfferUnitValue(''); }}
+                              placeholder={isAr ? 'اسم الصنف أو الباركود' : 'Name or barcode'}
+                              className="w-full bg-white border border-sky-200 rounded-lg p-2 font-bold"
+                            />
+                          </div>
+                          <div className="w-24">
+                            <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-qty">{isAr ? 'الكمية:' : 'Qty:'}</label>
+                            <input id="offer-qty" type="number" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
+                              className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono font-black" placeholder="4" />
+                          </div>
+                          {pickedUpc > 0 && (
+                            <div className="flex rounded-lg border border-sky-200 overflow-hidden text-[11px] font-bold" role="group">
+                              <button type="button" id="offer-unit-cartons" onClick={() => setOfferInCartons(true)} className={`px-2.5 py-2 ${offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? `كرتونة (${pickedUpc})` : `carton (${pickedUpc})`}</button>
+                              <button type="button" id="offer-unit-units" onClick={() => setOfferInCartons(false)} className={`px-2.5 py-2 ${!offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? 'حبّة' : 'unit'}</button>
+                            </div>
+                          )}
+                          <div className="w-28">
+                            <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-unit-value">{isAr ? 'قيمة الحبّة ($):' : 'Value per unit ($):'}</label>
+                            <input id="offer-unit-value" type="number" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
+                              placeholder={pickedProd ? offerDefaultUnitValue(pickedProd).toFixed(3) : '0.00'}
+                              className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono" />
+                          </div>
+                          <button type="button" id="btn-add-offer-item" onClick={handleAddOfferItem}
+                            className="bg-sky-600 hover:bg-sky-700 text-white font-black px-4 py-2 rounded-lg cursor-pointer">
+                            {isAr ? '+ زيد' : '+ Add'}
+                          </button>
+                        </div>
+
+                        {offerItems.length > 0 && (
+                          <div className="space-y-1.5">
+                            {offerItems.map((o, i) => {
+                              const upc = o.product.unitsPerCarton || draftItems.find(d => d.product.id === o.product.id)?.unitsPerCarton || 0;
+                              return (
+                                <div key={`${o.product.id}-${i}`} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
+                                  <span className="font-bold text-slate-800">
+                                    🎁 {o.product.name} — {o.qty} {isAr ? 'حبّة' : 'units'}{upc > 0 ? ` (${Number((o.qty / upc).toFixed(2))} ${isAr ? 'كرتونة' : 'cartons'})` : ''}
+                                    <span className="text-slate-500 font-mono mx-2">{(o.qty * o.unitValueUSD).toFixed(2)}$</span>
+                                  </span>
+                                  <button type="button" onClick={() => setOfferItems(prev => prev.filter((_, j) => j !== i))} className="text-rose-500 hover:bg-rose-500 hover:text-white p-1 rounded" aria-label={isAr ? 'حذف' : 'Remove'}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                            <div className="text-[11px] font-black text-sky-900 bg-sky-100 rounded-lg px-3 py-2" id="offer-summary">
+                              {isAr
+                                ? `قيمة الهدية ${freeValue.toFixed(2)}$ • كل البضاعة (المدفوعة والمجانية) كلفتها نزلت ${((1 - offerFactor) * 100).toFixed(1)}%`
+                                : `Gift value ${freeValue.toFixed(2)}$ • every unit's cost drops ${((1 - offerFactor) * 100).toFixed(1)}%`}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -2027,6 +2228,13 @@ export function PurchasesTab({
                                         <span className="inline-flex items-center gap-1 font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
                                           {isAr ? 'الضريبة (TVA): ' : 'VAT: '}
                                           <strong className="font-mono text-amber-900">{(inv.taxUSD || 0).toFixed(2)} $</strong>
+                                        </span>
+                                      )}
+                                      {(inv.offerFreeItems || []).length > 0 && (
+                                        <span className="inline-flex items-center gap-1 font-bold bg-sky-50 text-sky-800 border border-sky-200 px-2.5 py-1 rounded">
+                                          🎁 {isAr ? 'عرض الفاتورة: ' : 'Invoice offer: '}
+                                          {(inv.offerFreeItems || []).map(o => `${o.productName} ×${o.qty}`).join('، ')}
+                                          <strong className="font-mono text-sky-900">({(inv.offerFreeValueUSD || 0).toFixed(2)} $)</strong>
                                         </span>
                                       )}
                                       {inv.transportationCostUSD !== undefined && inv.transportationCostUSD > 0 && (

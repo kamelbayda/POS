@@ -19,3 +19,22 @@ export const landedCost = (l: PricedLine) => {
 export const bonusFor = (qty: number, every?: number, free?: number) =>
   every && every > 0 && free && free > 0 ? Math.floor(qty / every) * free : 0;
 export const sumLines = (lines: PricedLine[], f: (l: PricedLine) => number) => lines.reduce((acc, l) => acc + f(l), 0);
+
+/**
+ * Free goods given for the whole invoice ("buy these 4 products, get 4 cartons free").
+ * Their value is spread over everything received: every unit, paid or free, carries the
+ * same share of what was actually paid. `costFactor` is the share kept per unit of value.
+ */
+export type OfferFreeItem = { productId: string; qty: number; unitValueUSD: number };
+export const offerFreeValue = (offer: OfferFreeItem[]) => offer.reduce((acc, o) => acc + o.qty * o.unitValueUSD, 0);
+export function costFactor(lines: PricedLine[], offer: OfferFreeItem[]): number {
+  const paid = sumLines(lines, lineTotal);
+  const free = offerFreeValue(offer);
+  return paid > 0 && free > 0 ? paid / (paid + free) : 1;
+}
+/** Real unit cost of a paid line once the invoice offer is spread (offerUnits/offerValue: same product's offer share). */
+export function landedCostWithOffer(l: PricedLine, factor: number, offerUnits = 0, offerValue = 0): number {
+  const units = l.qty + (l.freeQty || 0) + offerUnits;
+  if (units > 0 && l.qty > 0) return ((lineTotal(l) + offerValue) * factor) / units;
+  return landedCost(l) * factor;
+}

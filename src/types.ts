@@ -32,6 +32,7 @@ export interface Product {
   // Operating cost on top of the purchase cost (see lib/operatingCost.ts)
   operatingCostUSD?: number; // fixed $ per unit
   operatingCostPercent?: number; // % of the purchase cost
+  unitsPerCarton?: number; // units in one supplier carton/pack (purchases can be entered in cartons)
 }
 
 export interface Category {
@@ -251,6 +252,9 @@ export interface PurchaseInvoice {
   transportationCostUSD?: number;
   taxUSD?: number; // total VAT on the items, included in totalAmountUSD
   discountUSD?: number; // total supplier discount, already taken off totalAmountUSD
+  // Free goods given for the whole invoice; their value is spread as a discount over all units
+  offerFreeItems?: Array<{ productId: string; productName: string; qty: number; unitValueUSD: number }>;
+  offerFreeValueUSD?: number;
 }
 
 export interface Supplier {
