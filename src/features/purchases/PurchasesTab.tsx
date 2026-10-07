@@ -116,6 +116,7 @@ export function PurchasesTab({
   const [newProdUpc, setNewProdUpc] = useState<string>('');
   const [newProdCartons, setNewProdCartons] = useState<string>('');
   const [newProdCartonPrice, setNewProdCartonPrice] = useState<string>('');
+  const [newProdFreeQty, setNewProdFreeQty] = useState<string>(''); // free units typed directly (overrides the bonus rule)
 
   const [quickMarginVal, setQuickMarginVal] = useState<string>('');
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
@@ -246,6 +247,12 @@ export function PurchasesTab({
     showToast('success', isAr ? `تمت إضافة [${prod.name}]. اكتب الكمية المستلمة.` : `Added [${prod.name}]. Enter the received quantity.`);
   };
 
+  /** Free units on the quick add line: typed directly, else from the "every N get M" rule. */
+  const quickFreeUnits = (qty: number) => {
+    const typed = parseFloat(newProdFreeQty) || 0;
+    return typed > 0 ? typed : bonusFor(qty, parseInt(newProdBonusEvery) || 0, parseInt(newProdBonusFree) || 0);
+  };
+
   // Handle Quick Add New Product to catalog directly
   const handleQuickAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,7 +279,7 @@ export function PurchasesTab({
     const quickDiscount = Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0));
     const quickBonusEvery = Math.max(0, parseInt(newProdBonusEvery) || 0);
     const quickBonusFree = Math.max(0, parseInt(newProdBonusFree) || 0);
-    const quickLine = { qty: quickQty, costPriceUSD: costNum, taxRate: quickTaxRate, discountPercent: quickDiscount, freeQty: bonusFor(quickQty, quickBonusEvery, quickBonusFree) };
+    const quickLine = { qty: quickQty, costPriceUSD: costNum, taxRate: quickTaxRate, discountPercent: quickDiscount, freeQty: quickFreeUnits(quickQty) };
     const sellRetailNum = parseFloat(newProdSellRetail) || 0;
     const sellWholesaleNum = parseFloat(newProdSellWholesale) || sellRetailNum * 0.9;
 
@@ -333,6 +340,7 @@ export function PurchasesTab({
     setNewProdUpc('');
     setNewProdCartons('');
     setNewProdCartonPrice('');
+    setNewProdFreeQty('');
     setShowQuickAddForm(false);
 
     showToast('success', isAr ? `رائع! تم تسجيل [${newProd.name}] في النظام وإدراجه بالفاتورة.` : `Product [${newProd.name}] registered and added to draft invoice.`);
@@ -1201,7 +1209,7 @@ export function PurchasesTab({
                             id="quick-add-bonus-every"
                             type="number"
                             min="0"
-                            placeholder="12"
+                            placeholder="—"
                             value={newProdBonusEvery}
                             onChange={e => setNewProdBonusEvery(e.target.value)}
                             className="w-16 bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold"
@@ -1212,7 +1220,7 @@ export function PurchasesTab({
                           id="quick-add-bonus-free"
                           type="number"
                           min="0"
-                          placeholder="1"
+                          placeholder="—"
                           value={newProdBonusFree}
                           onChange={e => setNewProdBonusFree(e.target.value)}
                           className="w-14 bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold"
@@ -1220,8 +1228,23 @@ export function PurchasesTab({
                         />
                         <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'مجاناً' : 'free'}</span>
                       </div>
+                      <div className="w-28">
+                        <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free">{isAr ? 'الكمية المجانية (حبّة):' : 'Free units:'}</label>
+                        <input id="quick-add-free" type="number" min="0" step="any" placeholder="0" value={newProdFreeQty}
+                          onChange={e => setNewProdFreeQty(e.target.value)}
+                          className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
+                      </div>
+                      {parseInt(newProdUpc) > 0 && (
+                        <div className="w-28">
+                          <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free-cartons">{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
+                          <input id="quick-add-free-cartons" type="number" min="0" step="any" placeholder="0"
+                            value={parseFloat(newProdFreeQty) > 0 ? Number((parseFloat(newProdFreeQty) / parseInt(newProdUpc)).toFixed(3)) : ''}
+                            onChange={e => setNewProdFreeQty(String((parseFloat(e.target.value) || 0) * parseInt(newProdUpc)))}
+                            className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
+                        </div>
+                      )}
                       {(() => {
-                        const free = bonusFor(parseFloat(newProdQty) || 0, parseInt(newProdBonusEvery) || 0, parseInt(newProdBonusFree) || 0);
+                        const free = quickFreeUnits(parseFloat(newProdQty) || 0);
                         return free > 0 ? (
                           <span className="text-[11px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded mb-1">
                             🎁 {isAr ? `+${free} مجاناً على هالكمية` : `+${free} free on this quantity`}
@@ -1238,7 +1261,7 @@ export function PurchasesTab({
                         costPriceUSD: parseFloat(newProdCost) || 0,
                         taxRate: Math.max(0, parseFloat(newProdTaxRate) || 0),
                         discountPercent: Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0)),
-                        freeQty: bonusFor(qQty, parseInt(newProdBonusEvery) || 0, parseInt(newProdBonusFree) || 0),
+                        freeQty: quickFreeUnits(qQty),
                       });
                       const qPrice = parseFloat(newProdSellRetail) || 0;
                       const qProfit = qPrice - qCost;
@@ -1379,8 +1402,8 @@ export function PurchasesTab({
                           {/* Live Math analysis */}
                           <div className="grid grid-cols-4 gap-2 text-center text-[10px] pt-1.5 border-t border-dashed border-emerald-100">
                             <div className="bg-white/70 p-1.5 rounded">
-                              <span className="text-slate-400 block">الكلفة المدخلة</span>
-                              <span className="font-mono font-black text-slate-700">{qCost.toFixed(2)} $</span>
+                              <span className="text-slate-400 block">{isAr ? 'كلفة الحبّة الفعلية' : 'Real unit cost'}</span>
+                              <span className="font-mono font-black text-slate-700" id="quick-add-real-cost">{qCost.toFixed(3)} $</span>
                             </div>
                             <div className="bg-white/70 p-1.5 rounded">
                               <span className="text-slate-400 block">سعر البيع المقترح</span>
@@ -1726,7 +1749,7 @@ export function PurchasesTab({
                                 id={`draft-bonus-every-${item.product.id}`}
                                 type="number"
                                 min="0"
-                                placeholder="12"
+                                placeholder="—"
                                 value={item.bonusEvery || ''}
                                 onChange={e => handleUpdateDraftField(idx, 'bonusEvery', Math.max(0, parseInt(e.target.value) || 0))}
                                 className="w-16 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
@@ -1737,7 +1760,7 @@ export function PurchasesTab({
                               id={`draft-bonus-free-${item.product.id}`}
                               type="number"
                               min="0"
-                              placeholder="1"
+                              placeholder="—"
                               value={item.bonusFree || ''}
                               onChange={e => handleUpdateDraftField(idx, 'bonusFree', Math.max(0, parseInt(e.target.value) || 0))}
                               className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
@@ -1757,6 +1780,21 @@ export function PurchasesTab({
                               className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
                             />
                           </div>
+                          {item.unitsPerCarton > 0 && (
+                            <div className="w-28">
+                              <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-cartons-${item.product.id}`}>{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
+                              <input
+                                id={`draft-free-cartons-${item.product.id}`}
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder="0"
+                                value={item.freeQty > 0 ? Number((item.freeQty / item.unitsPerCarton).toFixed(3)) : ''}
+                                onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, (parseFloat(e.target.value) || 0) * item.unitsPerCarton))}
+                                className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
+                              />
+                            </div>
+                          )}
                           {(item.freeQty > 0 || item.discountPercent > 0 || offerFactor < 1) && item.qty > 0 && (
                             <span className="text-[10px] text-slate-500 font-semibold pb-2" id={`draft-real-cost-${item.product.id}`}>
                               {isAr
