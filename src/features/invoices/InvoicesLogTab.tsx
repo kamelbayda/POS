@@ -57,15 +57,28 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, lang, showToast }: Inv
       inv.invoiceNumber.toLowerCase().includes(cleanQuery) ||
       (inv.barcode && inv.barcode.toLowerCase().includes(cleanQuery)) ||
       inv.cashier.toLowerCase().includes(cleanQuery) ||
-      inv.totalUSD.toString().includes(cleanQuery)
+      inv.totalUSD.toString().includes(cleanQuery) ||
+      inv.items.some(it => (it.serials || []).some(sn => sn.toLowerCase().includes(cleanQuery)))
     );
   });
+
+  // Phone shops: an exact IMEI shows who bought it and whether its warranty still runs
+  const serialQuery = invoiceSearchQuery.replace(/[\s-]+/g, '').toUpperCase();
+  const serialHit = serialQuery.length >= 6 ? (() => {
+    for (const inv of invoices) {
+      for (const it of inv.items) {
+        if ((it.serials || []).includes(serialQuery)) return { inv, item: it };
+      }
+    }
+    return null;
+  })() : null;
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   // Exact match for automated scan display
   const exactMatch = invoices.find(inv => 
     inv.invoiceNumber.toLowerCase() === cleanQuery ||
     (inv.barcode && inv.barcode.toLowerCase() === cleanQuery)
-  );
+  ) || serialHit?.inv;
 
   const handleBarcodeFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +125,7 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, lang, showToast }: Inv
             <div className="relative w-full">
               <input
                 type="text"
-                placeholder="امسح الـ Barcode من قارئ الليزر أو اكتب رقم الفاتورة للوصول الفوري..."
+                placeholder="امسح الـ Barcode أو اكتب رقم الفاتورة أو الـ IMEI للوصول الفوري..."
                 value={invoiceSearchQuery}
                 onChange={(e) => setInvoiceSearchQuery(e.target.value)}
                 className="w-full text-right pr-10 pl-3 py-2.5 rounded-xl border border-emerald-200 bg-white font-mono text-xs focus:ring-2 focus:ring-emerald-500 font-bold"
@@ -123,6 +136,29 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, lang, showToast }: Inv
               </div>
             </div>
           </div>
+          {serialHit && (() => {
+            const until = serialHit.item.warrantyUntil;
+            const returned = (serialHit.item.serials || []).indexOf(serialQuery) < (serialHit.item.returnedQty || 0);
+            const active = !!until && until >= todayIso;
+            return (
+              <div className="mt-3 bg-white border-2 border-sky-200 rounded-xl p-3 text-right text-xs space-y-1" id="imei-lookup">
+                <div className="font-black text-sky-900">📱 IMEI <span dir="ltr" className="font-mono">{serialQuery}</span> — {serialHit.item.productName}</div>
+                <div className="text-slate-600">
+                  انباع بالفاتورة <b className="font-mono">{serialHit.inv.invoiceNumber}</b> بتاريخ <b dir="ltr">{serialHit.inv.date}</b>
+                  {serialHit.inv.customerId ? ' (لزبون مسجّل)' : ''}
+                </div>
+                {returned ? (
+                  <div className="font-bold text-amber-700">↩️ هالجهاز ترجّع للمحل.</div>
+                ) : until ? (
+                  <div className={`font-black ${active ? 'text-emerald-700' : 'text-rose-600'}`}>
+                    🛡️ {active ? 'الكفالة سارية لغاية' : 'الكفالة انتهت بتاريخ'} <span dir="ltr">{until}</span>
+                  </div>
+                ) : (
+                  <div className="text-slate-500">بلا كفالة.</div>
+                )}
+              </div>
+            );
+          })()}
           <p className="text-[10px] text-slate-400 mt-1.5">
             * يدعم هذا الحقل قارئ الباركود الليزري الموجه للورق الحراري. قم بتوجيهه إلى باركود الفاتورة ليقوم بفتحه تلقائياً.
           </p>

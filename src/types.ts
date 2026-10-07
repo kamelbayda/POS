@@ -33,6 +33,10 @@ export interface Product {
   operatingCostUSD?: number; // fixed $ per unit
   operatingCostPercent?: number; // % of the purchase cost
   unitsPerCarton?: number; // units in one supplier carton/pack (purchases can be entered in cartons)
+  // Phone shops: each unit has its own IMEI / serial number
+  trackSerial?: boolean;
+  serialNumbers?: string[]; // IMEIs in stock, one per unit
+  warrantyMonths?: number; // warranty given with each unit sold
 }
 
 export interface Category {
@@ -44,6 +48,7 @@ export interface Category {
 export interface CartItem {
   product: Product;
   quantity: number;
+  serials?: string[]; // IMEIs picked for a serial-tracked product (quantity = serials.length)
 }
 
 export interface InvoiceItem {
@@ -57,6 +62,8 @@ export interface InvoiceItem {
   discountApplied?: number;
   promotionId?: string;
   returnedQty?: number;
+  serials?: string[]; // IMEIs sold; the first returnedQty of them came back
+  warrantyUntil?: string; // YYYY-MM-DD
 }
 
 export interface Invoice {
@@ -238,6 +245,7 @@ export interface PurchaseItem {
   taxRate?: number; // VAT % charged by the supplier on costPriceUSD (which is before VAT)
   discountPercent?: number; // supplier discount on this line, applied before VAT
   freeQty?: number; // bonus units received free on top of qty
+  serials?: string[]; // IMEIs received (serial-tracked products)
 }
 
 export interface PurchaseInvoice {

@@ -5,6 +5,7 @@ import { ColumnSelector } from '../../components/ColumnSelector';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import { operatingCostPerUnit, withOperatingCost } from '../../lib/operatingCost';
+import { parseSerialList } from '../../lib/serials';
 
 interface InventoryTabProps {
   products: Product[];
@@ -135,6 +136,11 @@ export function InventoryTab({
   const [newProdExpiry, setNewProdExpiry] = useState<string>(today);
   const [newProdImage, setNewProdImage] = useState<string | undefined>(undefined);
   const [newProdIsWeighed, setNewProdIsWeighed] = useState<boolean>(false);
+  // Phone shops: units tracked by IMEI, with a warranty
+  const [newProdTrackSerial, setNewProdTrackSerial] = useState<boolean>(false);
+  const [newProdSerials, setNewProdSerials] = useState<string>('');
+  const [newProdWarrantyMonths, setNewProdWarrantyMonths] = useState<string>('');
+  const isPhoneShop = settings.businessType === 'phones';
   const [newProdPlu, setNewProdPlu] = useState<string>('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isProductFormExpanded, setIsProductFormExpanded] = useState<boolean>(false);
@@ -163,7 +169,9 @@ export function InventoryTab({
     const name = newProdName.trim();
     const barcode = newProdBarcode.trim();
     const price = parseFloat(newProdPriceUSD);
-    const qty = parseFloat(newProdQuantity);
+    const serialList = newProdTrackSerial ? parseSerialList(newProdSerials) : [];
+    // A serial-tracked product has exactly as many units as IMEIs
+    const qty = newProdTrackSerial ? serialList.length : parseFloat(newProdQuantity);
     const priceW = parseFloat(newProdPriceWholesale) || (price * 0.9);
     const cost = parseFloat(newProdCostPriceUSD) || (price * 0.75);
     const minWQty = parseFloat(newProdMinWholesaleQty) || 5;
@@ -181,6 +189,14 @@ export function InventoryTab({
       const otherBarcodes = [p.barcode, ...(p.barcodes || [])].map(b => b.trim()).filter(Boolean);
       return allBarcodesToValidate.some(b => otherBarcodes.includes(b));
     });
+
+    if (newProdTrackSerial) {
+      const owner = products.find(p => (!editingProduct || p.id !== editingProduct.id) && (p.serialNumbers || []).some(sn => serialList.includes(sn)));
+      if (owner) {
+        showToast('error', `في IMEI مكرّر موجود عند الصنف [${owner.name}].`);
+        return;
+      }
+    }
 
     if (duplicatedProduct) {
       showToast('error', `عفواً! أحد الباركودات المدخلة مستعمل مسبقاً للصنف [${duplicatedProduct.name}].`);
@@ -209,6 +225,9 @@ export function InventoryTab({
             unitsPerCarton: parseInt(newProdUnitsPerCarton) || undefined,
             image: newProdImage,
             isWeighed: newProdIsWeighed,
+            trackSerial: newProdTrackSerial || undefined,
+            serialNumbers: newProdTrackSerial ? serialList : undefined,
+            warrantyMonths: parseInt(newProdWarrantyMonths) || undefined,
             plu: newProdPlu.trim(),
           };
         }
@@ -238,6 +257,9 @@ export function InventoryTab({
         unitsPerCarton: parseInt(newProdUnitsPerCarton) || undefined,
         image: newProdImage,
         isWeighed: newProdIsWeighed,
+        trackSerial: newProdTrackSerial || undefined,
+        serialNumbers: newProdTrackSerial ? serialList : undefined,
+        warrantyMonths: parseInt(newProdWarrantyMonths) || undefined,
         plu: newProdPlu.trim(),
       };
 
@@ -263,6 +285,9 @@ export function InventoryTab({
     setNewProdImage(undefined);
     setNewProdIsWeighed(false);
     setNewProdPlu('');
+    setNewProdTrackSerial(false);
+    setNewProdSerials('');
+    setNewProdWarrantyMonths('');
     setIsProductFormExpanded(false);
   };
 
@@ -287,6 +312,9 @@ export function InventoryTab({
     setNewProdImage(p.image);
     setNewProdIsWeighed(!!p.isWeighed);
     setNewProdPlu(p.plu || '');
+    setNewProdTrackSerial(!!p.trackSerial);
+    setNewProdSerials((p.serialNumbers || []).join('\n'));
+    setNewProdWarrantyMonths(p.warrantyMonths ? String(p.warrantyMonths) : '');
     // Smooth scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -638,7 +666,9 @@ export function InventoryTab({
                 <input 
                   type="text" 
                   inputMode="decimal"
-                  value={newProdQuantity}
+                  value={newProdTrackSerial ? String(parseSerialList(newProdSerials).length) : newProdQuantity}
+                  disabled={newProdTrackSerial}
+                  title={newProdTrackSerial ? 'الكمية = عدد أرقام IMEI' : undefined}
                   onChange={e => setNewProdQuantity(e.target.value)}
                   onBlur={e => handleMathBlur(e.target.value, setNewProdQuantity)}
                   onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdQuantity)}
@@ -646,6 +676,35 @@ export function InventoryTab({
                   required
                 />
               </div>
+
+              {/* --- PHONE SHOPS: IMEI tracking and warranty --- */}
+              {(isPhoneShop || newProdTrackSerial) && (
+                <div className="col-span-1 sm:col-span-3 xl:col-span-9 bg-sky-50 border border-sky-200 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-4 gap-3" id="prod-serial-box">
+                  <div>
+                    <label className="block text-sky-900 mb-1 text-xs font-black">📱 بيتباع بالـ IMEI؟</label>
+                    <button type="button" id="prod-track-serial" onClick={() => setNewProdTrackSerial(v => !v)}
+                      className={`w-full text-xs font-black py-2 px-2.5 rounded-lg border h-9 cursor-pointer ${newProdTrackSerial ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-slate-200 text-slate-500'}`}>
+                      {newProdTrackSerial ? '✓ كل جهاز إلو IMEI' : 'لا (إكسسوار / بالعدد)'}
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-sky-900 mb-1 text-xs font-black" htmlFor="prod-warranty">🛡️ الكفالة (أشهر):</label>
+                    <input id="prod-warranty" type="text" inputMode="numeric" value={newProdWarrantyMonths}
+                      onChange={e => setNewProdWarrantyMonths(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="w-full bg-white border border-sky-200 rounded-lg py-2 px-3 text-sm text-center font-mono font-bold h-9" placeholder="مثلاً: 12" />
+                  </div>
+                  {newProdTrackSerial && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-sky-900 mb-1 text-xs font-black" htmlFor="prod-serials">
+                        أرقام IMEI بالمخزن (واحد بكل سطر) — {parseSerialList(newProdSerials).length} جهاز
+                      </label>
+                      <textarea id="prod-serials" rows={3} dir="ltr" value={newProdSerials} onChange={e => setNewProdSerials(e.target.value)}
+                        className="w-full bg-white border border-sky-200 rounded-lg py-2 px-3 text-xs font-mono" placeholder={'356789012345678\n356789012345679'} />
+                      <span className="block text-[10px] text-sky-800 mt-0.5">الكمية بتصير عدد الأرقام. الأجهزة الجديدة بتفوت عادةً من فاتورة المشتريات.</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* --- ELECTRONIC SCALE CONFIGURATION --- */}
               <div className="col-span-1 sm:col-span-1 xl:col-span-2">

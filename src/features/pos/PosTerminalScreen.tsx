@@ -391,6 +391,11 @@ export function PosTerminalScreen({
                             {item.product.name}
                           </span>
                         </div>
+                        {(item.serials || []).length > 0 && (
+                          <div className="text-[9px] font-mono text-right mt-0.5 opacity-80" dir="ltr" data-cart-serials>
+                            📱 {(item.serials || []).join(' · ')}
+                          </div>
+                        )}
 
                         <div className="flex items-center gap-1.5 justify-end mt-1 text-[10px] font-mono select-none">
                           <span className={isSelected ? 'text-sky-200' : theme === 'dark' ? 'text-stone-400 font-bold' : 'text-slate-500 font-bold'}>

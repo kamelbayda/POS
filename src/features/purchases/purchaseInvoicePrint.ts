@@ -45,7 +45,7 @@ export function buildPurchaseInvoice(inv: PurchaseInvoice, shop: ShopIdentity, l
     .map((i, n) => `
       <tr>
         <td class="c">${n + 1}</td>
-        <td class="name">${esc(i.productName)}${i.expiryDate ? `<div class="sub">${t('صلاحية', 'Exp.')}: <span class="ltr">${esc(i.expiryDate)}</span></div>` : ''}</td>
+        <td class="name">${esc(i.productName)}${i.expiryDate ? `<div class="sub">${t('صلاحية', 'Exp.')}: <span class="ltr">${esc(i.expiryDate)}</span></div>` : ''}${i.serials?.length ? `<div class="sub ltr">IMEI: ${i.serials.map(esc).join(', ')}</div>` : ''}</td>
         <td class="c">${num(i.qty)}</td>
         ${hasFree ? `<td class="c ltr">${i.freeQty ? `+${num(i.freeQty)}` : '—'}</td>` : ''}
         <td class="n">${money(i.costPriceUSD)}</td>

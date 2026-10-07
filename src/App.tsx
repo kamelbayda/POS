@@ -140,6 +140,7 @@ import { BeeCashWordmark } from './components/BeeCashLogo';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
 import { SubscribeModal } from './modals/SubscribeModal';
 import { BusinessType, StoredRequest, getStoredRequest, clearStoredRequest, checkRequest } from './lib/subscription';
+import { SerialPickerModal } from './modals/SerialPickerModal';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -1433,6 +1434,17 @@ export default function App() {
           setContactShop={setContactShop}
           contactMessage={contactMessage}
           setContactMessage={setContactMessage}
+        />
+      )}
+
+      {/* --- PHONE SHOPS: pick the IMEI of the unit being sold --- */}
+      {posRegister.serialPickerProduct && (
+        <SerialPickerModal
+          lang={lang}
+          product={products.find(p => p.id === posRegister.serialPickerProduct!.id) || posRegister.serialPickerProduct}
+          inCart={posRegister.cart.flatMap(c => c.serials || [])}
+          onPick={serial => posRegister.addSerialToCart(products.find(p => p.id === posRegister.serialPickerProduct!.id) || posRegister.serialPickerProduct!, serial)}
+          onClose={() => posRegister.setSerialPickerProduct(null)}
         />
       )}
 
