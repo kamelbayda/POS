@@ -1999,6 +1999,25 @@ export function PurchasesTab({
                     {draftItems.length === 0 && (
                       <p className="text-[11px] font-bold text-amber-700">{isAr ? 'زيد أول أصناف الفاتورة المدفوعة من البحث فوق، وبعدين سجّل الهدية هون.' : 'Add the paid items first, then record the gift here.'}</p>
                     )}
+                    {draftItems.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5" id="offer-quick-picks">
+                        <span className="text-[10px] font-bold text-slate-500">{isAr ? 'اختيار سريع من أصناف الفاتورة:' : 'Quick pick from this invoice:'}</span>
+                        {[...draftItems].reverse().map(d => {
+                          const selected = pickedProd?.id === d.product.id;
+                          return (
+                            <button
+                              key={`offer-pick-${d.product.id}`}
+                              type="button"
+                              data-offer-pick={d.product.id}
+                              onClick={() => { setOfferSearch(d.product.name); setOfferUnitValue(''); setOfferInCartons(true); }}
+                              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition cursor-pointer ${selected ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-sky-200 text-sky-800 hover:bg-sky-100'}`}
+                            >
+                              {selected ? '✓ ' : ''}{d.product.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                     <datalist id="offer-products-list">
                       {products.map(p => <option key={p.id} value={p.name}>{p.barcode}</option>)}
                     </datalist>
