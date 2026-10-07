@@ -64,6 +64,33 @@ export interface InvoiceItem {
   returnedQty?: number;
   serials?: string[]; // IMEIs sold; the first returnedQty of them came back
   warrantyUntil?: string; // YYYY-MM-DD
+  unitCostUSD?: number; // cost of a line that is not a stock product (e.g. repair parts)
+}
+
+/** Phone shops: a device left for repair. */
+export type RepairStatus = 'received' | 'in_progress' | 'waiting_parts' | 'ready' | 'delivered' | 'cancelled';
+export interface RepairTicket {
+  id: string;
+  ticketNumber: string; // REP-0001
+  date: string; // YYYY-MM-DD received
+  customerName: string;
+  customerPhone: string;
+  customerId?: string;
+  device: string; // brand / model
+  imei?: string;
+  problem: string;
+  accessories?: string; // what was left with the device (charger, case, SIM...)
+  devicePasscode?: string;
+  estimateUSD: number;
+  depositUSD: number;
+  expectedDate?: string;
+  status: RepairStatus;
+  finalCostUSD?: number;
+  partsCostUSD?: number;
+  technicianNote?: string;
+  history: Array<{ date: string; status: RepairStatus; note?: string }>;
+  deliveredAt?: string;
+  invoiceId?: string; // sales invoice created on delivery
 }
 
 export interface Invoice {

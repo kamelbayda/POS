@@ -1,4 +1,4 @@
-import { Archive, ArrowLeftRight, Barcode, BadgeDollarSign, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, Truck, User, Users } from 'lucide-react';
+import { Wrench, Archive, ArrowLeftRight, Barcode, BadgeDollarSign, ClipboardList, Cloud, FileText, Layers, Menu, Settings, ShoppingBag, ShoppingCart, Tag, TrendingUp, Truck, User, Users } from 'lucide-react';
 import { CartItem } from '../types';
 import React from 'react';
 
@@ -6,6 +6,7 @@ import React from 'react';
 // Sidebar navigation entries (id is used by tests and deep links)
 const menuItems = [
   { id: 'btn-nav-pos', tab: 'pos', labelAr: 'شاشة البيع المباشر', labelEn: 'Direct POS Screen', icon: ShoppingCart },
+  { id: 'btn-nav-repairs', tab: 'repairs', labelAr: 'قسم التصليح', labelEn: 'Repairs', icon: Wrench, phonesOnly: true },
   { id: 'btn-nav-inventory', tab: 'inventory', labelAr: 'إدارة المخزن', labelEn: 'Inventory & Stock', icon: Layers },
   { id: 'btn-nav-suppliers', tab: 'suppliers', labelAr: 'الموردين', labelEn: 'Suppliers', icon: Truck },
   { id: 'btn-nav-customers', tab: 'customers', labelAr: 'حسابات الزبائن والديون', labelEn: 'Customers & Debts', icon: Users },
@@ -31,6 +32,8 @@ interface SidebarProps {
   posLayoutMode: "modern" | "terminal";
   sidebarCollapsed: boolean;
   setSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Phone shops get their own sections (repairs...). */
+  businessType?: 'supermarket' | 'phones';
 }
 
 export function Sidebar({
@@ -41,6 +44,7 @@ export function Sidebar({
   posLayoutMode,
   sidebarCollapsed,
   setSidebarCollapsed,
+  businessType,
 }: SidebarProps) {
   return (
     <aside className={`w-full ${sidebarCollapsed ? 'md:w-20' : 'md:w-64'} shrink-0 flex flex-col gap-2 h-full overflow-y-auto pr-1 transition-all duration-300 ${activeTab === 'pos' && posLayoutMode === 'terminal' ? 'hidden' : ''}`} id="sidebar-navigation">
@@ -61,7 +65,7 @@ export function Sidebar({
         </div>
 
         <nav className="space-y-1 flex flex-col" aria-label="Sidebar Navigation">
-          {menuItems.map((item) => {
+          {menuItems.filter(item => !('phonesOnly' in item) || businessType === 'phones').map((item) => {
             const IconComponent = item.icon;
             const isActive = activeTab === item.tab;
             const label = lang === 'ar' ? item.labelAr : item.labelEn;
