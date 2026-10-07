@@ -16,9 +16,10 @@ import {
   connectFirestoreEmulator,
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { FIREBASE_APP_NAME } from './lib/shops';
 
-// Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+// One Firebase app per shop on this browser: its own cloud sign-in and offline cache
+const app = initializeApp(firebaseConfig, FIREBASE_APP_NAME);
 
 // Initialize Firestore with Offline Persistence enabled for concurrent Offline/Online operations
 export const db = initializeFirestore(app, {

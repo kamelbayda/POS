@@ -145,6 +145,8 @@ import { RepairsTab } from './features/repairs/RepairsTab';
 import { TradeInsTab } from './features/tradeins/TradeInsTab';
 import { TopupsTab, DEFAULT_TOPUP_WALLETS } from './features/topups/TopupsTab';
 import { InstallmentsTab } from './features/installments/InstallmentsTab';
+import { ShopSwitcherModal } from './modals/ShopSwitcherModal';
+import { listShops, updateActiveShop } from './lib/shops';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -630,6 +632,13 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [licensedBusinessType, settings.businessType]);
 
+  // Several shops on one browser: the shop list shows each one's name and kind
+  const [showShopSwitcher, setShowShopSwitcher] = useState(false);
+  const hasOtherShops = listShops().length > 1;
+  useEffect(() => {
+    if (storeLoaded) updateActiveShop({ name: settings.shopName, businessType: settings.businessType });
+  }, [storeLoaded, settings.shopName, settings.businessType]);
+
   // --- SUBSCRIPTION REQUEST: once approved on the admin page, activate with the key it carries ---
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [subscriptionRequest, setSubscriptionRequest] = useState<StoredRequest | null>(() => getStoredRequest());
@@ -828,13 +837,23 @@ export default function App() {
         loginError={loginError}
         handleLogin={handleLogin}
         needsOwnerSetup={!adminPasscode && !accounts.cashierPasscode && !users.some(u => u.password)}
-        onCreateOwner={(name, email, password) => accounts.createOwnerAccount(name, email, password)}
+        onCreateOwner={(name, email, password, shopName) => {
+          setSettings(prev => {
+            const next = { ...prev, shopName };
+            storage.setJSON('pos_settings', next);
+            return next;
+          });
+          return accounts.createOwnerAccount(name, email, password);
+        }}
         businessType={chosenBusinessType}
         onChooseBusiness={saveBusinessType}
         businessLocked={!!licensedBusinessType}
+        shopName={hasOtherShops ? settings.shopName : ''}
+        onSwitchShop={() => setShowShopSwitcher(true)}
         onForgotPassword={() => setShowForgotPassword(true)}
         onJoinCloud={() => setShowCloudJoin(true)}
       />
+      {showShopSwitcher && <ShopSwitcherModal lang={lang} onClose={() => setShowShopSwitcher(false)} />}
       {showCloudJoin && (
         <CloudJoinModal lang={lang} onBeforeSignIn={cloudSync.joinByDownload} onClose={() => setShowCloudJoin(false)} />
       )}
@@ -999,6 +1018,7 @@ export default function App() {
 
       {/* --- TOP BRAND HEADER BAR --- */}
       <AppHeader
+        onSwitchShop={() => { handleLogout(); setShowShopSwitcher(true); }}
         SYS_DATE={SYS_DATE}
         lang={lang}
         handleToggleLang={handleToggleLang}

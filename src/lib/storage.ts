@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SHOP_KEY_PREFIX } from './shops';
 
 /**
  * Single entry point for the app's local (per-device) persistence.
@@ -7,11 +8,14 @@ import { useState } from 'react';
  * here, so the backing store can later be swapped (IndexedDB, backend sync…)
  * without touching every screen. Access is wrapped in try/catch because
  * storage can be unavailable (private mode, quota exceeded).
+ *
+ * Keys belong to the active shop (see shops.ts): several shops can share a browser.
  */
+const k = (key: string) => SHOP_KEY_PREFIX + key;
 
 export function getItem(key: string): string | null {
   try {
-    return localStorage.getItem(key);
+    return localStorage.getItem(k(key));
   } catch {
     return null;
   }
@@ -19,7 +23,7 @@ export function getItem(key: string): string | null {
 
 export function setItem(key: string, value: string | number | boolean): void {
   try {
-    localStorage.setItem(key, String(value));
+    localStorage.setItem(k(key), String(value));
   } catch (err) {
     console.warn(`storage: failed to write "${key}"`, err);
   }
@@ -27,7 +31,7 @@ export function setItem(key: string, value: string | number | boolean): void {
 
 export function removeItem(key: string): void {
   try {
-    localStorage.removeItem(key);
+    localStorage.removeItem(k(key));
   } catch {
     // ignore
   }

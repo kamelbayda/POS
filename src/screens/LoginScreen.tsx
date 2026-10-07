@@ -16,7 +16,7 @@ interface LoginScreenProps {
   /** A new shop whose admin account has no password yet: show the owner setup form. */
   needsOwnerSetup: boolean;
   /** Creates the owner's admin account and signs in; returns an error message or null. */
-  onCreateOwner: (name: string, email: string, password: string) => Promise<string | null>;
+  onCreateOwner: (name: string, email: string, password: string, shopName: string) => Promise<string | null>;
   onForgotPassword: () => void;
   /** New device: sign in to the shop's cloud account and download the shop. */
   onJoinCloud: () => void;
@@ -25,6 +25,9 @@ interface LoginScreenProps {
   onChooseBusiness: (type: BusinessType) => void;
   /** Set by an active subscription: can't be changed here. */
   businessLocked: boolean;
+  /** This shop's name when the browser keeps several shops ('' = only one). */
+  shopName: string;
+  onSwitchShop: () => void;
 }
 
 export function LoginScreen({
@@ -44,6 +47,8 @@ export function LoginScreen({
   businessType,
   onChooseBusiness,
   businessLocked,
+  shopName,
+  onSwitchShop,
 }: LoginScreenProps) {
   const [choosing, setChoosing] = useState(false);
   const ar = lang === 'ar';
@@ -57,6 +62,7 @@ export function LoginScreen({
         current={businessType}
         onChoose={type => { onChooseBusiness(type); setChoosing(false); }}
         onBack={businessType ? () => setChoosing(false) : undefined}
+        onSwitchShop={onSwitchShop}
       />
     );
   }
@@ -89,6 +95,7 @@ export function LoginScreen({
               ? (ar ? 'نظام البيع والمخزون لمحلات التلفونات' : 'Sales and inventory for phone shops')
               : (ar ? 'نظام الكاشير والمخزون للسوبرماركت' : 'Checkout and inventory for supermarkets')}
           </p>
+          {shopName && <div className="mt-2 text-white font-black" id="login-shop-name">🏪 {shopName}</div>}
           <div className="mt-3 inline-flex items-center gap-2 bg-white/10 rounded-full px-3 py-1 text-xs font-bold" id="login-business-type" data-business={businessType}>
             <span>{typeInfo?.icon} {ar ? typeInfo?.ar : typeInfo?.en}</span>
             {businessLocked ? (
@@ -98,6 +105,11 @@ export function LoginScreen({
                 {ar ? 'تغيير' : 'Change'}
               </button>
             )}
+          </div>
+          <div>
+            <button type="button" id="btn-switch-shop" onClick={onSwitchShop} className="mt-2 text-xs font-bold text-slate-300 hover:text-white hover:underline cursor-pointer">
+              🏪 {ar ? 'تبديل المحل / إضافة محل' : 'Switch / add shop'}
+            </button>
           </div>
         </div>
 
@@ -194,6 +206,7 @@ function OwnerSetupForm({ lang, businessType, onCreateOwner, onJoinCloud }: {
 }) {
   const ar = lang === 'ar';
   const [name, setName] = useState('');
+  const [shop, setShop] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -203,6 +216,7 @@ function OwnerSetupForm({ lang, businessType, onCreateOwner, onJoinCloud }: {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!shop.trim()) return setError(ar ? 'اكتب اسم المحل.' : 'Enter the shop name.');
     if (!name.trim()) return setError(ar ? 'اكتب اسمك.' : 'Enter your name.');
     if (!EMAIL_RE.test(email.trim())) return setError(ar ? 'الإيميل مش مكتوب صح.' : 'Please enter a valid email.');
     if (password.length < MIN_PASSWORD) {
@@ -210,7 +224,7 @@ function OwnerSetupForm({ lang, businessType, onCreateOwner, onJoinCloud }: {
     }
     if (password !== confirm) return setError(ar ? 'كلمتا المرور مش متطابقتين.' : 'Passwords do not match.');
     setBusy(true);
-    const err = await onCreateOwner(name, email, password);
+    const err = await onCreateOwner(name, email, password, shop.trim());
     setBusy(false);
     if (err) setError(err);
   };
@@ -235,6 +249,10 @@ function OwnerSetupForm({ lang, businessType, onCreateOwner, onJoinCloud }: {
         </div>
       )}
 
+      <div>
+        <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="owner-shop">{ar ? 'اسم المحل' : 'Shop name'}</label>
+        <input id="owner-shop" value={shop} onChange={e => setShop(e.target.value)} className={inputClass} placeholder={businessType === 'phones' ? (ar ? 'متلاً: موبايل سنتر' : 'e.g. Mobile Center') : (ar ? 'متلاً: سوبرماركت البركة' : 'e.g. Baraka Market')} required />
+      </div>
       <div>
         <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="owner-name">{ar ? 'الاسم' : 'Name'}</label>
         <input id="owner-name" value={name} onChange={e => setName(e.target.value)} className={inputClass} autoComplete="name" required />
@@ -264,13 +282,14 @@ function OwnerSetupForm({ lang, businessType, onCreateOwner, onJoinCloud }: {
 }
 
 /** First screen of a new install: the kind of shop decides the sections, then the login / owner setup. */
-function BusinessChooser({ lang, SYS_DATE, handleToggleLang, current, onChoose, onBack }: {
+function BusinessChooser({ lang, SYS_DATE, handleToggleLang, current, onChoose, onBack, onSwitchShop }: {
   lang: 'ar' | 'en';
   SYS_DATE: string;
   handleToggleLang: () => void;
   current: BusinessType | null;
   onChoose: (type: BusinessType) => void;
   onBack?: () => void;
+  onSwitchShop: () => void;
 }) {
   const ar = lang === 'ar';
   return (
@@ -305,6 +324,9 @@ function BusinessChooser({ lang, SYS_DATE, handleToggleLang, current, onChoose, 
               {ar ? 'رجوع' : 'Back'}
             </button>
           )}
+          <button type="button" id="btn-chooser-switch-shop" onClick={onSwitchShop} className="sm:col-span-2 text-sm font-bold text-slate-500 hover:underline cursor-pointer">
+            🏪 {ar ? 'محلاتي على هالجهاز' : 'My shops on this device'}
+          </button>
         </div>
       </div>
     </div>
