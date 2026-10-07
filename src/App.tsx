@@ -803,8 +803,10 @@ export default function App() {
     return renderLockScreen();
   }
 
-  // IF NOT LOGGED IN, SHOW BEAUTIFUL LOGIN SCREEN
+  // IF NOT LOGGED IN, SHOW BEAUTIFUL LOGIN SCREEN (after the kind of shop is chosen)
   if (!currentUser) {
+    const storedType = storeLoaded ? settings.businessType : storage.getJSON<Partial<SystemSettings>>('pos_settings', {}).businessType;
+    const chosenBusinessType: BusinessType | null = licensedBusinessType || storedType || null;
     return (
       <>
       <LoginScreen
@@ -818,10 +820,10 @@ export default function App() {
         loginError={loginError}
         handleLogin={handleLogin}
         needsOwnerSetup={!adminPasscode && !accounts.cashierPasscode && !users.some(u => u.password)}
-        onCreateOwner={(name, email, password, businessType) => {
-          saveBusinessType(businessType);
-          return accounts.createOwnerAccount(name, email, password);
-        }}
+        onCreateOwner={(name, email, password) => accounts.createOwnerAccount(name, email, password)}
+        businessType={chosenBusinessType}
+        onChooseBusiness={saveBusinessType}
+        businessLocked={!!licensedBusinessType}
         onForgotPassword={() => setShowForgotPassword(true)}
         onJoinCloud={() => setShowCloudJoin(true)}
       />
