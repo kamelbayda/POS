@@ -67,6 +67,27 @@ export interface InvoiceItem {
   unitCostUSD?: number; // cost of a line that is not a stock product (e.g. repair parts)
 }
 
+/** Phone shops: a used phone bought from a customer. */
+export interface TradeIn {
+  id: string;
+  number: string; // TI-0001
+  date: string;
+  sellerName: string;
+  sellerPhone: string;
+  sellerIdNumber: string; // ID card / passport, for the ownership declaration
+  customerId?: string;
+  device: string;
+  imei: string;
+  condition: 'excellent' | 'good' | 'fair';
+  batteryHealth?: number;
+  notes?: string;
+  pricePaidUSD: number;
+  sellPriceUSD: number;
+  payment: 'cash' | 'credit'; // credit = goes to the customer's account (trade-in towards a purchase)
+  productId: string; // the used phone put on sale
+  purchaseInvoiceId?: string;
+}
+
 /** Phone shops: a device left for repair. */
 export type RepairStatus = 'received' | 'in_progress' | 'waiting_parts' | 'ready' | 'delivered' | 'cancelled';
 export interface RepairTicket {
