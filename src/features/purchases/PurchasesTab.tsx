@@ -112,6 +112,10 @@ export function PurchasesTab({
   const [newProdDiscount, setNewProdDiscount] = useState<string>('');
   const [newProdBonusEvery, setNewProdBonusEvery] = useState<string>('');
   const [newProdBonusFree, setNewProdBonusFree] = useState<string>('');
+  // Cartons helper for the quick add form: fills the received units and the unit cost
+  const [newProdUpc, setNewProdUpc] = useState<string>('');
+  const [newProdCartons, setNewProdCartons] = useState<string>('');
+  const [newProdCartonPrice, setNewProdCartonPrice] = useState<string>('');
 
   const [quickMarginVal, setQuickMarginVal] = useState<string>('');
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
@@ -286,7 +290,8 @@ export function PurchasesTab({
       lastPurchaseCostUSD: costNum,
       purchaseDiscountPercent: quickDiscount,
       bonusEvery: quickBonusEvery,
-      bonusFree: quickBonusFree
+      bonusFree: quickBonusFree,
+      ...(parseInt(newProdUpc) > 0 ? { unitsPerCarton: parseInt(newProdUpc) } : {})
     };
 
     // Append to master products list
@@ -308,7 +313,7 @@ export function PurchasesTab({
         freeQty: quickLine.freeQty,
         bonusEvery: quickBonusEvery,
         bonusFree: quickBonusFree,
-        unitsPerCarton: 0
+        unitsPerCarton: parseInt(newProdUpc) || 0
       },
       ...prev
     ]);
@@ -325,6 +330,9 @@ export function PurchasesTab({
     setNewProdDiscount('');
     setNewProdBonusEvery('');
     setNewProdBonusFree('');
+    setNewProdUpc('');
+    setNewProdCartons('');
+    setNewProdCartonPrice('');
     setShowQuickAddForm(false);
 
     showToast('success', isAr ? `رائع! تم تسجيل [${newProd.name}] في النظام وإدراجه بالفاتورة.` : `Product [${newProd.name}] registered and added to draft invoice.`);
@@ -1033,6 +1041,44 @@ export function PurchasesTab({
                           </select>
                         )}
                       </div>
+                    </div>
+
+                    {/* Bought by the carton: units per carton, cartons and carton price fill the fields below */}
+                    <div className="flex flex-wrap items-end gap-3 bg-indigo-50/60 border border-indigo-100 rounded-lg p-2.5">
+                      <div className="w-28">
+                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-upc">{isAr ? '📦 حبّة بالكرتونة:' : '📦 Units/carton:'}</label>
+                        <input id="quick-add-upc" type="number" min="0" value={newProdUpc} placeholder="12"
+                          onChange={e => {
+                            const upc = parseInt(e.target.value) || 0;
+                            setNewProdUpc(e.target.value);
+                            if (upc > 0 && parseFloat(newProdCartons) > 0) setNewProdQty(String(parseFloat(newProdCartons) * upc));
+                            if (upc > 0 && parseFloat(newProdCartonPrice) > 0) setNewProdCost(String(Number((parseFloat(newProdCartonPrice) / upc).toFixed(4))));
+                          }}
+                          className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono font-bold" />
+                      </div>
+                      <div className="w-28">
+                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-cartons">{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
+                        <input id="quick-add-cartons" type="number" min="0" step="any" value={newProdCartons} placeholder="5" disabled={!(parseInt(newProdUpc) > 0)}
+                          onChange={e => {
+                            setNewProdCartons(e.target.value);
+                            const upc = parseInt(newProdUpc) || 0;
+                            if (upc > 0) setNewProdQty(String((parseFloat(e.target.value) || 0) * upc));
+                          }}
+                          className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono font-black disabled:bg-slate-100" />
+                      </div>
+                      <div className="w-32">
+                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-carton-price">{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
+                        <input id="quick-add-carton-price" type="number" min="0" step="any" value={newProdCartonPrice} placeholder="0.00" disabled={!(parseInt(newProdUpc) > 0)}
+                          onChange={e => {
+                            setNewProdCartonPrice(e.target.value);
+                            const upc = parseInt(newProdUpc) || 0;
+                            if (upc > 0) setNewProdCost(String(Number(((parseFloat(e.target.value) || 0) / upc).toFixed(4))));
+                          }}
+                          className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono disabled:bg-slate-100" />
+                      </div>
+                      <span className="text-[10px] text-indigo-700 font-semibold pb-2">
+                        {isAr ? 'إذا بتشتري بالكرتونة: البرنامج بيعبّي الكمية بالحبّة وسعر الحبّة لحالو.' : 'Buying by the carton fills the units and unit cost for you.'}
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -1894,87 +1940,91 @@ export function PurchasesTab({
                     );
                   })}
 
-                  {/* --- INVOICE OFFER: free goods for the whole invoice --- */}
-                  {(() => {
-                    const freeValue = offerFreeValue(offerForMath);
-                    const pickedProd = findOfferProduct(offerSearch);
-                    const pickedUpc = pickedProd ? (draftItems.find(d => d.product.id === pickedProd.id)?.unitsPerCarton || pickedProd.unitsPerCarton || 0) : 0;
-                    return (
-                      <div className="bg-sky-50/60 border-2 border-dashed border-sky-200 rounded-xl p-4 space-y-3 text-xs" id="purchase-offer-box">
-                        <div>
-                          <h5 className="font-black text-sky-900 text-sm">{isAr ? '🎁 بضاعة مجانية من عرض الفاتورة' : '🎁 Free goods from an invoice offer'}</h5>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            {isAr
-                              ? 'للعروض على الطلبية كلّها (متلاً: 5 كراتين من كل صنف = 4 كراتين مجاناً). البضاعة بتفوت عالمخزن، وقيمتها بتتوزّع حسم على كل أصناف الفاتورة.'
-                              : 'For offers on the whole order. The goods go into stock and their value is spread as a discount over every item.'}
-                          </p>
-                        </div>
-                        <datalist id="offer-products-list">
-                          {products.map(p => <option key={p.id} value={p.name}>{p.barcode}</option>)}
-                        </datalist>
-                        <div className="flex flex-wrap items-end gap-2">
-                          <div className="flex-1 min-w-[180px]">
-                            <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-product">{isAr ? 'الصنف المجاني:' : 'Free product:'}</label>
-                            <input
-                              id="offer-product"
-                              list="offer-products-list"
-                              value={offerSearch}
-                              onChange={e => { setOfferSearch(e.target.value); setOfferUnitValue(''); }}
-                              placeholder={isAr ? 'اسم الصنف أو الباركود' : 'Name or barcode'}
-                              className="w-full bg-white border border-sky-200 rounded-lg p-2 font-bold"
-                            />
-                          </div>
-                          <div className="w-24">
-                            <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-qty">{isAr ? 'الكمية:' : 'Qty:'}</label>
-                            <input id="offer-qty" type="number" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
-                              className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono font-black" placeholder="4" />
-                          </div>
-                          {pickedUpc > 0 && (
-                            <div className="flex rounded-lg border border-sky-200 overflow-hidden text-[11px] font-bold" role="group">
-                              <button type="button" id="offer-unit-cartons" onClick={() => setOfferInCartons(true)} className={`px-2.5 py-2 ${offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? `كرتونة (${pickedUpc})` : `carton (${pickedUpc})`}</button>
-                              <button type="button" id="offer-unit-units" onClick={() => setOfferInCartons(false)} className={`px-2.5 py-2 ${!offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? 'حبّة' : 'unit'}</button>
-                            </div>
-                          )}
-                          <div className="w-28">
-                            <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-unit-value">{isAr ? 'قيمة الحبّة ($):' : 'Value per unit ($):'}</label>
-                            <input id="offer-unit-value" type="number" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
-                              placeholder={pickedProd ? offerDefaultUnitValue(pickedProd).toFixed(3) : '0.00'}
-                              className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono" />
-                          </div>
-                          <button type="button" id="btn-add-offer-item" onClick={handleAddOfferItem}
-                            className="bg-sky-600 hover:bg-sky-700 text-white font-black px-4 py-2 rounded-lg cursor-pointer">
-                            {isAr ? '+ زيد' : '+ Add'}
-                          </button>
-                        </div>
-
-                        {offerItems.length > 0 && (
-                          <div className="space-y-1.5">
-                            {offerItems.map((o, i) => {
-                              const upc = o.product.unitsPerCarton || draftItems.find(d => d.product.id === o.product.id)?.unitsPerCarton || 0;
-                              return (
-                                <div key={`${o.product.id}-${i}`} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
-                                  <span className="font-bold text-slate-800">
-                                    🎁 {o.product.name} — {o.qty} {isAr ? 'حبّة' : 'units'}{upc > 0 ? ` (${Number((o.qty / upc).toFixed(2))} ${isAr ? 'كرتونة' : 'cartons'})` : ''}
-                                    <span className="text-slate-500 font-mono mx-2">{(o.qty * o.unitValueUSD).toFixed(2)}$</span>
-                                  </span>
-                                  <button type="button" onClick={() => setOfferItems(prev => prev.filter((_, j) => j !== i))} className="text-rose-500 hover:bg-rose-500 hover:text-white p-1 rounded" aria-label={isAr ? 'حذف' : 'Remove'}>
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                            <div className="text-[11px] font-black text-sky-900 bg-sky-100 rounded-lg px-3 py-2" id="offer-summary">
-                              {isAr
-                                ? `قيمة الهدية ${freeValue.toFixed(2)}$ • كل البضاعة (المدفوعة والمجانية) كلفتها نزلت ${((1 - offerFactor) * 100).toFixed(1)}%`
-                                : `Gift value ${freeValue.toFixed(2)}$ • every unit's cost drops ${((1 - offerFactor) * 100).toFixed(1)}%`}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
                 </div>
               )}
+
+              {/* --- INVOICE OFFER: free goods for the whole invoice --- */}
+              {(() => {
+                const freeValue = offerFreeValue(offerForMath);
+                const pickedProd = findOfferProduct(offerSearch);
+                const pickedUpc = pickedProd ? (draftItems.find(d => d.product.id === pickedProd.id)?.unitsPerCarton || pickedProd.unitsPerCarton || 0) : 0;
+                return (
+                  <div className="bg-sky-50/60 border-2 border-dashed border-sky-200 rounded-xl p-4 space-y-3 text-xs" id="purchase-offer-box">
+                    <div>
+                      <h5 className="font-black text-sky-900 text-sm">{isAr ? '🎁 بضاعة مجانية من عرض الفاتورة' : '🎁 Free goods from an invoice offer'}</h5>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {isAr
+                          ? 'للعروض على الطلبية كلّها (متلاً: 5 كراتين من كل صنف = 4 كراتين مجاناً). البضاعة بتفوت عالمخزن، وقيمتها بتتوزّع حسم على كل أصناف الفاتورة.'
+                          : 'For offers on the whole order. The goods go into stock and their value is spread as a discount over every item.'}
+                      </p>
+                    </div>
+                    {draftItems.length === 0 && (
+                      <p className="text-[11px] font-bold text-amber-700">{isAr ? 'زيد أول أصناف الفاتورة المدفوعة من البحث فوق، وبعدين سجّل الهدية هون.' : 'Add the paid items first, then record the gift here.'}</p>
+                    )}
+                    <datalist id="offer-products-list">
+                      {products.map(p => <option key={p.id} value={p.name}>{p.barcode}</option>)}
+                    </datalist>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="flex-1 min-w-[180px]">
+                        <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-product">{isAr ? 'الصنف المجاني:' : 'Free product:'}</label>
+                        <input
+                          id="offer-product"
+                          list="offer-products-list"
+                          value={offerSearch}
+                          onChange={e => { setOfferSearch(e.target.value); setOfferUnitValue(''); }}
+                          placeholder={isAr ? 'اسم الصنف أو الباركود' : 'Name or barcode'}
+                          className="w-full bg-white border border-sky-200 rounded-lg p-2 font-bold"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-qty">{isAr ? 'الكمية:' : 'Qty:'}</label>
+                        <input id="offer-qty" type="number" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
+                          className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono font-black" placeholder="4" />
+                      </div>
+                      {pickedUpc > 0 && (
+                        <div className="flex rounded-lg border border-sky-200 overflow-hidden text-[11px] font-bold" role="group">
+                          <button type="button" id="offer-unit-cartons" onClick={() => setOfferInCartons(true)} className={`px-2.5 py-2 ${offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? `كرتونة (${pickedUpc})` : `carton (${pickedUpc})`}</button>
+                          <button type="button" id="offer-unit-units" onClick={() => setOfferInCartons(false)} className={`px-2.5 py-2 ${!offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? 'حبّة' : 'unit'}</button>
+                        </div>
+                      )}
+                      <div className="w-28">
+                        <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-unit-value">{isAr ? 'قيمة الحبّة ($):' : 'Value per unit ($):'}</label>
+                        <input id="offer-unit-value" type="number" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
+                          placeholder={pickedProd ? offerDefaultUnitValue(pickedProd).toFixed(3) : '0.00'}
+                          className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono" />
+                      </div>
+                      <button type="button" id="btn-add-offer-item" onClick={handleAddOfferItem}
+                        className="bg-sky-600 hover:bg-sky-700 text-white font-black px-4 py-2 rounded-lg cursor-pointer">
+                        {isAr ? '+ زيد' : '+ Add'}
+                      </button>
+                    </div>
+
+                    {offerItems.length > 0 && (
+                      <div className="space-y-1.5">
+                        {offerItems.map((o, i) => {
+                          const upc = o.product.unitsPerCarton || draftItems.find(d => d.product.id === o.product.id)?.unitsPerCarton || 0;
+                          return (
+                            <div key={`${o.product.id}-${i}`} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
+                              <span className="font-bold text-slate-800">
+                                🎁 {o.product.name} — {o.qty} {isAr ? 'حبّة' : 'units'}{upc > 0 ? ` (${Number((o.qty / upc).toFixed(2))} ${isAr ? 'كرتونة' : 'cartons'})` : ''}
+                                <span className="text-slate-500 font-mono mx-2">{(o.qty * o.unitValueUSD).toFixed(2)}$</span>
+                              </span>
+                              <button type="button" onClick={() => setOfferItems(prev => prev.filter((_, j) => j !== i))} className="text-rose-500 hover:bg-rose-500 hover:text-white p-1 rounded" aria-label={isAr ? 'حذف' : 'Remove'}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                        <div className="text-[11px] font-black text-sky-900 bg-sky-100 rounded-lg px-3 py-2" id="offer-summary">
+                          {isAr
+                            ? `قيمة الهدية ${freeValue.toFixed(2)}$ • كل البضاعة (المدفوعة والمجانية) كلفتها نزلت ${((1 - offerFactor) * 100).toFixed(1)}%`
+                            : `Gift value ${freeValue.toFixed(2)}$ • every unit's cost drops ${((1 - offerFactor) * 100).toFixed(1)}%`}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
           </div>
