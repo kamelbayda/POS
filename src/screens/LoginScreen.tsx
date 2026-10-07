@@ -1,6 +1,7 @@
 import { Globe, ShieldAlert, User, Lock } from 'lucide-react';
 import React, { useState } from 'react';
 import { BeeCashMark, BeeCashWordmark } from '../components/BeeCashLogo';
+import { BUSINESS_TYPES, BusinessType } from '../lib/subscription';
 
 interface LoginScreenProps {
   SYS_DATE: string;
@@ -15,7 +16,7 @@ interface LoginScreenProps {
   /** A new shop whose admin account has no password yet: show the owner setup form. */
   needsOwnerSetup: boolean;
   /** Creates the owner's admin account and signs in; returns an error message or null. */
-  onCreateOwner: (name: string, email: string, password: string) => Promise<string | null>;
+  onCreateOwner: (name: string, email: string, password: string, businessType: BusinessType) => Promise<string | null>;
   onForgotPassword: () => void;
   /** New device: sign in to the shop's cloud account and download the shop. */
   onJoinCloud: () => void;
@@ -162,6 +163,7 @@ function OwnerSetupForm({ lang, onCreateOwner, onJoinCloud }: {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [businessType, setBusinessType] = useState<BusinessType>('supermarket');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +175,7 @@ function OwnerSetupForm({ lang, onCreateOwner, onJoinCloud }: {
     }
     if (password !== confirm) return setError(ar ? 'كلمتا المرور مش متطابقتين.' : 'Passwords do not match.');
     setBusy(true);
-    const err = await onCreateOwner(name, email, password);
+    const err = await onCreateOwner(name, email, password, businessType);
     setBusy(false);
     if (err) setError(err);
   };
@@ -197,6 +199,20 @@ function OwnerSetupForm({ lang, onCreateOwner, onJoinCloud }: {
           <span>{error}</span>
         </div>
       )}
+
+      <div>
+        <div className="block text-slate-700 font-bold mb-1.5 text-sm">{ar ? 'شو نوع محلّك؟' : 'What kind of shop?'}</div>
+        <div className="grid grid-cols-2 gap-2">
+          {BUSINESS_TYPES.map(b => (
+            <button key={b.id} type="button" data-owner-business={b.id} onClick={() => setBusinessType(b.id)}
+              className={`p-3 rounded-xl border-2 text-start cursor-pointer transition ${businessType === b.id ? 'border-[#1D9E75] bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}>
+              <div className="text-xl">{b.icon}</div>
+              <div className="font-black text-slate-800 text-sm">{ar ? b.ar : b.en}</div>
+              <div className="text-[10px] text-slate-500">{ar ? b.descAr : b.descEn}</div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div>
         <label className="block text-slate-700 font-bold mb-1.5 text-sm" htmlFor="owner-name">{ar ? 'الاسم' : 'Name'}</label>

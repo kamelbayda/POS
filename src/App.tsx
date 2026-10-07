@@ -138,6 +138,8 @@ import { CloudAlignModal } from './components/CloudAlignModal';
 import { CloudJoinModal } from './components/CloudJoinModal';
 import { BeeCashWordmark } from './components/BeeCashLogo';
 import { handleMathBlur, handleMathKeyDown } from './mathEvaluator';
+import { SubscribeModal } from './modals/SubscribeModal';
+import { BusinessType, StoredRequest, getStoredRequest, clearStoredRequest, checkRequest } from './lib/subscription';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -512,6 +514,15 @@ export default function App() {
 
   // Direct POS hardware (raw USB / serial receipt printing, cash drawer)
   // Licence (verified offline, refreshed against the licence server when online)
+  /** Kind of shop (supermarket / phones): saved at once so it survives a refresh and syncs. */
+  const saveBusinessType = (type: BusinessType) => {
+    setSettings(prev => {
+      const next = { ...prev, businessType: type };
+      storage.setJSON('pos_settings', next);
+      return next;
+    });
+  };
+
   const licenseState = useLicense({
     shopName: settings.shopName,
     ownerEmail: (users.find(u => u.username === 'admin')?.email || users.find(u => u.role === 'admin' && u.email)?.email || ''),
@@ -522,6 +533,41 @@ export default function App() {
     },
   });
   const { isActivated } = licenseState;
+
+  // A key sold for a kind of shop sets it on this install
+  const licensedBusinessType = licenseState.license?.businessType;
+  useEffect(() => {
+    if (licensedBusinessType && licensedBusinessType !== (settings.businessType || 'supermarket')) saveBusinessType(licensedBusinessType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [licensedBusinessType]);
+
+  // --- SUBSCRIPTION REQUEST: once approved on the admin page, activate with the key it carries ---
+  const [showSubscribe, setShowSubscribe] = useState(false);
+  const [subscriptionRequest, setSubscriptionRequest] = useState<StoredRequest | null>(() => getStoredRequest());
+  useEffect(() => {
+    if (!subscriptionRequest || licenseState.isLicensed) return;
+    let stopped = false;
+    const check = async () => {
+      const st = await checkRequest(subscriptionRequest);
+      if (stopped || !st) return;
+      if (st.status === 'approved' && st.licenseKey) {
+        stopped = true;
+        clearStoredRequest();
+        setSubscriptionRequest(null);
+        await licenseState.applyActivation(st.licenseKey);
+      } else if (st.status === 'rejected') {
+        stopped = true;
+        clearStoredRequest();
+        setSubscriptionRequest(null);
+        showToast('error', lang === 'ar' ? 'طلب الاشتراك ما انقبل. تواصل معنا لتعرف السبب.' : 'Your subscription request was declined. Please contact us.');
+      }
+    };
+    check();
+    const id = setInterval(check, 60_000);
+    window.addEventListener('online', check);
+    return () => { stopped = true; clearInterval(id); window.removeEventListener('online', check); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscriptionRequest?.id, licenseState.isLicensed]);
 
   const printerHardware = usePrinterHardware({ settings, customers, lang, showToast });
   const {
@@ -683,7 +729,10 @@ export default function App() {
         loginError={loginError}
         handleLogin={handleLogin}
         needsOwnerSetup={!adminPasscode && !accounts.cashierPasscode && !users.some(u => u.password)}
-        onCreateOwner={accounts.createOwnerAccount}
+        onCreateOwner={(name, email, password, businessType) => {
+          saveBusinessType(businessType);
+          return accounts.createOwnerAccount(name, email, password);
+        }}
         onForgotPassword={() => setShowForgotPassword(true)}
         onJoinCloud={() => setShowCloudJoin(true)}
       />
@@ -837,6 +886,18 @@ export default function App() {
         />
       )}
 
+      {showSubscribe && (
+        <SubscribeModal
+          lang={lang}
+          businessType={settings.businessType || 'supermarket'}
+          shopName={settings.shopName}
+          ownerName={users.find(u => u.username === 'admin')?.name || ''}
+          ownerEmail={users.find(u => u.username === 'admin')?.email || ''}
+          onClose={() => setShowSubscribe(false)}
+          onSubmitted={req => setSubscriptionRequest(req)}
+        />
+      )}
+
       {/* --- TOP BRAND HEADER BAR --- */}
       <AppHeader
         SYS_DATE={SYS_DATE}
@@ -862,6 +923,8 @@ export default function App() {
         setLockPasscode={setLockPasscode}
         setLockError={setLockError}
         setShowPurchaseContactModal={setShowPurchaseContactModal}
+        onSubscribe={() => setShowSubscribe(true)}
+        subscriptionPending={!!subscriptionRequest}
         handleLogout={handleLogout}
         showToast={showToast}
         license={licenseState}

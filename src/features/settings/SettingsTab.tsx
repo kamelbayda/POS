@@ -889,6 +889,21 @@ export function SettingsTab({
           </div>
 
           <div>
+            <label className="block text-slate-700 font-bold mb-1.5 text-xs text-right" htmlFor="settings-business-type">
+              {lang === 'ar' ? 'نوع المحل (بيحدد أقسام البرنامج):' : 'Shop type (sets the program sections):'}
+            </label>
+            <select
+              id="settings-business-type"
+              value={settings.businessType || 'supermarket'}
+              onChange={e => setSettings({ ...settings, businessType: e.target.value as 'supermarket' | 'phones' })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-sm text-right font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            >
+              <option value="supermarket">🛒 {lang === 'ar' ? 'سوبرماركت' : 'Supermarket'}</option>
+              <option value="phones">📱 {lang === 'ar' ? 'محل تلفونات' : 'Phone shop'}</option>
+            </select>
+          </div>
+
+          <div>
             <label className="block text-slate-700 font-bold mb-1.5 text-xs text-right">
               {lang === 'ar' ? 'نوع وطبيعة النشاط التجاري:' : 'Business Domain / Activity:'}
             </label>

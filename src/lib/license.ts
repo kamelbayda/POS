@@ -14,6 +14,10 @@ export interface LicensePayload {
   deviceId: string;
   shop: string | null;
   plan: 'year' | 'life';
+  /** Subscription period (newer keys); monthly keys keep plan 'year'. */
+  period?: 'month' | 'year' | 'life';
+  /** Kind of shop the key was sold for (newer keys). */
+  businessType?: 'supermarket' | 'phones';
   issuedAt: number;
   /** Epoch ms, or null for lifetime licences. */
   expiresAt: number | null;
