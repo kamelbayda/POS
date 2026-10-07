@@ -114,6 +114,45 @@ export interface RepairTicket {
   invoiceId?: string; // sales invoice created on delivery
 }
 
+/** Phone shops: the shop's prepaid credit with a mobile operator (Alfa / Touch). */
+export interface TopupWallet {
+  id: string; // 'alfa' | 'touch' | custom
+  name: string;
+  balance: number; // credit dollars the shop can still transfer
+  avgCostUSD: number; // what the shop paid per 1$ of credit (weighted average)
+  sellRateUSD: number; // default price per 1$ of credit sold
+  loads?: Array<{ date: string; credit: number; paidUSD: number }>;
+}
+
+export interface InstallmentDue {
+  dueDate: string; // YYYY-MM-DD
+  amountUSD: number;
+  paidUSD: number;
+  paidDate?: string;
+}
+
+/** Phone shops: a sale paid over several months. */
+export interface InstallmentPlan {
+  id: string;
+  number: string; // INS-0001
+  date: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  description: string; // device / IMEI
+  invoiceId?: string; // the debt sale it schedules
+  priceUSD: number; // amount owed before the down payment
+  downPaymentUSD: number;
+  markupPercent: number;
+  totalUSD: number; // financed amount incl. markup, split over the months
+  months: number;
+  guarantorName?: string;
+  guarantorPhone?: string;
+  schedule: InstallmentDue[];
+  payments: Array<{ date: string; amountUSD: number }>;
+  status: 'active' | 'done';
+}
+
 export interface Invoice {
   id: string;
   invoiceNumber: string;
