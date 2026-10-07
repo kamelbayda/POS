@@ -3,6 +3,7 @@ import { ShoppingCart, Globe, Sun, Moon, Maximize, Menu, Monitor, X, Plus, Check
 import { Product, Category, CartItem, SystemSettings, Promotion, Customer, CartSession } from '../../types';
 import React, { useState } from 'react';
 import { BeeCashMark, BeeCashWordmark } from '../../components/BeeCashLogo';
+import { matchesProductSearch } from '../../lib/productSearch';
 
 interface PosTerminalScreenProps {
   /** Cart, sessions and checkout state from usePosRegister. */
@@ -780,7 +781,8 @@ export function PosTerminalScreen({
                     : 'bg-white border-slate-300 text-slate-800'
                 }`}
               >
-                <option value="all" className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{lang === 'ar' ? 'جميع الأقسام والأصناف' : 'All categories'}</option>
+                <option value="all" className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{lang === 'ar' ? '🏠 الأقسام' : '🏠 Categories'}</option>
+                <option value="everything" className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{lang === 'ar' ? '📦 كل المنتجات' : '📦 All products'}</option>
                 {categories.map(c => (
                   <option key={c.id} value={c.id} className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{c.name}</option>
                 ))}
@@ -851,9 +853,16 @@ export function PosTerminalScreen({
             </div>
           )}
           {(() => {
+            // Home shows the categories; a search always looks through every category
+            const query = searchQuery.trim();
+            const showCategoryHome = !query && selectedCategory === 'all';
             const filtered = processedProducts
-              .filter(p => selectedCategory === 'all' || p.category === selectedCategory || (selectedCategory === 'promotions' && p.priceWholesale))
-              .filter(p => !searchQuery || p.name.includes(searchQuery) || p.barcode.includes(searchQuery) || (p.barcodes && p.barcodes.some(b => b.includes(searchQuery))));
+              .filter(p => query || selectedCategory === 'all' || selectedCategory === 'everything' || p.category === selectedCategory || (selectedCategory === 'promotions' && p.priceWholesale))
+              .filter(p => matchesProductSearch(p, query));
+            const openCategory = (id: string) => { setSelectedCategory(id); setTerminalProductPage(0); };
+            const tileClass = `rounded-2xl border p-4 flex flex-col items-center justify-center gap-1 h-32 cursor-pointer transition-all hover:-translate-y-0.5 active:scale-95 select-none ${
+              theme === 'dark' ? 'border-[#2B2B2F] bg-[#1E1E20] hover:border-sky-500 text-stone-100' : 'border-slate-300 bg-white hover:border-emerald-500 hover:bg-emerald-50/30 text-slate-800 shadow-xs'
+            }`;
 
             const itemsPerPage = terminalItemsPerPage;
             const pagesCount = Math.ceil(filtered.length / itemsPerPage) || 1;
@@ -863,9 +872,44 @@ export function PosTerminalScreen({
             return (
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden" id="terminal-grid-wrapper">
 
+                {!showCategoryHome && (
+                  <div className={`flex items-center justify-between flex-row-reverse gap-2 mb-2 text-xs font-black shrink-0 ${theme === 'dark' ? 'text-stone-300' : 'text-slate-700'}`} id="terminal-browse-bar">
+                    <span>
+                      {query
+                        ? `🔎 ${lang === 'ar' ? 'نتائج البحث بكل الأقسام' : 'Search results in all categories'} (${filtered.length})`
+                        : selectedCategory === 'everything'
+                          ? `📦 ${lang === 'ar' ? 'كل المنتجات' : 'All products'} (${filtered.length})`
+                          : `${categories.find(c => c.id === selectedCategory)?.emoji || '📁'} ${categories.find(c => c.id === selectedCategory)?.name || ''} (${filtered.length})`}
+                    </span>
+                    <button type="button" id="btn-terminal-categories-home"
+                      onClick={() => { setSearchQuery(''); openCategory('all'); }}
+                      className={`px-3 py-1.5 rounded-lg border cursor-pointer ${theme === 'dark' ? 'border-stone-700 hover:bg-[#2C2C2E]' : 'border-slate-300 bg-white hover:bg-slate-100'}`}>
+                      {lang === 'ar' ? '→ رجوع للأقسام' : '← Categories'}
+                    </button>
+                  </div>
+                )}
+
                 {/* Scrollable grid container for products */}
                 <div className="flex-1 overflow-y-auto pr-1 select-none" id="terminal-grid-panel">
-                  {filtered.length === 0 ? (
+                  {showCategoryHome ? (
+                    <div className="grid gap-4 py-1 font-sans" id="terminal-category-tiles" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 185px), 1fr))' }}>
+                      <div data-category-tile="everything" onClick={() => openCategory('everything')} className={tileClass}>
+                        <span className="text-4xl">📦</span>
+                        <span className="font-black text-sm">{lang === 'ar' ? 'كل المنتجات' : 'All products'}</span>
+                        <span className="text-[11px] font-bold text-stone-500">{processedProducts.length} {lang === 'ar' ? 'صنف' : 'items'}</span>
+                      </div>
+                      {categories.map(cat => {
+                        const count = processedProducts.filter(p => p.category === cat.id).length;
+                        return (
+                          <div key={cat.id} data-category-tile={cat.id} onClick={() => openCategory(cat.id)} className={tileClass}>
+                            <span className="text-4xl">{cat.emoji || '📁'}</span>
+                            <span className="font-black text-sm text-center leading-tight">{cat.name}</span>
+                            <span className="text-[11px] font-bold text-stone-500">{count} {lang === 'ar' ? 'صنف' : 'items'}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : filtered.length === 0 ? (
                     <div className={`flex flex-col items-center justify-center p-14 font-bold rounded-2xl border border-dashed my-4 ${theme === 'dark' ? 'text-stone-500 bg-[#151517] border-stone-850' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
                       😞 {lang === 'ar' ? 'عفواً! لم يتم العثور على أي منتج مطابق في المتجر.' : 'No terminal items matched.'}
                     </div>
@@ -935,7 +979,7 @@ export function PosTerminalScreen({
                 </div>
 
                 {/* Pagination footer bar at bottom with interactive items-per-page selector */}
-                <div className={`border p-2 text-xs rounded-xl flex items-center justify-between flex-row-reverse select-none shrink-0 mt-3 font-sans ${theme === 'dark' ? 'bg-[#1C1C1E] border-stone-850' : 'bg-white border-slate-300 shadow-xs'}`}>
+                <div className={`border p-2 text-xs rounded-xl flex items-center justify-between flex-row-reverse select-none shrink-0 mt-3 font-sans ${showCategoryHome ? 'hidden' : ''} ${theme === 'dark' ? 'bg-[#1C1C1E] border-stone-850' : 'bg-white border-slate-300 shadow-xs'}`}>
 
                   {/* Page navigation indicators */}
                   <span className={`font-extrabold font-mono select-none ${theme === 'dark' ? 'text-stone-400' : 'text-slate-600'}`}>

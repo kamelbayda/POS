@@ -6,6 +6,7 @@ import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import { getGridColsStyle, getCardStyle } from './posGrid';
 import React, { useState } from 'react';
 import * as storage from '../../lib/storage';
+import { matchesProductSearch } from '../../lib/productSearch';
 
 interface PosModernScreenProps {
   /** Cart, sessions and checkout state from usePosRegister. */
@@ -1116,8 +1117,8 @@ export function PosModernScreen({
                   })
               ) : (
                 processedProducts
-                  .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
-                  .filter(p => !searchQuery || p.name.includes(searchQuery) || p.barcode.includes(searchQuery) || (p.barcodes && p.barcodes.some(b => b.includes(searchQuery))))
+                  .filter(p => searchQuery.trim() !== '' || selectedCategory === 'all' || p.category === selectedCategory)
+                  .filter(p => matchesProductSearch(p, searchQuery))
                   .map(item => {
                     const computedPriceLBP = item.priceUSD * settings.exchangeRate;
                     const cardStyle = getCardStyle(settings.posGridSize || 'auto');
@@ -1200,8 +1201,8 @@ export function PosModernScreen({
                 )
               ) : (
                 processedProducts
-                  .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
-                  .filter(p => !searchQuery || p.name.includes(searchQuery) || p.barcode.includes(searchQuery) || (p.barcodes && p.barcodes.some(b => b.includes(searchQuery)))).length === 0 && (
+                  .filter(p => searchQuery.trim() !== '' || selectedCategory === 'all' || p.category === selectedCategory)
+                  .filter(p => matchesProductSearch(p, searchQuery)).length === 0 && (
                     <div className="col-span-full py-12 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                       😞 {lang === 'ar' ? 'عفواً! لم يتم العثور على أي منتج مطابق في هذا القسم.' : 'No items found matching the filter.'}
                     </div>
