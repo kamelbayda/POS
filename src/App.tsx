@@ -74,7 +74,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
-import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier, CartSession, RepairTicket, TradeIn } from './types';
+import { Product, Category, Invoice, User as UserType, SystemSettings, PrinterConfig, CartItem, StockCountItem, ReturnRecord, WasteRecord, Promotion, Customer, ExpenseRecord, PurchaseItem, PurchaseInvoice, Supplier, CartSession, RepairTicket, TradeIn, TopupWallet, InstallmentPlan } from './types';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, DEFAULT_USERS, getSeededProducts, getSeededInvoices, DEFAULT_CUSTOMERS, DEFAULT_SUPPLIERS, DEFAULT_PROMOTIONS, DEFAULT_EXPENSES } from './mockData';
 import { CustomersTab } from './features/customers/CustomersTab';
 import { SuppliersTab } from './features/suppliers/SuppliersTab';
@@ -143,6 +143,8 @@ import { BusinessType, StoredRequest, getStoredRequest, clearStoredRequest, chec
 import { SerialPickerModal } from './modals/SerialPickerModal';
 import { RepairsTab } from './features/repairs/RepairsTab';
 import { TradeInsTab } from './features/tradeins/TradeInsTab';
+import { TopupsTab, DEFAULT_TOPUP_WALLETS } from './features/topups/TopupsTab';
+import { InstallmentsTab } from './features/installments/InstallmentsTab';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -450,48 +452,71 @@ export default function App() {
     storage.setJSON('pos_repairs', rows);
   };
 
-  /** A repaired device handed back: its price becomes a sales invoice (parts cost counts in profit). */
-  const deliverRepair = (t: RepairTicket, finalCostUSD: number, partsCostUSD: number, paymentMethod: 'cash' | 'debt'): string | null => {
+  /** A service sold outside the cart (repair, top-up, instalment markup): one invoice line, counted in sales and profit. */
+  const recordServiceSale = (sale: { productId: string; name: string; priceUSD: number; costUSD: number; paymentMethod: 'cash' | 'debt'; paidNowUSD: number; customerId?: string; note?: string; keepBalance?: boolean }): Invoice | null => {
     if (!isActivated && invoices.length >= 15) {
       showToast('error', lang === 'ar' ? '🚨 انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : '🚨 Trial ended (15 invoices). Subscribe to continue.');
       return null;
     }
-    const remaining = Math.max(0, finalCostUSD - t.depositUSD);
     const now = new Date();
     const inv: Invoice = {
       id: `inv-${Date.now()}`,
       invoiceNumber: `INV-${Date.now().toString().slice(-6)}-${(invoices.length + 1).toString().padStart(4, '0')}`,
       date: SYS_DATE,
       time: now.toTimeString().slice(0, 5),
-      items: [{
-        productId: `repair-${t.id}`,
-        productName: `${lang === 'ar' ? 'تصليح' : 'Repair'}: ${t.device} (${t.ticketNumber})`,
-        priceUSD: finalCostUSD,
-        quantity: 1,
-        totalUSD: finalCostUSD,
-        unitCostUSD: partsCostUSD,
-      }],
-      subtotalUSD: finalCostUSD,
+      items: [{ productId: sale.productId, productName: sale.name, priceUSD: sale.priceUSD, quantity: 1, totalUSD: sale.priceUSD, unitCostUSD: sale.costUSD }],
+      subtotalUSD: sale.priceUSD,
       discountUSD: 0,
-      totalUSD: finalCostUSD,
-      totalLBP: finalCostUSD * settings.exchangeRate,
-      paymentMethod,
+      totalUSD: sale.priceUSD,
+      totalLBP: sale.priceUSD * settings.exchangeRate,
+      paymentMethod: sale.paymentMethod,
       cashier: currentUser?.name || '',
       exchangeRate: settings.exchangeRate,
-      paidAmountUSD: paymentMethod === 'cash' ? remaining : 0,
-      ...(t.customerId ? { customerId: t.customerId } : {}),
-      ...(t.depositUSD > 0 ? { note: lang === 'ar' ? `عربون ${t.depositUSD.toFixed(2)}$ انقبض عند استلام الجهاز` : `Deposit ${t.depositUSD.toFixed(2)}$ taken at intake` } : {}),
+      paidAmountUSD: sale.paidNowUSD,
+      ...(sale.customerId ? { customerId: sale.customerId } : {}),
+      ...(sale.note ? { note: sale.note } : {}),
     };
     const updatedInvoices = [inv, ...invoices];
     setInvoices(updatedInvoices);
     storage.setJSON('pos_invoices', updatedInvoices);
-    if (paymentMethod === 'debt' && t.customerId && remaining > 0) {
-      const updatedCustomers = customers.map(c => (c.id === t.customerId ? { ...c, creditBalance: c.creditBalance + remaining } : c));
+    const debt = sale.priceUSD - sale.paidNowUSD;
+    if (sale.paymentMethod === 'debt' && sale.customerId && debt > 0 && !sale.keepBalance) {
+      const updatedCustomers = customers.map(c => (c.id === sale.customerId ? { ...c, creditBalance: c.creditBalance + debt } : c));
       setCustomers(updatedCustomers);
       storage.setJSON('pos_customers', updatedCustomers);
     }
+    return inv;
+  };
+
+  /** A repaired device handed back: its price becomes a sales invoice (parts cost counts in profit). */
+  const deliverRepair = (t: RepairTicket, finalCostUSD: number, partsCostUSD: number, paymentMethod: 'cash' | 'debt'): string | null => {
+    const remaining = Math.max(0, finalCostUSD - t.depositUSD);
+    const inv = recordServiceSale({
+      productId: `repair-${t.id}`,
+      name: `${lang === 'ar' ? 'تصليح' : 'Repair'}: ${t.device} (${t.ticketNumber})`,
+      priceUSD: finalCostUSD,
+      costUSD: partsCostUSD,
+      paymentMethod,
+      // the deposit was taken at intake; on credit only the rest goes on the account
+      paidNowUSD: paymentMethod === 'cash' ? remaining : t.depositUSD,
+      customerId: t.customerId,
+      ...(t.depositUSD > 0 ? { note: lang === 'ar' ? `عربون ${t.depositUSD.toFixed(2)}$ انقبض عند استلام الجهاز` : `Deposit ${t.depositUSD.toFixed(2)}$ taken at intake` } : {}),
+    });
+    if (!inv) return null;
     showToast('success', lang === 'ar' ? `انسلّم الجهاز وانسجّلت فاتورة ${inv.invoiceNumber} (${finalCostUSD.toFixed(2)}$).` : `Delivered; invoice ${inv.invoiceNumber} recorded.`);
     return inv.id;
+  };
+
+  // Phone shops: operator credit (Alfa / Touch) and instalment plans
+  const [topupWallets, setTopupWalletsState] = useState<TopupWallet[]>(() => storage.getJSON<TopupWallet[]>('pos_topup_wallets', DEFAULT_TOPUP_WALLETS));
+  const setTopupWallets = (rows: TopupWallet[]) => {
+    setTopupWalletsState(rows);
+    storage.setJSON('pos_topup_wallets', rows);
+  };
+  const [installments, setInstallmentsState] = useState<InstallmentPlan[]>(() => storage.getJSON<InstallmentPlan[]>('pos_installments', []));
+  const setInstallments = (rows: InstallmentPlan[]) => {
+    setInstallmentsState(rows);
+    storage.setJSON('pos_installments', rows);
   };
 
   const cloudSync = useCloudSync({
@@ -512,6 +537,8 @@ export default function App() {
       purchaseInvoices: { items: purchaseInvoices, set: setPurchaseInvoices },
       repairs: { items: repairs, set: setRepairs },
       tradeIns: { items: tradeIns, set: setTradeIns },
+      topupWallets: { items: topupWallets, set: setTopupWallets },
+      installments: { items: installments, set: setInstallments },
     },
     settings,
     setSettings,
@@ -1107,6 +1134,34 @@ export default function App() {
               customers={customers}
               showToast={showToast}
               onDeliver={deliverRepair}
+            />
+          )}
+
+          {activeTab === 'topups' && (
+            <TopupsTab
+              lang={lang}
+              sysDate={SYS_DATE}
+              wallets={topupWallets}
+              setWallets={setTopupWallets}
+              invoices={invoices}
+              customers={customers}
+              showToast={showToast}
+              onSell={recordServiceSale}
+            />
+          )}
+
+          {activeTab === 'installments' && (
+            <InstallmentsTab
+              lang={lang}
+              sysDate={SYS_DATE}
+              settings={settings}
+              plans={installments}
+              setPlans={setInstallments}
+              invoices={invoices}
+              customers={customers}
+              setCustomers={setCustomers}
+              showToast={showToast}
+              onMarkup={recordServiceSale}
             />
           )}
 
