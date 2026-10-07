@@ -4,6 +4,7 @@ import { Invoice, User, SystemSettings } from '../types';
 import React, { useState } from 'react';
 import * as storage from '../lib/storage';
 import { BeeCashMark } from './BeeCashLogo';
+import { trialInvoicesUsed, TRIAL_LIMIT } from '../lib/trial';
 
 interface AppHeaderProps {
   SYS_DATE: string;
@@ -352,12 +353,12 @@ export function AppHeader({
               {lang === 'ar' ? 'البرنامج يعمل حالياً بالوضع التجريبي: ' : 'System running in sandbox trial mode: '}
               <span className="font-sans text-amber-700 font-bold ml-1">
                 {lang === 'ar' 
-                  ? Math.max(0, 15 - invoices.length) <= 0 
+                  ? Math.max(0, TRIAL_LIMIT - trialInvoicesUsed(invoices)) <= 0 
                     ? '🚨 انتهت صلاحية الفترة التجريبية (الحد الأقصى 15 فاتورة مبيعات). يرجى تفعيل البرنامج فوراً للمتابعة.'
-                    : `تم إصدار ${invoices.length} من أصل 15 فاتورة تجريبية كحد أقصى. فعّل البرنامج للعمل اللامحدود.` 
-                  : Math.max(0, 15 - invoices.length) <= 0
+                    : `تم إصدار ${trialInvoicesUsed(invoices)} من أصل 15 فاتورة تجريبية كحد أقصى. فعّل البرنامج للعمل اللامحدود.` 
+                  : Math.max(0, TRIAL_LIMIT - trialInvoicesUsed(invoices)) <= 0
                     ? '🚨 Trial expired (Max 15 reached). Please activate to resume.'
-                    : `Emitted ${invoices.length} of 15 allowed trial invoices. Activate for unlimited.`}
+                    : `Emitted ${trialInvoicesUsed(invoices)} of 15 allowed trial invoices. Activate for unlimited.`}
               </span>
             </span>
           </div>

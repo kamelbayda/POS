@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Printer, Scan, Search } from 'lucide-react';
+import { Printer, Scan, Search, Trash2 } from 'lucide-react';
 import { Invoice } from '../../types';
 import { ColumnSelector } from '../../components/ColumnSelector';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
@@ -8,11 +8,13 @@ interface InvoicesLogTabProps {
   invoices: Invoice[];
   /** Opens the receipt preview for an invoice. */
   onOpenInvoice: (invoice: Invoice) => void;
+  /** Deletes the invoice (asks for the admin password first). */
+  onDeleteInvoice: (invoice: Invoice) => void;
   lang: 'ar' | 'en';
   showToast: (type: 'success' | 'error' | 'warning', message: string) => void;
 }
 
-export function InvoicesLogTab({ invoices, onOpenInvoice, lang, showToast }: InvoicesLogTabProps) {
+export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang, showToast }: InvoicesLogTabProps) {
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState<string>('');
   const [visibleInvLogCols, setVisibleInvLogCols] = useState<{ [key: string]: boolean }>({
     actions: true,
@@ -311,13 +313,23 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, lang, showToast }: Inv
               filteredInvoices.map(inv => (
                 <tr key={inv.id} className="hover:bg-slate-50/50">
                   {visibleInvLogCols.actions !== false && (
-                    <td className="p-3">
+                    <td className="p-3 flex items-center gap-1.5">
                       <button 
                         onClick={() => onOpenInvoice(inv)}
                         className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1 rounded-lg text-[11px] transition flex items-center gap-1 cursor-pointer"
                       >
                         <Printer className="w-3.5 h-3.5" />
                         <span>{lang === 'ar' ? 'معاينة الفاتورة' : 'Preview'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-delete-invoice={inv.invoiceNumber}
+                        onClick={() => onDeleteInvoice(inv)}
+                        title={lang === 'ar' ? 'حذف الفاتورة' : 'Delete invoice'}
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[11px] transition flex items-center gap-1 cursor-pointer border border-rose-100"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{lang === 'ar' ? 'حذف' : 'Delete'}</span>
                       </button>
                     </td>
                   )}

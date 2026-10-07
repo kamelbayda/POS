@@ -148,6 +148,7 @@ import { InstallmentsTab } from './features/installments/InstallmentsTab';
 import { ShopSwitcherModal } from './modals/ShopSwitcherModal';
 import { listShops, updateActiveShop } from './lib/shops';
 import { demoSwap } from './lib/demoData';
+import { trialInvoicesUsed, TRIAL_LIMIT } from './lib/trial';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -457,7 +458,7 @@ export default function App() {
 
   /** A service sold outside the cart (repair, top-up, instalment markup): one invoice line, counted in sales and profit. */
   const recordServiceSale = (sale: { productId: string; name: string; priceUSD: number; costUSD: number; paymentMethod: 'cash' | 'debt'; paidNowUSD: number; customerId?: string; note?: string; keepBalance?: boolean }): Invoice | null => {
-    if (!isActivated && invoices.length >= 15) {
+    if (!isActivated && trialInvoicesUsed(invoices) >= TRIAL_LIMIT) {
       showToast('error', lang === 'ar' ? '🚨 انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : '🚨 Trial ended (15 invoices). Subscribe to continue.');
       return null;
     }
@@ -493,7 +494,7 @@ export default function App() {
 
   /** Saves a sales invoice built outside the till (e.g. a trade-in exchange); false when the trial is used up. */
   const recordInvoice = (inv: Invoice): boolean => {
-    if (!isActivated && invoices.length >= 15) {
+    if (!isActivated && trialInvoicesUsed(invoices) >= TRIAL_LIMIT) {
       showToast('error', lang === 'ar' ? '🚨 انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : '🚨 Trial ended (15 invoices). Subscribe to continue.');
       return false;
     }
@@ -763,6 +764,7 @@ export default function App() {
   const {
     handleCancelWholeInvoice,
     handleReturnSingleItem,
+    handleDeleteInvoice,
   } = invoiceActions;
 
   // Keep the built-in admin / kaseer login credentials in sync when edited from the users tab
@@ -1405,6 +1407,7 @@ export default function App() {
             <InvoicesLogTab
               invoices={invoices}
               onOpenInvoice={setShowInvoiceReceipt}
+              onDeleteInvoice={handleDeleteInvoice}
               lang={lang}
               showToast={showToast}
             />

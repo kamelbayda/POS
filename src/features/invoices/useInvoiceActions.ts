@@ -2,6 +2,7 @@ import { Invoice, ReturnRecord, Product, Customer } from '../../types';
 import { auth } from '../../firebase';
 import React from 'react';
 import * as storage from '../../lib/storage';
+import { countDeletedInvoice } from '../../lib/trial';
 
 export interface UseInvoiceActionsDeps {
   SYS_DATE: string;
@@ -294,8 +295,65 @@ export function useInvoiceActions({
     showToast('success', lang === 'ar' ? `✅ تم بنجاح إرجاع عدد ${qtyToReturn} من الصنف، وتحديث جرود المخازن والمالية!` : 'Returned item successfully.');
   };
 
+  /**
+   * Deletes an invoice for good (e.g. entered by mistake): what was not returned yet goes back in
+   * stock (with its IMEIs), the unpaid part comes off the customer's debt, and the invoice and its
+   * return records disappear from the log and the reports.
+   */
+  const handleDeleteInvoice = (inv: Invoice) => {
+    executeWithAdminAuth(lang === 'ar' ? `حذف الفاتورة #${inv.invoiceNumber}` : `Delete invoice #${inv.invoiceNumber}`, () => {
+      const msg = lang === 'ar'
+        ? `🗑️ بدّك تمحي الفاتورة ${inv.invoiceNumber} (${inv.totalUSD.toFixed(2)}$) نهائياً؟\n\nالبضاعة يلي فيها بترجع عالمخزن، ودين الزبون بيتصحّح، والفاتورة بتختفي من السجل والتقارير. ما فيك ترجّعها.`
+        : `Delete invoice ${inv.invoiceNumber} for good? Items go back to stock and it disappears from the log and reports.`;
+      if (!window.confirm(msg)) return;
+
+      const updatedProducts = products.map(p => {
+        let qty = 0;
+        let back: string[] = [];
+        inv.items.forEach(item => {
+          if (item.productId !== p.id) return;
+          const left = item.quantity - (item.returnedQty || 0);
+          if (left > 0) {
+            qty += left;
+            back = back.concat((item.serials || []).slice(item.returnedQty || 0));
+          }
+        });
+        if (!qty) return p;
+        const serials = p.serialNumbers || [];
+        return { ...p, quantity: p.quantity + qty, ...(back.length ? { serialNumbers: [...serials, ...back.filter(sn => !serials.includes(sn))] } : {}) };
+      });
+
+      let updatedCustomers = customers;
+      if (inv.paymentMethod === 'debt' && inv.customerId) {
+        const notReturned = inv.items.reduce((sum, item) => sum + item.priceUSD * (item.quantity - (item.returnedQty || 0)), 0);
+        const stillOwed = Math.max(0, notReturned - (inv.discountUSD || 0) - (inv.paidAmountUSD || 0));
+        if (stillOwed > 0) {
+          updatedCustomers = customers.map(c => (c.id === inv.customerId ? { ...c, creditBalance: Math.max(0, c.creditBalance - stillOwed) } : c));
+        }
+      }
+
+      const updatedInvoices = invoices.filter(i => i.id !== inv.id);
+      const updatedReturns = returns.filter(r => r.invoiceId !== inv.id);
+
+      setProducts(updatedProducts);
+      storage.setJSON('pos_products', updatedProducts);
+      if (updatedCustomers !== customers) {
+        setCustomers(updatedCustomers);
+        storage.setJSON('pos_customers', updatedCustomers);
+      }
+      setInvoices(updatedInvoices);
+      storage.setJSON('pos_invoices', updatedInvoices);
+      setReturns(updatedReturns);
+      storage.setJSON('pos_returns', updatedReturns);
+      countDeletedInvoice();
+
+      showToast('success', lang === 'ar' ? `🗑️ انمحت الفاتورة ${inv.invoiceNumber} ورجعت بضاعتها عالمخزن.` : `Invoice ${inv.invoiceNumber} deleted.`);
+    });
+  };
+
   return {
     handleCancelWholeInvoice,
     handleReturnSingleItem,
+    handleDeleteInvoice,
   };
 }
