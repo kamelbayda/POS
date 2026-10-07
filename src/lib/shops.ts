@@ -77,3 +77,25 @@ export function addShop() {
   write(REGISTRY_KEY, [...listShops(), { id, name: '', createdAt: Date.now() }]);
   switchShop(id);
 }
+
+/**
+ * Deletes a shop kept on this browser with all its data (stock, invoices, accounts, licence).
+ * The open shop and the first shop (whose data uses the original keys) can't be deleted here.
+ */
+export function deleteShop(id: string): boolean {
+  if (id === MAIN_SHOP_ID || id === ACTIVE_SHOP_ID) return false;
+  const prefix = `shop_${id}::`;
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith(prefix)) localStorage.removeItem(key);
+  } catch {
+    return false;
+  }
+  write(REGISTRY_KEY, listShops().filter(s => s.id !== id));
+  // the shop's offline cloud cache (its own Firebase app); best effort
+  try {
+    indexedDB.databases?.().then(dbs => dbs.forEach(db => { if (db.name?.includes(`shop-${id}`)) indexedDB.deleteDatabase(db.name); }));
+  } catch {
+    // ignore
+  }
+  return true;
+}

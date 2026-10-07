@@ -1,13 +1,24 @@
-import React from 'react';
-import { X, Plus, Store, Check } from 'lucide-react';
-import { ACTIVE_SHOP_ID, addShop, listShops, switchShop } from '../lib/shops';
+import React, { useState } from 'react';
+import { X, Plus, Store, Check, Trash2 } from 'lucide-react';
+import { ACTIVE_SHOP_ID, MAIN_SHOP_ID, addShop, deleteShop, listShops, switchShop } from '../lib/shops';
 
 const TYPE_ICON: Record<string, string> = { supermarket: '🛒', phones: '📱' };
 
 /** The shops kept on this browser: open another one, or add a new shop with its own data. */
 export function ShopSwitcherModal({ lang, onClose }: { lang: 'ar' | 'en'; onClose: () => void }) {
   const ar = lang === 'ar';
-  const shops = listShops();
+  const [shops, setShops] = useState(listShops);
+  const remove = (id: string, label: string, setUp: boolean) => {
+    const warn = ar
+      ? `بدّك تمحي "${label}"؟\n\nبتنمحى كل بياناتو عن هالجهاز: البضاعة والفواتير والزبائن والحسابات${setUp ? ' والاشتراك' : ''}. ما فيك ترجّعها.`
+      : `Delete "${label}"?\n\nAll its data on this device (stock, invoices, customers, accounts${setUp ? ', subscription' : ''}) is removed for good.`;
+    if (!window.confirm(warn)) return;
+    if (setUp) {
+      const typed = window.prompt(ar ? 'للتأكيد اكتب كلمة: حذف' : 'Type DELETE to confirm');
+      if (!typed || !['حذف', 'delete'].includes(typed.trim().toLowerCase())) return;
+    }
+    if (deleteShop(id)) setShops(listShops());
+  };
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4" id="shop-switcher" dir={ar ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -29,6 +40,14 @@ export function ShopSwitcherModal({ lang, onClose }: { lang: 'ar' | 'en'; onClos
                   </span>
                 </span>
                 {active && <span className="flex items-center gap-1 text-xs font-bold text-[#1D9E75]"><Check className="w-4 h-4" /> {ar ? 'مفتوح' : 'Open'}</span>}
+                {!active && s.id !== MAIN_SHOP_ID && (
+                  <span role="button" tabIndex={0} data-delete-shop={s.id}
+                    onClick={e => { e.stopPropagation(); remove(s.id, s.name || (ar ? `محل ${i + 1}` : `Shop ${i + 1}`), !!s.businessType); }}
+                    title={ar ? 'محي المحل' : 'Delete shop'}
+                    className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 cursor-pointer">
+                    <Trash2 className="w-4 h-4" />
+                  </span>
+                )}
               </button>
             );
           })}
@@ -38,7 +57,7 @@ export function ShopSwitcherModal({ lang, onClose }: { lang: 'ar' | 'en'; onClos
           </button>
           <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
             {ar
-              ? 'كل محل إلو بضاعتو وفواتيرو وزبائنو وحساباتو واشتراكو لحالو. بتنقل بيناتن من هون بلا ما يختلطوا.'
+              ? 'كل محل إلو بضاعتو وفواتيرو وزبائنو وحساباتو واشتراكو لحالو. بتنقل بيناتن من هون بلا ما يختلطوا. 🗑️ بتمحي محل وإنت فاتح محل غيرو (المحل الأول ما بينمحى).'
               : 'Each shop has its own stock, invoices, customers, accounts and subscription. Switch between them here.'}
           </p>
         </div>
