@@ -35,6 +35,8 @@ interface AppHeaderProps {
   /** A subscription request was sent and is waiting for approval. */
   subscriptionPending: boolean;
   handleLogout: () => void;
+  /** Sign out and pick another shop kept on this browser. */
+  onSwitchShop: () => void;
   showToast: (type: "success" | "error" | "warning", message: string) => void;
 }
 
@@ -66,6 +68,7 @@ export function AppHeader({
   onSubscribe,
   subscriptionPending,
   handleLogout,
+  onSwitchShop,
   showToast,
 }: AppHeaderProps) {
   const [showSizeControlPopover, setShowSizeControlPopover] = useState<boolean>(false);
@@ -320,6 +323,15 @@ export function AppHeader({
           >
             <Lock className="w-3.5 h-3.5" />
             <span>{lang === 'ar' ? 'قفل الشاشة' : 'Lock Screen'}</span>
+          </button>
+          <button
+            type="button"
+            id="btn-header-switch-shop"
+            onClick={onSwitchShop}
+            className="text-xs text-slate-700 hover:text-[#1D9E75] bg-slate-50 hover:bg-slate-100 px-3 py-2 rounded-lg transition font-bold border border-slate-200 cursor-pointer shrink-0"
+            title={lang === 'ar' ? 'تبديل المحل' : 'Switch shop'}
+          >
+            🏪 {lang === 'ar' ? 'تبديل المحل' : 'Switch shop'}
           </button>
           <button 
             onClick={handleLogout}
