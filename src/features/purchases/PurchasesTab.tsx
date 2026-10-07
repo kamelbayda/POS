@@ -30,6 +30,7 @@ import * as storage from '../../lib/storage';
 
 import { VAT_PRESETS, lineGross, lineDiscount, lineTax, lineTotal, landedCost, bonusFor, sumLines, costFactor, landedCostWithOffer, offerFreeValue } from './purchaseMath';
 import { printPurchaseInvoice } from './purchaseInvoicePrint';
+import { parseSerialList } from '../../lib/serials';
 
 const PURCHASE_DRAFT_KEY = 'pos_purchase_draft';
 
@@ -45,6 +46,7 @@ interface StoredPurchaseDraft {
   items: Array<{
     productId: string; qty: number; costPriceUSD: number; newPriceUSD: number; newPriceWholesale: number; expiryDate: string;
     taxRate: number; discountPercent: number; freeQty: number; bonusEvery: number; bonusFree: number; unitsPerCarton: number;
+    serialText?: string;
   }>;
   offer: Array<{ productId: string; qty: number; unitValueUSD: number }>;
 }
@@ -109,6 +111,7 @@ export function PurchasesTab({
     bonusEvery: number; // "for every bonusEvery bought, bonusFree free"; 0 = no bonus
     bonusFree: number;
     unitsPerCarton: number; // 0 = not sold by the carton
+    serialText?: string; // phones: received IMEIs, one per line
   }>>(() => (savedDraft?.items || []).flatMap(({ productId, ...line }) => {
     const product = productById(productId);
     return product ? [{ ...line, product }] : [];
@@ -519,6 +522,22 @@ export function PurchasesTab({
       showToast('error', isAr ? 'يرجى كتابة اسم المورّد أو الشركة الموزعة لتوثيق الفاتورة.' : 'Supplier name is required!');
       return;
     }
+    // Phones: every unit received needs its IMEI, and an IMEI can only exist once
+    for (const d of draftItems) {
+      if (!d.product.trackSerial) continue;
+      const list = parseSerialList(d.serialText || '');
+      const needed = d.qty + (d.freeQty || 0) + offerShare(d.product.id).units;
+      if (list.length !== needed) {
+        showToast('error', isAr ? `[${d.product.name}]: لازم ${needed} رقم IMEI (مكتوب ${list.length}).` : `[${d.product.name}]: ${needed} IMEIs needed (${list.length} entered).`);
+        return;
+      }
+      const owner = products.find(p => (p.serialNumbers || []).some(sn => list.includes(sn)));
+      if (owner) {
+        showToast('error', isAr ? `في IMEI من [${d.product.name}] موجود من قبل عند [${owner.name}].` : `An IMEI of [${d.product.name}] already exists on [${owner.name}].`);
+        return;
+      }
+    }
+
     const missingQty = draftItems.find(d => !(d.qty > 0));
     if (missingQty) {
       showToast('error', isAr ? `حدد الكمية المستلمة للصنف [${missingQty.product.name}] حتى تنضاف للمخزن.` : `Enter the received quantity for [${missingQty.product.name}].`);
@@ -539,7 +558,8 @@ export function PurchasesTab({
       expiryDate: d.expiryDate,
       taxRate: d.taxRate,
       discountPercent: d.discountPercent,
-      freeQty: d.freeQty
+      freeQty: d.freeQty,
+      ...(d.product.trackSerial ? { serials: parseSerialList(d.serialText || '') } : {})
     }));
 
     const totalTax = sumLines(draftItems, lineTax);
@@ -577,6 +597,7 @@ export function PurchasesTab({
         return {
           ...prod,
           unitsPerCarton: draftVal.unitsPerCarton || prod.unitsPerCarton,
+          ...(prod.trackSerial ? { serialNumbers: [...(prod.serialNumbers || []), ...parseSerialList(draftVal.serialText || '')] } : {}),
           quantity: isToWarehouse ? prod.quantity : (prod.quantity + received), // add to retail shop if not to warehouse
           warehouseQuantity: isToWarehouse ? ((prod.warehouseQuantity || 0) + received) : (prod.warehouseQuantity || 0), // add to warehouse if selected
           costPriceUSD: Number(effectiveCost(draftVal).toFixed(2)), // real unit cost: after discount, VAT included, spread over free units and the invoice offer
@@ -1876,6 +1897,28 @@ export function PurchasesTab({
                             </span>
                           )}
                         </div>
+
+                        {item.product.trackSerial && (() => {
+                          const list = parseSerialList(item.serialText || '');
+                          const needed = item.qty + (item.freeQty || 0) + offerShare(item.product.id).units;
+                          return (
+                            <div className="bg-sky-50 border border-sky-200 rounded-lg p-2.5 text-xs">
+                              <label className="block font-black text-sky-900 mb-1" htmlFor={`draft-serials-${item.product.id}`}>
+                                📱 {isAr ? 'أرقام IMEI (امسح أو اكتب، واحد بكل سطر)' : 'IMEIs (scan or type, one per line)'}
+                                <span className={`mr-2 font-mono ${list.length === needed && needed > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{list.length} / {needed}</span>
+                              </label>
+                              <textarea
+                                id={`draft-serials-${item.product.id}`}
+                                rows={Math.min(6, Math.max(2, needed))}
+                                dir="ltr"
+                                value={item.serialText || ''}
+                                onChange={e => handleUpdateDraftField(idx, 'serialText', e.target.value)}
+                                className="w-full bg-white border border-sky-200 rounded-lg p-2 font-mono text-xs"
+                                placeholder="356789012345678"
+                              />
+                            </div>
+                          );
+                        })()}
 
                         {/* --- INLINE DYNAMIC PRICING MARGIN ASSISTANT FOR DRAFT ITEM --- */}
                         {(() => {

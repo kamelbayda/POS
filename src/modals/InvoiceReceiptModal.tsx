@@ -295,6 +295,8 @@ export function InvoiceReceiptModal({
                       txt += `------------------------------------\n`;
                       showInvoiceReceipt.items.forEach(itm => {
                         txt += `• ${itm.productName} (×${itm.quantity}) = ${itm.totalUSD.toFixed(1)}$\n`;
+                        (itm.serials || []).forEach(sn => { txt += `   IMEI ${sn}\n`; });
+                        if (itm.warrantyUntil) txt += `   كفالة لغاية ${itm.warrantyUntil}\n`;
                       });
                       txt += `------------------------------------\n`;
                       txt += `المجموع الفرعي: ${showInvoiceReceipt.subtotalUSD.toFixed(2)}$\n`;
@@ -344,6 +346,8 @@ export function InvoiceReceiptModal({
                       txt += `------------------------------------\n`;
                       showInvoiceReceipt.items.forEach(itm => {
                         txt += `${itm.productName} [×${itm.quantity}] = ${itm.totalUSD.toFixed(1)}$\n`;
+                        (itm.serials || []).forEach(sn => { txt += `   IMEI ${sn}\n`; });
+                        if (itm.warrantyUntil) txt += `   كفالة لغاية ${itm.warrantyUntil}\n`;
                       });
                       txt += `------------------------------------\n`;
                       txt += `المطلوب للدفع بالتسوية: ${showInvoiceReceipt.totalUSD.toFixed(2)}$ / ${Math.ceil(showInvoiceReceipt.totalLBP).toLocaleString()} ل.ل\n`;
@@ -397,6 +401,8 @@ export function InvoiceReceiptModal({
                       text += `------------------------------------\n`;
                       showInvoiceReceipt.items.forEach(itm => {
                         text += `• ${itm.productName} (الكمية: ${itm.quantity}) = ${itm.totalUSD.toFixed(1)}$\n`;
+                        (itm.serials || []).forEach(sn => { text += `   IMEI ${sn}\n`; });
+                        if (itm.warrantyUntil) text += `   كفالة لغاية ${itm.warrantyUntil}\n`;
                       });
                       text += `------------------------------------\n`;
                       if (showInvoiceReceipt.discountUSD > 0) {
@@ -583,7 +589,15 @@ export function InvoiceReceiptModal({
                   <div className="space-y-1.5 text-stone-900 my-2 divide-y divide-dotted divide-stone-300 max-h-[160px] overflow-y-auto pr-1">
                     {showInvoiceReceipt.items.map((item, idx) => (
                       <div key={idx} className="grid grid-cols-12 gap-1 text-right text-[10px] pt-1.5">
-                        <span className="col-span-6 text-right font-black text-stone-955 truncate pr-0.5">{item.productName}</span>
+                        <span className="col-span-6 text-right font-black text-stone-955 pr-0.5">
+                          <span className="block truncate">{item.productName}</span>
+                          {(item.serials || []).map(sn => (
+                            <span key={sn} className="block font-mono font-bold text-[9px] text-stone-700" dir="ltr" data-receipt-imei>IMEI {sn}</span>
+                          ))}
+                          {item.warrantyUntil && (
+                            <span className="block text-[9px] font-bold text-stone-700" data-receipt-warranty>🛡️ كفالة لغاية <span dir="ltr">{item.warrantyUntil}</span></span>
+                          )}
+                        </span>
                         <span className="col-span-2 text-center font-mono font-extrabold text-stone-850">×{item.quantity}</span>
                         <span className="col-span-2 text-left font-mono text-stone-700">${item.priceUSD.toFixed(1)}</span>
                         <span className="col-span-2 text-left font-mono font-black text-stone-955 pl-0.5">${(item.priceUSD * item.quantity).toFixed(1)}</span>

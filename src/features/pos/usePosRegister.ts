@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CartItem, CartSession, Product, Invoice, User, SystemSettings, Promotion, Customer } from '../../types';
 import { auth } from '../../firebase';
 import * as storage from '../../lib/storage';
+import { addMonths, normalizeSerial } from '../../lib/serials';
 
 export interface UsePosRegisterDeps {
   SYS_DATE: string;
@@ -74,6 +75,8 @@ export function usePosRegister({
 }: UsePosRegisterDeps) {
   // --- POS CART STATES ---
   const [cart, setCart] = useState<CartItem[]>([]);
+  // Serial-tracked product (phone) waiting for its IMEI to be picked
+  const [serialPickerProduct, setSerialPickerProduct] = useState<Product | null>(null);
 
   const [barcodeInput, setBarcodeInput] = useState<string>('');
 
@@ -380,6 +383,15 @@ export function usePosRegister({
       }
     }
 
+    // A scanned IMEI adds that exact phone
+    const serial = normalizeSerial(barcode);
+    const serialOwner = products.find(p => p.trackSerial && (p.serialNumbers || []).includes(serial));
+    if (serialOwner) {
+      addSerialToCart(serialOwner, serial);
+      setBarcodeInput('');
+      return;
+    }
+
     const matched = processedProducts.find(p => p.barcode === barcode || (p.barcodes && p.barcodes.includes(barcode)));
     if (!matched) {
       showToast('error', `عفواً! الباركود [${barcode}] غير معرف في قاعدة البيانات.`);
@@ -397,6 +409,29 @@ export function usePosRegister({
     setBarcodeInput('');
   };
 
+  /** Adds one unit of a serial-tracked product with its IMEI. */
+  const addSerialToCart = (product: Product, rawSerial: string) => {
+    const serial = normalizeSerial(rawSerial);
+    if (!(product.serialNumbers || []).includes(serial)) {
+      showToast('error', lang === 'ar' ? `الرقم [${serial}] مش موجود بمخزون [${product.name}].` : `[${serial}] is not in stock for [${product.name}].`);
+      return false;
+    }
+    if (cart.some(item => (item.serials || []).includes(serial))) {
+      showToast('warning', lang === 'ar' ? `الجهاز [${serial}] موجود بالسلة.` : `[${serial}] is already in the cart.`);
+      return false;
+    }
+    setCart(prev => {
+      const idx = prev.findIndex(item => item.product.id === product.id);
+      if (idx === -1) return [...prev, { product, quantity: 1, serials: [serial] }];
+      const u = [...prev];
+      const serials = [...(u[idx].serials || []), serial];
+      u[idx] = { ...u[idx], serials, quantity: serials.length };
+      return u;
+    });
+    showToast('success', lang === 'ar' ? `📱 ${product.name} • IMEI ${serial}` : `📱 ${product.name} • IMEI ${serial}`);
+    return true;
+  };
+
   // --- ADD TO CART UTILITY ---
   const addToCart = (product: Product, customQty?: number) => {
     // Check if food is expired directly
@@ -404,6 +439,12 @@ export function usePosRegister({
     const currentDate = new Date(SYS_DATE);
     if (expiryDate < currentDate) {
       setExpiryWarningModal(product);
+      return;
+    }
+
+    // Phones and other serial-tracked items: pick which unit (IMEI) is sold
+    if (product.trackSerial) {
+      setSerialPickerProduct(product);
       return;
     }
 
@@ -502,6 +543,12 @@ export function usePosRegister({
     if (existingIndex === -1) return;
 
     const item = cart[existingIndex];
+    if (item.product.trackSerial) {
+      if (delta > 0) { setSerialPickerProduct(item.product); return; }
+      const serials = (item.serials || []).slice(0, -1);
+      setCart(serials.length ? cart.map((c, i) => (i === existingIndex ? { ...c, serials, quantity: serials.length } : c)) : cart.filter((_, i) => i !== existingIndex));
+      return;
+    }
     const newQty = item.quantity + delta;
 
     if (newQty <= 0) {
@@ -719,7 +766,9 @@ export function usePosRegister({
           quantity: item.quantity,
           totalUSD: unitPrice * item.quantity,
           priceType: posSaleType,
-          discountApplied: item.product.priceUSD > unitPrice ? (item.product.priceUSD - unitPrice) : 0
+          discountApplied: item.product.priceUSD > unitPrice ? (item.product.priceUSD - unitPrice) : 0,
+          ...(item.serials?.length ? { serials: item.serials } : {}),
+          ...(item.product.warrantyMonths ? { warrantyUntil: addMonths(SYS_DATE, item.product.warrantyMonths) } : {})
         };
       }),
       subtotalUSD: cartSubtotalUSD,
@@ -763,9 +812,11 @@ export function usePosRegister({
       });
 
       if (qtyToSubtract > 0) {
+        const sold = cart.filter(item => item.product.id === p.id).flatMap(item => item.serials || []);
         return {
           ...p,
-          quantity: Math.max(0, p.quantity - qtyToSubtract)
+          quantity: Math.max(0, p.quantity - qtyToSubtract),
+          ...(sold.length ? { serialNumbers: (p.serialNumbers || []).filter(s => !sold.includes(s)) } : {})
         };
       }
       return p;
@@ -971,6 +1022,9 @@ export function usePosRegister({
   return {
     cart,
     setCart,
+    serialPickerProduct,
+    setSerialPickerProduct,
+    addSerialToCart,
     barcodeInput,
     setBarcodeInput,
     searchQuery,

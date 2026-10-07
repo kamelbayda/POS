@@ -284,6 +284,9 @@ export function PosModernScreen({
                 <div className="flex-1 text-right min-w-0 flex items-center gap-2 justify-end">
                   <div className="text-right truncate flex-1">
                     <h4 className="font-extrabold text-slate-800 text-sm sm:text-base truncate">{item.product.name}</h4>
+                    {(item.serials || []).length > 0 && (
+                      <div className="text-[10px] font-mono text-slate-500" dir="ltr" data-cart-serials>📱 {(item.serials || []).join(' · ')}</div>
+                    )}
                     <span className="text-xs sm:text-sm font-semibold font-mono text-slate-400">
                       {getProductDisplayPrice(item.product, item.quantity).toFixed(2)} $ / صنف
                     </span>

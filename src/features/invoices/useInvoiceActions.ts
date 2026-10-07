@@ -51,9 +51,12 @@ export function useInvoiceActions({
         if (returnedAmount > 0) {
           const idx = updatedProducts.findIndex(p => p.id === item.productId);
           if (idx !== -1) {
+            // Phones: the IMEIs not yet returned go back into stock
+            const back = (item.serials || []).slice(item.returnedQty || 0);
             updatedProducts[idx] = {
               ...updatedProducts[idx],
-              quantity: updatedProducts[idx].quantity + returnedAmount
+              quantity: updatedProducts[idx].quantity + returnedAmount,
+              ...(back.length ? { serialNumbers: [...(updatedProducts[idx].serialNumbers || []), ...back.filter(sn => !(updatedProducts[idx].serialNumbers || []).includes(sn))] } : {})
             };
           }
         }
@@ -189,11 +192,14 @@ export function useInvoiceActions({
     if (!window.confirm(confirmMsg)) return;
 
     // 1. Revert product quantity in inventory list
+    // Phones: the next IMEIs of this line (in sale order) go back into stock
+    const backSerials = (item.serials || []).slice(item.returnedQty || 0, (item.returnedQty || 0) + qtyToReturn);
     const updatedProducts = products.map(p => {
       if (p.id === productId) {
         return {
           ...p,
-          quantity: p.quantity + qtyToReturn
+          quantity: p.quantity + qtyToReturn,
+          ...(backSerials.length ? { serialNumbers: [...(p.serialNumbers || []), ...backSerials.filter(sn => !(p.serialNumbers || []).includes(sn))] } : {})
         };
       }
       return p;
