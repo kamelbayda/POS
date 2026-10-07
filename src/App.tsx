@@ -1137,6 +1137,8 @@ export default function App() {
               showToast={showToast}
               openCashDrawer={openCashDrawer}
               handleLogout={handleLogout}
+              businessType={settings.businessType}
+              onOpenTab={tab => setActiveTab(tab as typeof activeTab)}
             />
           )}
 

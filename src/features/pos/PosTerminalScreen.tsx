@@ -4,6 +4,7 @@ import { Product, Category, CartItem, SystemSettings, Promotion, Customer, CartS
 import React, { useState } from 'react';
 import { BeeCashMark, BeeCashWordmark } from '../../components/BeeCashLogo';
 import { matchesProductSearch } from '../../lib/productSearch';
+import * as storage from '../../lib/storage';
 
 interface PosTerminalScreenProps {
   /** Cart, sessions and checkout state from usePosRegister. */
@@ -30,6 +31,9 @@ interface PosTerminalScreenProps {
   openCashDrawer: () => Promise<void>;
   /** Signs the current user out (back to the login screen). */
   handleLogout: () => void;
+  /** Phone shops: service tiles on the till home open these sections. */
+  businessType?: 'supermarket' | 'phones';
+  onOpenTab?: (tab: string) => void;
 }
 
 export function PosTerminalScreen({
@@ -55,7 +59,12 @@ export function PosTerminalScreen({
   showToast,
   openCashDrawer,
   handleLogout,
+  businessType,
+  onOpenTab,
 }: PosTerminalScreenProps) {
+  // Till home tiles the cashier pinned stay first, in the order they were pinned (per shop, per device)
+  const [pinnedTiles, setPinnedTiles] = storage.useStoredState<string[]>('pos_pinned_tiles', []);
+  const togglePin = (id: string) => setPinnedTiles(pinnedTiles.includes(id) ? pinnedTiles.filter(t => t !== id) : [...pinnedTiles, id]);
   const {
     cart,
     setCart,
@@ -893,21 +902,43 @@ export function PosTerminalScreen({
                 <div className="flex-1 overflow-y-auto pr-1 select-none" id="terminal-grid-panel">
                   {showCategoryHome ? (
                     <div className="grid gap-4 py-1 font-sans" id="terminal-category-tiles" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 185px), 1fr))' }}>
-                      <div data-category-tile="everything" onClick={() => openCategory('everything')} className={tileClass}>
-                        <span className="text-4xl">📦</span>
-                        <span className="font-black text-sm">{lang === 'ar' ? 'كل المنتجات' : 'All products'}</span>
-                        <span className="text-[11px] font-bold text-stone-500">{processedProducts.length} {lang === 'ar' ? 'صنف' : 'items'}</span>
-                      </div>
-                      {categories.map(cat => {
-                        const count = processedProducts.filter(p => p.category === cat.id).length;
-                        return (
-                          <div key={cat.id} data-category-tile={cat.id} onClick={() => openCategory(cat.id)} className={tileClass}>
-                            <span className="text-4xl">{cat.emoji || '📁'}</span>
-                            <span className="font-black text-sm text-center leading-tight">{cat.name}</span>
-                            <span className="text-[11px] font-bold text-stone-500">{count} {lang === 'ar' ? 'صنف' : 'items'}</span>
-                          </div>
-                        );
-                      })}
+                      {(() => {
+                        type Tile = { id: string; icon: string; title: string; sub: string; service?: boolean; open: () => void };
+                        const items = lang === 'ar' ? 'صنف' : 'items';
+                        const tiles: Tile[] = [
+                          { id: 'everything', icon: '📦', title: lang === 'ar' ? 'كل المنتجات' : 'All products', sub: `${processedProducts.length} ${items}`, open: () => openCategory('everything') },
+                          ...categories.map(cat => ({
+                            id: cat.id, icon: cat.emoji || '📁', title: cat.name,
+                            sub: `${processedProducts.filter(p => p.category === cat.id).length} ${items}`,
+                            open: () => openCategory(cat.id),
+                          })),
+                          ...(businessType === 'phones' && onOpenTab ? [
+                            { id: 'svc:repairs', icon: '🔧', title: lang === 'ar' ? 'قسم التصليح' : 'Repairs', sub: lang === 'ar' ? 'استلام وتسليم أجهزة' : 'Intake & delivery', service: true, open: () => onOpenTab('repairs') },
+                            { id: 'svc:tradeins', icon: '📲', title: lang === 'ar' ? 'شرا مستعمل' : 'Buy used', sub: lang === 'ar' ? 'شرا جهاز من زبون' : 'Buy a phone', service: true, open: () => onOpenTab('tradeins') },
+                            { id: 'svc:topups', icon: '⚡', title: lang === 'ar' ? 'التشريج' : 'Top-ups', sub: 'Alfa · Touch', service: true, open: () => onOpenTab('topups') },
+                            { id: 'svc:installments', icon: '📅', title: lang === 'ar' ? 'التقسيط' : 'Instalments', sub: lang === 'ar' ? 'خطط وأقساط' : 'Plans & dues', service: true, open: () => onOpenTab('installments') },
+                          ] : []),
+                        ];
+                        const pinned = pinnedTiles.map(id => tiles.find(t => t.id === id)).filter((t): t is Tile => !!t);
+                        const ordered = [...pinned, ...tiles.filter(t => !pinnedTiles.includes(t.id))];
+                        return ordered.map(t => {
+                          const isPinned = pinnedTiles.includes(t.id);
+                          return (
+                            <div key={t.id} data-category-tile={t.id} onClick={t.open}
+                              className={`${tileClass} relative ${t.service ? (theme === 'dark' ? 'border-sky-700' : 'border-sky-300 bg-sky-50/60') : ''} ${isPinned ? 'ring-2 ring-amber-400' : ''}`}>
+                              <button type="button" data-pin-tile={t.id}
+                                onClick={e => { e.stopPropagation(); togglePin(t.id); }}
+                                title={isPinned ? (lang === 'ar' ? 'إلغاء التثبيت' : 'Unpin') : (lang === 'ar' ? 'تثبيت بالأول' : 'Pin first')}
+                                className={`absolute top-1.5 left-1.5 w-7 h-7 rounded-full flex items-center justify-center text-sm cursor-pointer transition ${isPinned ? 'bg-amber-400 shadow' : 'opacity-40 hover:opacity-100 hover:bg-slate-200'}`}>
+                                📌
+                              </button>
+                              <span className="text-4xl">{t.icon}</span>
+                              <span className="font-black text-sm text-center leading-tight">{t.title}</span>
+                              <span className="text-[11px] font-bold text-stone-500">{t.sub}</span>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   ) : filtered.length === 0 ? (
                     <div className={`flex flex-col items-center justify-center p-14 font-bold rounded-2xl border border-dashed my-4 ${theme === 'dark' ? 'text-stone-500 bg-[#151517] border-stone-850' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
