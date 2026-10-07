@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   Plus, 
@@ -30,6 +30,24 @@ import * as storage from '../../lib/storage';
 
 import { VAT_PRESETS, lineGross, lineDiscount, lineTax, lineTotal, landedCost, bonusFor, sumLines, costFactor, landedCostWithOffer, offerFreeValue } from './purchaseMath';
 import { printPurchaseInvoice } from './purchaseInvoicePrint';
+
+const PURCHASE_DRAFT_KEY = 'pos_purchase_draft';
+
+/** Purchase invoice being entered, kept on this device until it is saved or discarded. */
+interface StoredPurchaseDraft {
+  supplierName: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  note: string;
+  paymentStatus: 'paid' | 'pending';
+  destination: 'shop' | 'warehouse';
+  transportationCost: string;
+  items: Array<{
+    productId: string; qty: number; costPriceUSD: number; newPriceUSD: number; newPriceWholesale: number; expiryDate: string;
+    taxRate: number; discountPercent: number; freeQty: number; bonusEvery: number; bonusFree: number; unitsPerCarton: number;
+  }>;
+  offer: Array<{ productId: string; qty: number; unitValueUSD: number }>;
+}
 
 interface PurchasesTabProps {
   products: Product[];
@@ -63,13 +81,19 @@ export function PurchasesTab({
   // Section Toggle: 'new' or 'ledger'
   const [subTab, setSubTab] = useState<'new' | 'ledger'>('new');
 
+  // The invoice being entered is kept as a draft on this device, so locking the screen,
+  // refreshing or switching tabs never loses it. Lines keep product ids and are matched
+  // back to the current products when the draft is restored.
+  const [savedDraft] = useState(() => storage.getJSON<StoredPurchaseDraft | null>(PURCHASE_DRAFT_KEY, null));
+  const productById = (id: string) => products.find(p => p.id === id);
+
   // --- NEW PURCHASE INVOICE STATE ---
-  const [supplierName, setSupplierName] = useState<string>('');
-  const [invoiceNumber, setInvoiceNumber] = useState<string>(() => `PUR-${Math.floor(100000 + Math.random() * 900000)}`);
-  const [invoiceDate, setInvoiceDate] = useState<string>(sysDate);
-  const [note, setNote] = useState<string>('');
-  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'pending'>('paid');
-  const [purchaseDestination, setPurchaseDestination] = useState<'shop' | 'warehouse'>('shop');
+  const [supplierName, setSupplierName] = useState<string>(savedDraft?.supplierName ?? '');
+  const [invoiceNumber, setInvoiceNumber] = useState<string>(() => savedDraft?.invoiceNumber || `PUR-${Math.floor(100000 + Math.random() * 900000)}`);
+  const [invoiceDate, setInvoiceDate] = useState<string>(savedDraft?.invoiceDate || sysDate);
+  const [note, setNote] = useState<string>(savedDraft?.note ?? '');
+  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'pending'>(savedDraft?.paymentStatus || 'paid');
+  const [purchaseDestination, setPurchaseDestination] = useState<'shop' | 'warehouse'>(savedDraft?.destination || 'shop');
 
   // Selected items draft
   const [draftItems, setDraftItems] = useState<Array<{
@@ -85,10 +109,17 @@ export function PurchasesTab({
     bonusEvery: number; // "for every bonusEvery bought, bonusFree free"; 0 = no bonus
     bonusFree: number;
     unitsPerCarton: number; // 0 = not sold by the carton
-  }>>([]);
+  }>>(() => (savedDraft?.items || []).flatMap(({ productId, ...line }) => {
+    const product = productById(productId);
+    return product ? [{ ...line, product }] : [];
+  }));
 
   // Free goods given for the whole invoice (e.g. "5 of each of these 4 products -> 4 cartons free")
-  const [offerItems, setOfferItems] = useState<Array<{ product: Product; qty: number; unitValueUSD: number }>>([]);
+  const [offerItems, setOfferItems] = useState<Array<{ product: Product; qty: number; unitValueUSD: number }>>(() =>
+    (savedDraft?.offer || []).flatMap(({ productId, qty, unitValueUSD }) => {
+      const product = productById(productId);
+      return product ? [{ product, qty, unitValueUSD }] : [];
+    }));
   const [offerSearch, setOfferSearch] = useState<string>('');
   const [offerQty, setOfferQty] = useState<string>('');
   const [offerInCartons, setOfferInCartons] = useState<boolean>(true);
@@ -122,7 +153,32 @@ export function PurchasesTab({
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
   const [draftMarginInputs, setDraftMarginInputs] = useState<{[productId: string]: string}>({});
   const [draftMarkupInputs, setDraftMarkupInputs] = useState<{[productId: string]: string}>({});
-  const [transportationCost, setTransportationCost] = useState<string>('0');
+  const [transportationCost, setTransportationCost] = useState<string>(savedDraft?.transportationCost || '0');
+
+  // Keep the draft saved while it has anything in it; an empty or saved invoice clears it
+  useEffect(() => {
+    const hasContent = draftItems.length > 0 || offerItems.length > 0 || supplierName.trim() !== '' || note.trim() !== '';
+    if (!hasContent) {
+      storage.removeItem(PURCHASE_DRAFT_KEY);
+      return;
+    }
+    const draft: StoredPurchaseDraft = {
+      supplierName, invoiceNumber, invoiceDate, note, paymentStatus, destination: purchaseDestination, transportationCost,
+      items: draftItems.map(({ product, ...line }) => ({ ...line, productId: product.id })),
+      offer: offerItems.map(o => ({ productId: o.product.id, qty: o.qty, unitValueUSD: o.unitValueUSD })),
+    };
+    storage.setJSON(PURCHASE_DRAFT_KEY, draft);
+  }, [draftItems, offerItems, supplierName, invoiceNumber, invoiceDate, note, paymentStatus, purchaseDestination, transportationCost]);
+
+  const discardDraft = () => {
+    setDraftItems([]);
+    setOfferItems([]);
+    setSupplierName('');
+    setNote('');
+    setTransportationCost('0');
+    setInvoiceNumber(`PUR-${Math.floor(100000 + Math.random() * 900000)}`);
+    showToast('success', isAr ? 'انمسحت مسودة فاتورة المشتريات.' : 'Purchase draft discarded.');
+  };
 
   // Category Creation Inline State
   const [showInlineCategoryInput, setShowInlineCategoryInput] = useState<boolean>(false);
@@ -1527,9 +1583,26 @@ export function PurchasesTab({
             {/* 2. DRAFT ITEMS TABLE */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b pb-3">
-                <span className="bg-[#1D9E75]/10 text-[#1D9E75] px-3 py-1 rounded-lg text-xs font-extrabold font-mono">
-                  {draftItems.length} {isAr ? 'أصناف مختلفة' : 'variants listed'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#1D9E75]/10 text-[#1D9E75] px-3 py-1 rounded-lg text-xs font-extrabold font-mono">
+                    {draftItems.length} {isAr ? 'أصناف مختلفة' : 'variants listed'}
+                  </span>
+                  {(draftItems.length > 0 || offerItems.length > 0) && (
+                    <>
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg" id="purchase-draft-saved">
+                        📝 {isAr ? 'محفوظة كمسودة' : 'Saved as draft'}
+                      </span>
+                      <button
+                        type="button"
+                        id="btn-discard-purchase-draft"
+                        onClick={() => { if (window.confirm(isAr ? 'مسح كل أصناف هالفاتورة والبدء من جديد؟' : 'Discard this purchase draft?')) discardDraft(); }}
+                        className="text-[10px] font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg cursor-pointer"
+                      >
+                        {isAr ? 'مسح المسودة' : 'Discard'}
+                      </button>
+                    </>
+                  )}
+                </div>
                 <h4 className="font-bold text-slate-800 text-sm">{isAr ? 'قائمة الفواتير والأسعار المدخلة' : 'Purchase Receipt Items Details'}</h4>
               </div>
 
