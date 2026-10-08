@@ -9,6 +9,10 @@ import '@fontsource/cairo/700.css';
 import '@fontsource/cairo/800.css';
 import '@fontsource/cairo/900.css';
 import './index.css';
+import { installMathInputs } from './lib/mathInputs';
+
+// 3*12, 24x0.75+2... in any number field becomes the result
+installMathInputs();
 
 if (location.protocol.startsWith('http')) {
   // Web version: install/offline support. The new version activates on the next start.
