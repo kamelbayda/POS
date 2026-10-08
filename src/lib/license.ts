@@ -111,12 +111,25 @@ export function getShopUid(): string {
   return settings.shopUid || '';
 }
 
+/** Short description of this computer for the admin device list, e.g. "iPad · Chrome". */
+export function getDeviceLabel(): string {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const touchMac = /Macintosh/.test(ua) && typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1;
+  const os = /iPad/.test(ua) || touchMac ? 'iPad' : /iPhone/.test(ua) ? 'iPhone' : /Android/.test(ua) ? (/Mobile/.test(ua) ? 'Android' : 'Android tablet')
+    : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'Mac' : /CrOS/.test(ua) ? 'Chromebook' : /Linux/.test(ua) ? 'Linux' : 'Device';
+  const browser = /Edg\//.test(ua) ? 'Edge' : /CriOS|Chrome\//.test(ua) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '';
+  const app = typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)').matches ? ' (app)' : '';
+  return [os, browser].filter(Boolean).join(' · ') + app;
+}
+
+const savedShopName = () => storage.getJSON<{ shopName?: string }>('pos_settings', {}).shopName || '';
+
 /** `ownerEmail` lets the licence admin page show which customer a key belongs to. */
 export const activateLicense = (key: string, shopName: string, ownerEmail = '') =>
-  callServer('activate', { key: key.trim().toUpperCase(), deviceId: getDeviceId(), shopName, email: ownerEmail, shopUid: getShopUid() });
+  callServer('activate', { key: key.trim().toUpperCase(), deviceId: getDeviceId(), shopName, email: ownerEmail, shopUid: getShopUid(), deviceLabel: getDeviceLabel() });
 
 export const refreshLicense = (key: string) =>
-  callServer('refresh', { key, deviceId: getDeviceId(), shopUid: getShopUid() });
+  callServer('refresh', { key, deviceId: getDeviceId(), shopUid: getShopUid(), deviceLabel: getDeviceLabel(), shopName: savedShopName() });
 
 export const LICENSE_ERROR_MESSAGES: Record<LicenseError, { ar: string; en: string }> = {
   invalid_key: { ar: 'كود التفعيل غير صحيح.', en: 'Invalid activation key.' },
