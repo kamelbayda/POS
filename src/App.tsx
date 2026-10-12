@@ -149,6 +149,7 @@ import { ShopSwitcherModal } from './modals/ShopSwitcherModal';
 import { listShops, updateActiveShop } from './lib/shops';
 import { demoSwap } from './lib/demoData';
 import { trialInvoicesUsed, TRIAL_LIMIT } from './lib/trial';
+import { reportUsage } from './lib/trialPing';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -682,6 +683,23 @@ export default function App() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeLoaded, settings.shopUid]);
+
+  // The licence admin page lists who is trying / using the program
+  const ownerAccount = users.find(u => u.username === 'admin') || users.find(u => u.role === 'admin');
+  const usedInvoices = trialInvoicesUsed(invoices);
+  useEffect(() => {
+    if (!storeLoaded || !licenseState.checked || !settings.shopUid) return;
+    reportUsage({
+      shopName: settings.shopName,
+      businessType: settings.businessType,
+      ownerName: ownerAccount?.email ? ownerAccount.name : undefined, // the seeded admin has no email nor a real name
+      ownerEmail: ownerAccount?.email,
+      ownerPhone: settings.phone,
+      invoicesUsed: usedInvoices,
+      licenseKey: licenseState.license?.key,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeLoaded, licenseState.checked, licenseState.license?.key, settings.shopUid, settings.shopName, settings.businessType, ownerAccount?.email, ownerAccount?.name, usedInvoices]);
 
   // Several shops on one browser: the shop list shows each one's name and kind
   const [showShopSwitcher, setShowShopSwitcher] = useState(false);
