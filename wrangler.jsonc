@@ -1,5 +1,6 @@
 // Web version of the POS, served as static files by Cloudflare Workers (free plan).
 // Cloudflare dashboard: Build command "npm run build:web", Deploy command "npx wrangler deploy".
+// The build command itself also deploys when building the main branch (scripts/build-web.mjs).
 {
   "name": "pos-app",
   "main": "edge/worker.js",
@@ -11,5 +12,7 @@
     // domain: beecash.app/api/... and beecash.app/admin.
     "run_worker_first": ["/api/*", "/admin", "/admin/*"]
   },
-  "services": [{ "binding": "LICENSING", "service": "pos-licensing" }]
+  "services": [{ "binding": "LICENSING", "service": "pos-licensing" }],
+  // Lets the dashboard's non-production command ("npx wrangler preview") run on other branches
+  "previews": {}
 }
