@@ -43,6 +43,9 @@ const SERVER_URL = ((import.meta.env.VITE_LICENSE_SERVER_URL as string | undefin
 
 export const isLicensingConfigured = () => Boolean(PUBLIC_KEY_B64 && SERVER_URL);
 
+/** Base URL of the licence server ('' when not configured). */
+export const licenseServerUrl = () => SERVER_URL;
+
 /** A random id for this installation, created once and remembered on the device. */
 export function getDeviceId(): string {
   let id = storage.getItem('pos_device_id');
