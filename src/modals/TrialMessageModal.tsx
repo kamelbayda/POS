@@ -21,7 +21,7 @@ export function TrialMessageModal({ lang, text, more, onSubscribe, onClose }: Tr
           <BeeCashMark className="w-11 h-11 shrink-0" />
           <div>
             <div className="font-black text-lg">{ar ? 'رسالة من BeeCash' : 'A message from BeeCash'}</div>
-            <div className="text-xs text-[#FFC21A] font-bold">🐝 {ar ? 'فريق بي كاش' : 'The BeeCash team'}</div>
+            <div className="text-xs text-[#FFC21A] font-bold">🐝 {ar ? 'فريق BeeCash' : 'The BeeCash team'}</div>
           </div>
           <button type="button" onClick={onClose} aria-label="close" className="absolute top-3 left-3 p-1 rounded-lg hover:bg-white/10 cursor-pointer"><X className="w-5 h-5" /></button>
         </div>
