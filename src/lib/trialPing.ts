@@ -43,3 +43,31 @@ export async function reportUsage(info: TrialInfo): Promise<void> {
     // offline: try again next time
   }
 }
+
+export interface InboxMessage { id: string; text: string; createdAt: string }
+
+/** Messages the admin sent to this device (while on trial). Empty when offline or not configured. */
+export async function fetchInbox(): Promise<InboxMessage[]> {
+  const server = licenseServerUrl();
+  if (!server || typeof navigator !== 'undefined' && navigator.onLine === false) return [];
+  try {
+    const res = await fetch(`${server}/api/trials/inbox?deviceId=${encodeURIComponent(getDeviceId())}`);
+    const data = await res.json();
+    return res.ok && Array.isArray(data.messages) ? data.messages : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Tells the admin page the message was seen, so it is not shown again. */
+export async function markMessageRead(id: string): Promise<void> {
+  const server = licenseServerUrl();
+  if (!server) return;
+  try {
+    await fetch(`${server}/api/trials/messages/${encodeURIComponent(id)}/read`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ deviceId: getDeviceId() }),
+    });
+  } catch {
+    // offline: shown again next time
+  }
+}

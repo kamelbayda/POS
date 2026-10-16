@@ -149,7 +149,8 @@ import { ShopSwitcherModal } from './modals/ShopSwitcherModal';
 import { listShops, updateActiveShop } from './lib/shops';
 import { demoSwap } from './lib/demoData';
 import { trialInvoicesUsed, TRIAL_LIMIT } from './lib/trial';
-import { reportUsage } from './lib/trialPing';
+import { reportUsage, fetchInbox, markMessageRead, InboxMessage } from './lib/trialPing';
+import { TrialMessageModal } from './modals/TrialMessageModal';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -701,6 +702,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeLoaded, licenseState.checked, licenseState.license?.key, settings.shopUid, settings.shopName, settings.businessType, ownerAccount?.email, ownerAccount?.name, usedInvoices]);
 
+  // Messages the admin sends to shops on trial (checked at start and every 5 minutes)
+  const [inbox, setInbox] = useState<InboxMessage[]>([]);
+  useEffect(() => {
+    if (!storeLoaded || !licenseState.checked || isActivated) return;
+    let stop = false;
+    const check = () => fetchInbox().then(msgs => { if (!stop && msgs.length) setInbox(msgs); });
+    const first = setTimeout(check, 3000);
+    const timer = setInterval(check, 5 * 60 * 1000);
+    return () => { stop = true; clearTimeout(first); clearInterval(timer); };
+  }, [storeLoaded, licenseState.checked, isActivated]);
+  const dismissMessage = (id: string) => {
+    markMessageRead(id);
+    setInbox(prev => prev.filter(m => m.id !== id));
+  };
+  const fillMessage = (text: string) => text
+    .replace(/\{name\}/g, (ownerAccount?.email && ownerAccount.name) || (lang === 'ar' ? 'صديقنا' : 'friend'))
+    .replace(/\{shop\}/g, settings.shopName || (lang === 'ar' ? 'محلّك' : 'your shop'))
+    .replace(/\{left\}/g, String(Math.max(0, TRIAL_LIMIT - usedInvoices)));
+
   // Several shops on one browser: the shop list shows each one's name and kind
   const [showShopSwitcher, setShowShopSwitcher] = useState(false);
   const hasOtherShops = listShops().length > 1;
@@ -1071,6 +1091,16 @@ export default function App() {
           cashierRealName={cashierRealName}
           saveWizardData={saveWizardData}
           showToast={showToast}
+        />
+      )}
+
+      {inbox.length > 0 && !showSubscribe && (
+        <TrialMessageModal
+          lang={lang}
+          text={fillMessage(inbox[0].text)}
+          more={inbox.length - 1}
+          onSubscribe={() => { dismissMessage(inbox[0].id); setShowSubscribe(true); }}
+          onClose={() => dismissMessage(inbox[0].id)}
         />
       )}
 
