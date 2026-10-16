@@ -717,8 +717,8 @@ export default function App() {
     setInbox(prev => prev.filter(m => m.id !== id));
   };
   const fillMessage = (text: string) => text
-    .replace(/\{name\}/g, (ownerAccount?.email && ownerAccount.name) || (lang === 'ar' ? 'صديقنا' : 'friend'))
-    .replace(/\{shop\}/g, settings.shopName || (lang === 'ar' ? 'محلّك' : 'your shop'))
+    .replace(/\{name\}/g, (ownerAccount?.email && ownerAccount.name) || (lang === 'ar' ? 'عزيزنا' : 'friend'))
+    .replace(/\{shop\}/g, settings.shopName || (lang === 'ar' ? 'متجرك' : 'your shop'))
     .replace(/\{left\}/g, String(Math.max(0, TRIAL_LIMIT - usedInvoices)));
 
   // Several shops on one browser: the shop list shows each one's name and kind
