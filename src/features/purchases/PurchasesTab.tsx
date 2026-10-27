@@ -34,6 +34,43 @@ import { parseSerialList } from '../../lib/serials';
 
 const PURCHASE_DRAFT_KEY = 'pos_purchase_draft';
 
+/**
+ * Unit cost after discount and VAT, next to the supplier price. Typing a price here (for
+ * suppliers that quote VAT included) works the supplier price back out.
+ */
+function CostAfterTaxInput({ id, cost, taxRate, discountPercent, onCost, isAr, className }: {
+  id: string; cost: number; taxRate: number; discountPercent: number; onCost: (cost: number) => void; isAr: boolean; className: string;
+}) {
+  const factor = (1 - Math.min(100, discountPercent) / 100) * (1 + taxRate / 100);
+  const shown = cost > 0 ? String(Number((cost * factor).toFixed(3))) : '';
+  const [text, setText] = useState<string | null>(null); // what is being typed, null when not editing
+  const commit = (raw: string) => {
+    const v = parseFloat(raw);
+    if (v >= 0 && factor > 0) onCost(Number((v / factor).toFixed(4)));
+    setText(null);
+  };
+  return (
+    <div>
+      <label className="block text-amber-700 font-black mb-1 text-[10px]" htmlFor={id}>
+        {isAr ? (discountPercent > 0 ? 'الكلفة بعد الحسم والضريبة ($):' : 'الكلفة بعد الضريبة ($):') : (discountPercent > 0 ? 'Cost after discount & VAT ($):' : 'Cost incl. VAT ($):')}
+      </label>
+      <input
+        id={id}
+        type="text"
+        inputMode="decimal"
+        value={text ?? shown}
+        placeholder="0.00"
+        onFocus={() => setText(shown)}
+        onChange={e => setText(e.target.value)}
+        onBlur={e => commit(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+        className={className}
+        title={isAr ? 'إذا المورّد بيعطيك السعر مع الضريبة، اكتبه هون والبرنامج بيحسب السعر قبل الضريبة' : 'If the supplier quotes VAT included, type it here'}
+      />
+    </div>
+  );
+}
+
 /** Purchase invoice being entered, kept on this device until it is saved or discarded. */
 interface StoredPurchaseDraft {
   supplierName: string;
@@ -1200,7 +1237,7 @@ export function PurchasesTab({
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                       <div>
                         <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة 📥:' : 'Received Qty 📥:'}</label>
                         <input
@@ -1256,6 +1293,20 @@ export function PurchasesTab({
                           ))}
                         </div>
                       </div>
+
+                      <CostAfterTaxInput
+                        id="quick-add-cost-after-tax"
+                        cost={parseFloat(newProdCost) || 0}
+                        taxRate={Math.max(0, parseFloat(newProdTaxRate) || 0)}
+                        discountPercent={Math.max(0, parseFloat(newProdDiscount) || 0)}
+                        onCost={c => {
+                          setNewProdCost(String(c));
+                          const upc = parseInt(newProdUpc) || 0;
+                          if (upc > 0 && newProdCartonPrice) setNewProdCartonPrice(String(Number((c * upc).toFixed(2))));
+                        }}
+                        isAr={isAr}
+                        className="w-full bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-center font-mono font-bold text-amber-800"
+                      />
 
                       <div>
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر البيع مفرق للرف ($):' : 'Retail Price ($):'}</label>
@@ -1719,7 +1770,7 @@ export function PurchasesTab({
                         </div>
 
                         {/* Editable properties: Inputs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 font-sans text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-7 gap-3 font-sans text-xs">
                           
                           {/* 1. Qty to buy */}
                           <div>
@@ -1778,6 +1829,17 @@ export function PurchasesTab({
                               ))}
                             </div>
                           </div>
+
+                          {/* 2c. Unit cost after discount and VAT (editable: works the supplier price back out) */}
+                          <CostAfterTaxInput
+                            id={`draft-cost-after-tax-${item.product.id}`}
+                            cost={item.costPriceUSD}
+                            taxRate={item.taxRate}
+                            discountPercent={item.discountPercent || 0}
+                            onCost={c => handleUpdateDraftField(idx, 'costPriceUSD', c)}
+                            isAr={isAr}
+                            className="w-full bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-center font-mono font-bold text-amber-800"
+                          />
 
                           {/* 3. Retail Sell Price */}
                           <div>
