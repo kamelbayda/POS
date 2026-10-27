@@ -481,6 +481,40 @@ export function PurchasesTab({
     const share = offerShare(item.product.id);
     return landedCostWithOffer(item, offerFactor, share.units, share.value);
   };
+  /**
+   * How the real unit cost is reached, step by step: supplier price, discount, VAT, then spread over
+   * the paid and free units. Free units can bring the cost below the price even with VAT added.
+   */
+  const costSteps = (l: { qty: number; costPriceUSD: number; taxRate?: number; discountPercent?: number; freeQty?: number }, final: number, offerUnits = 0) => {
+    const f = (n: number) => `${Number(n.toFixed(3))}$`;
+    const disc = l.discountPercent || 0;
+    const tax = l.taxRate || 0;
+    const afterDisc = l.costPriceUSD * (1 - disc / 100);
+    const withTax = afterDisc * (1 + tax / 100);
+    const steps = [f(l.costPriceUSD)];
+    if (disc > 0) steps.push(`${isAr ? 'حسم' : 'off'} ${disc}% = ${f(afterDisc)}`);
+    steps.push(tax > 0 ? `TVA ${tax}% = ${f(withTax)}` : (isAr ? 'بلا TVA' : 'no VAT'));
+    const free = (l.freeQty || 0) + offerUnits;
+    if (free > 0 && l.qty > 0) {
+      steps.push(isAr
+        ? `${l.qty} مدفوعة + ${free} مجاناً = ${l.qty + free} حبة ← ${f(final)}`
+        : `${l.qty} paid + ${free} free = ${l.qty + free} units → ${f(final)}`);
+    } else if (Math.abs(final - withTax) > 0.0005) {
+      steps.push(`${isAr ? 'بعد عرض الفاتورة' : 'after the invoice offer'} = ${f(final)}`);
+    }
+    return steps;
+  };
+  const CostSteps = ({ steps, id }: { steps: string[]; id: string }) => (
+    <div className="flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-500" id={id}>
+      <span>🧮 {isAr ? 'حساب الكلفة:' : 'Cost:'}</span>
+      {steps.map((step, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <span className="text-slate-400">{isAr ? '←' : '→'}</span>}
+          <bdi className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-700">{step}</bdi>
+        </React.Fragment>
+      ))}
+    </div>
+  );
   /** Default value of one free unit: what the same product costs on this invoice, else its last cost. */
   const offerDefaultUnitValue = (prod: Product) => {
     const line = draftItems.find(d => d.product.id === prod.id);
@@ -1495,6 +1529,12 @@ export function PurchasesTab({
                               <span className="font-bold text-indigo-850 block">من المبيع: {qMargin.toFixed(1)}% | فوق الكلفة: {qMarkup.toFixed(1)}%</span>
                             </div>
                           </div>
+                          {qCost > 0 && (
+                            <CostSteps id="quick-add-cost-steps" steps={costSteps({
+                              qty: qQty, costPriceUSD: parseFloat(newProdCost) || 0, taxRate: Math.max(0, parseFloat(newProdTaxRate) || 0),
+                              discountPercent: Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0)), freeQty: quickFreeUnits(qQty),
+                            }, qCost)} />
+                          )}
 
                         </div>
                       );
@@ -2086,6 +2126,9 @@ export function PurchasesTab({
                                   </span>
                                 </div>
                               </div>
+                              {dCost > 0 && (
+                                <CostSteps id={`draft-cost-steps-${item.product.id}`} steps={costSteps(item, dCost, offerShare(item.product.id).units)} />
+                              )}
                             </div>
                           );
                         })()}
