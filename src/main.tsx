@@ -10,13 +10,17 @@ import '@fontsource/cairo/800.css';
 import '@fontsource/cairo/900.css';
 import './index.css';
 import { installMathInputs } from './lib/mathInputs';
+import { keepAppUpdated } from './lib/appUpdates';
 
 // 3*12, 24x0.75+2... in any number field becomes the result
 installMathInputs();
 
 if (location.protocol.startsWith('http')) {
-  // Web version: install/offline support. The new version activates on the next start.
-  import('virtual:pwa-register').then(({ registerSW }) => registerSW({ immediate: true })).catch(() => {});
+  // Web version: install/offline support. A new version is picked up at start, and while the app
+  // stays open it is looked for at quiet moments (see keepAppUpdated).
+  import('virtual:pwa-register')
+    .then(({ registerSW }) => registerSW({ immediate: true, onRegisteredSW: (_url, registration) => keepAppUpdated(registration) }))
+    .catch(() => {});
   // Ask the browser not to evict the shop's local data (products, invoices, licence).
   navigator.storage?.persist?.().catch(() => {});
 }
