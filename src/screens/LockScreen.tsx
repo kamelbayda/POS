@@ -169,12 +169,20 @@ export function LockScreen({
 
             {/* Password visual masked screen string input display */}
             <div className="relative">
+              {/* Typable too: tapping it opens the tablet keyboard for passwords with letters */}
               <input 
+                id="lock-passcode-input"
                 type="password"
-                readOnly
                 value={lockPasscode}
+                onChange={e => { setLockPasscode(e.target.value); setLockError(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleUnlock(); } }}
+                autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="go"
                 placeholder={lang === 'ar' ? '••••••••' : '••••••••'}
-                className={`w-full bg-white/5 border text-center text-xl font-bold py-3.5 px-4 rounded-2xl text-white ltr:font-mono focus:outline-none transition-all duration-300 ${
+                className={`w-full bg-white/5 border text-center text-xl font-bold py-3.5 px-4 rounded-2xl text-white ltr:font-mono focus:outline-none focus:border-emerald-400/60 transition-all duration-300 ${
                   lockError ? 'border-red-500 bg-red-500/5' : 'border-white/10'
                 }`}
               />
@@ -203,6 +211,14 @@ export function LockScreen({
                 </motion.div>
               )}
             </AnimatePresence>
+
+            <button
+              type="button"
+              onClick={() => document.getElementById('lock-passcode-input')?.focus()}
+              className="w-full text-xs font-bold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 rounded-xl py-2 cursor-pointer"
+            >
+              ⌨️ {lang === 'ar' ? 'كلمة المرور فيها أحرف؟ اكبس هون لتطلع لوحة المفاتيح' : 'Password with letters? Tap here for the keyboard'}
+            </button>
 
             {/* Keypad selector blocks */}
             <div className="grid grid-cols-3 gap-2.5 max-w-[270px] mx-auto pt-1">

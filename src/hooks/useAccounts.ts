@@ -246,6 +246,8 @@ export function useAccounts({
     if (!isScreenLocked || !currentUser) return;
 
     const handleWindowKeyDown = (e: KeyboardEvent) => {
+      // typing in the lock screen's own field (on-screen keyboard of a tablet): the field handles it
+      if ((e.target as HTMLElement | null)?.id === 'lock-passcode-input') return;
       if (e.key === 'Enter') {
         e.preventDefault();
         handleUnlock();
