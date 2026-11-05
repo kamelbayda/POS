@@ -10,7 +10,9 @@ import { execSync } from 'node:child_process';
 
 const run = (cmd) => execSync(cmd, { stdio: 'inherit' });
 
-run('npx vite build');
+// Raise this shell's open-file limit to the machine's maximum first: the Cloudflare build
+// machine starts with a low one and vite then fails with EMFILE (too many open files).
+run(`sh -c 'ulimit -n "$(ulimit -Hn)" 2>/dev/null; exec npx vite build'`);
 
 const branch = process.env.WORKERS_CI_BRANCH;
 if (branch === 'main') {
