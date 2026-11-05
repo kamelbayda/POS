@@ -2,7 +2,7 @@ import { LockScreenClock } from '../components/LockScreenClock';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lock, X } from 'lucide-react';
 import { Invoice, User } from '../types';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import * as storage from '../lib/storage';
 
 interface LockScreenProps {
@@ -34,6 +34,25 @@ export function LockScreen({
   handleUnlock,
   handleLogout,
 }: LockScreenProps) {
+  // How this user unlocks: a numeric PIN on the keypad, or a password typed on the keyboard.
+  // Remembered per user on this device.
+  const modeKey = `pos_lock_mode_${currentUser?.id || ''}`;
+  const [mode, setMode] = useState<'pin' | 'password'>(() => (storage.getItem(modeKey) === 'password' ? 'password' : 'pin'));
+  const chooseMode = (m: 'pin' | 'password') => {
+    setMode(m);
+    storage.setItem(modeKey, m);
+    setLockPasscode('');
+    setLockError('');
+    if (m === 'password') {
+      // focus inside the tap itself: iPad only opens its keyboard for a focus made by a tap
+      const el = document.getElementById('lock-passcode-input') as HTMLInputElement | null;
+      if (el) { el.readOnly = false; el.inputMode = 'text'; el.focus(); }
+    }
+  };
+  useEffect(() => {
+    if (mode === 'password') document.getElementById('lock-passcode-input')?.focus();
+  }, [mode]);
+
   if (!currentUser) return null;
 
   // Daily stats filtered strictly for current cashier context
@@ -146,15 +165,34 @@ export function LockScreen({
               {lang === 'ar' ? 'تأمين شاشة نقطة البيع' : 'Supermarket Terminal Locked'}
             </h2>
             <p className="text-slate-400 text-xs mb-4">
-              {lang === 'ar' ? 'أدخل كلمة المرور أو الباسكود لاستئناف المبيعات' : 'Enter your password or passcode to resume sales'}
+              {mode === 'pin'
+                ? (lang === 'ar' ? 'أدخل رمز الـ PIN لاستئناف المبيعات' : 'Enter your PIN to resume sales')
+                : (lang === 'ar' ? 'اكتب كلمة المرور لاستئناف المبيعات' : 'Type your password to resume sales')}
             </p>
           </motion.div>
 
           {/* Security Interface Panel */}
           <div className="w-full max-w-xs space-y-4">
 
+            {/* PIN or password */}
+            <div className="grid grid-cols-2 gap-1 p-1 bg-white/5 border border-white/10 rounded-2xl" role="tablist" id="lock-mode-switch">
+              {([['pin', lang === 'ar' ? '🔢 رمز PIN' : '🔢 PIN code'], ['password', lang === 'ar' ? '🔤 كلمة المرور' : '🔤 Password']] as const).map(([m, label]) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  id={`lock-mode-${m}`}
+                  onClick={() => chooseMode(m)}
+                  className={`py-2.5 rounded-xl text-sm font-black transition cursor-pointer ${mode === m ? 'bg-[#1D9E75] text-white shadow-lg shadow-emerald-500/20' : 'text-slate-300 hover:bg-white/10'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {/* Floating pin dots indicators */}
-            <div className="flex gap-2.5 justify-center py-1">
+            {mode === 'pin' && <div className="flex gap-2.5 justify-center py-1">
               {Array.from({ length: Math.max(4, lockPasscode.length) }).map((_, i) => (
                 <div 
                   key={i} 
@@ -165,14 +203,16 @@ export function LockScreen({
                   }`} 
                 />
               ))}
-            </div>
+            </div>}
 
             {/* Password visual masked screen string input display */}
             <div className="relative">
-              {/* Typable too: tapping it opens the tablet keyboard for passwords with letters */}
+              {/* PIN: filled by the keypad (no tablet keyboard). Password: typed, opens the tablet keyboard */}
               <input 
                 id="lock-passcode-input"
                 type="password"
+                readOnly={mode === 'pin'}
+                inputMode={mode === 'pin' ? 'none' : 'text'}
                 value={lockPasscode}
                 onChange={e => { setLockPasscode(e.target.value); setLockError(''); }}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleUnlock(); } }}
@@ -181,7 +221,7 @@ export function LockScreen({
                 autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="go"
-                placeholder={lang === 'ar' ? '••••••••' : '••••••••'}
+                placeholder={mode === 'pin' ? '••••' : (lang === 'ar' ? 'كلمة المرور' : 'Password')}
                 className={`w-full bg-white/5 border text-center text-xl font-bold py-3.5 px-4 rounded-2xl text-white ltr:font-mono focus:outline-none focus:border-emerald-400/60 transition-all duration-300 ${
                   lockError ? 'border-red-500 bg-red-500/5' : 'border-white/10'
                 }`}
@@ -212,16 +252,8 @@ export function LockScreen({
               )}
             </AnimatePresence>
 
-            <button
-              type="button"
-              onClick={() => document.getElementById('lock-passcode-input')?.focus()}
-              className="w-full text-xs font-bold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 rounded-xl py-2 cursor-pointer"
-            >
-              ⌨️ {lang === 'ar' ? 'كلمة المرور فيها أحرف؟ اكبس هون لتطلع لوحة المفاتيح' : 'Password with letters? Tap here for the keyboard'}
-            </button>
-
             {/* Keypad selector blocks */}
-            <div className="grid grid-cols-3 gap-2.5 max-w-[270px] mx-auto pt-1">
+            {mode === 'pin' && <div className="grid grid-cols-3 gap-2.5 max-w-[270px] mx-auto pt-1">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map(key => {
                 const isAction = key === 'C' || key === '⌫';
                 return (
@@ -250,7 +282,7 @@ export function LockScreen({
                   </button>
                 );
               })}
-            </div>
+            </div>}
 
             {/* Controls triggers */}
             <div className="flex gap-2.5 pt-4">
