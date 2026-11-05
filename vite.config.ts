@@ -7,6 +7,13 @@ import {VitePWA} from 'vite-plugin-pwa';
 export default defineConfig(() => {
   return {
     base: './',
+    build: {
+      rollupOptions: {
+        // Read at most 64 files at a time. lucide-react has one file per icon, and the
+        // Cloudflare build machine stops builds that open too many files at once (EMFILE).
+        maxParallelFileOps: 64,
+      },
+    },
     plugins: [
       react(),
       tailwindcss(),
