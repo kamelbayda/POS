@@ -129,6 +129,7 @@ import { usePrinterHardware } from './hooks/usePrinterHardware';
 import { useLicense } from './hooks/useLicense';
 import { hashPassword, verifyPassword, needsRehash } from './lib/password';
 import { PurchasesTab } from './features/purchases/PurchasesTab';
+import { openWhatsNew } from './lib/whatsNew';
 import { WarehouseTab } from './features/warehouse/WarehouseTab';
 import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
 import { ForgotPasswordModal } from './modals/ForgotPasswordModal';
@@ -1859,6 +1860,10 @@ export default function App() {
         </p>
         <p className="mt-1">
           🐝 {lang === 'ar' ? 'يعمل بنظام' : 'Powered by'} <BeeCashWordmark /> {lang === 'ar' ? '· نظام الكاشير والمخزون' : '· checkout & inventory'}
+          {' · '}
+          <button type="button" id="footer-whats-new" onClick={openWhatsNew} className="font-bold text-[#B98600] hover:underline cursor-pointer">
+            🆕 {lang === 'ar' ? 'ما الجديد' : "What's new"}
+          </button>
         </p>
       </footer>
     </div>
