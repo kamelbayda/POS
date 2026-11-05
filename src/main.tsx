@@ -12,6 +12,7 @@ import './index.css';
 import { installMathInputs } from './lib/mathInputs';
 import { keepAppUpdated, newVersionWaiting } from './lib/appUpdates';
 import { UpdateBanner } from './components/UpdateBanner';
+import { WhatsNew } from './components/WhatsNew';
 
 // 3*12, 24x0.75+2... in any number field becomes the result
 installMathInputs();
@@ -36,5 +37,6 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
     <UpdateBanner />
+    <WhatsNew />
   </StrictMode>,
 );
