@@ -10,16 +10,23 @@ import '@fontsource/cairo/800.css';
 import '@fontsource/cairo/900.css';
 import './index.css';
 import { installMathInputs } from './lib/mathInputs';
-import { keepAppUpdated } from './lib/appUpdates';
+import { keepAppUpdated, newVersionWaiting } from './lib/appUpdates';
+import { UpdateBanner } from './components/UpdateBanner';
 
 // 3*12, 24x0.75+2... in any number field becomes the result
 installMathInputs();
 
 if (location.protocol.startsWith('http')) {
-  // Web version: install/offline support. A new version is picked up at start, and while the app
-  // stays open it is looked for at quiet moments (see keepAppUpdated).
+  // Web version: install/offline support. A new version downloads in the background and a message
+  // asks to close and reopen the app (see appUpdates.ts).
   import('virtual:pwa-register')
-    .then(({ registerSW }) => registerSW({ immediate: true, onRegisteredSW: (_url, registration) => keepAppUpdated(registration) }))
+    .then(({ registerSW }) => {
+      const updateSW = registerSW({
+        immediate: true,
+        onNeedRefresh: () => newVersionWaiting(updateSW),
+        onRegisteredSW: (_url, registration) => keepAppUpdated(registration),
+      });
+    })
     .catch(() => {});
   // Ask the browser not to evict the shop's local data (products, invoices, licence).
   navigator.storage?.persist?.().catch(() => {});
@@ -28,5 +35,6 @@ if (location.protocol.startsWith('http')) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
+    <UpdateBanner />
   </StrictMode>,
 );

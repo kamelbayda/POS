@@ -13,7 +13,7 @@ export default defineConfig(() => {
       // Installable web app with offline support. The service worker is registered in
       // src/main.tsx only over http(s), so the Electron build (file://) is unaffected.
       VitePWA({
-        registerType: 'autoUpdate',
+        registerType: 'prompt', // a new version waits; the app asks to reopen it (src/lib/appUpdates.ts)
         injectRegister: null,
         includeAssets: ['icon.svg', 'apple-touch-icon.png'],
         manifest: {
