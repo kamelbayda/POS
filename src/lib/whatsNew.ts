@@ -12,6 +12,16 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-07b',
+    date: '2026-11-07',
+    ar: [
+      '✏️ تعديل فواتير المشتريات: من سجل الفواتير افتح الفاتورة واضغط "تعديل الفاتورة". عند الحفظ يُصحَّح المخزون (المحل أو المستودع) والأسعار والمجموع تلقائياً.',
+    ],
+    en: [
+      '✏️ Edit purchase invoices: open one in the ledger and tap "Edit invoice". Saving corrects the stock (shop or warehouse), the prices and the total.',
+    ],
+  },
+  {
     id: '2026-11-07a',
     date: '2026-11-07',
     ar: [
