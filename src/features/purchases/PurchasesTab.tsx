@@ -930,7 +930,7 @@ export function PurchasesTab({
   });
 
   return (
-    <div className="space-y-6" id="tab-purchases-manager">
+    <div className={`space-y-6 ${subTab === 'new' ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : ''}`} id="tab-purchases-manager">
       {/* 1. Header with custom icon and title representing corporate quality */}
       <div className="bg-gradient-to-l from-emerald-600 to-[#1D9E75] text-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-right">
         <div>
@@ -966,10 +966,11 @@ export function PurchasesTab({
 
       {/* SUBTAB: NEW INVOICE ENTRY SECTION */}
       {subTab === 'new' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-right">
+        // Wide screens: the page stays put; the invoice details stay fixed and the item lines scroll in their own pane
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-right lg:flex-1 lg:min-h-0 lg:grid-rows-[minmax(0,1fr)]" id="purchase-new-panes">
           
-          {/* LEFT SIDE/FIRST COLUMN: INVOICE META/HEADER: stays in view while the item lines scroll */}
-          <div className="space-y-6 lg:col-span-1 lg:sticky lg:top-3 lg:self-start lg:max-h-[calc(100dvh-250px)] lg:overflow-y-auto lg:overscroll-contain" id="purchase-invoice-meta">
+          {/* LEFT SIDE/FIRST COLUMN: INVOICE META/HEADER: fixed; scrolls on its own only if taller than the screen */}
+          <div className="space-y-6 lg:col-span-1 lg:h-full lg:overflow-y-auto lg:overscroll-contain" id="purchase-invoice-meta">
             <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
               <h3 className="font-extrabold text-slate-800 text-sm border-b pb-2 flex items-center justify-end gap-2 text-right">
                 <FileText className="w-4 h-4 text-[#1D9E75]" />
@@ -1215,8 +1216,8 @@ export function PurchasesTab({
             </div>
           </div>
 
-          {/* RIGHT SIDE/TWO COLUMNS: DRAFT PRODUCTS LIST & ADD-PRODUCT SEARCH BAR */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* RIGHT SIDE/TWO COLUMNS: DRAFT PRODUCTS LIST & ADD-PRODUCT SEARCH BAR: scrolls in its own pane */}
+          <div className="lg:col-span-2 space-y-6 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pe-1" id="purchase-lines-pane">
             
             {/* 1. Selector/Search Engine for adding products inside the invoice */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3 relative">
