@@ -351,7 +351,7 @@ export function SettingsTab({
           </div>
         </div>
 
-        <div>
+        {settings.businessType !== 'phones' && <div>
           <label className="block text-slate-700 font-bold mb-1.5 text-xs text-right">
             {lang === 'ar' ? 'أيام جرد الصلاحية لتنبيه الكاشير (يوم):' : 'Expiry Alert Notification Days:'}
           </label>
@@ -362,7 +362,7 @@ export function SettingsTab({
             className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm text-center font-mono focus:outline-none"
             required
           />
-        </div>
+        </div>}
 
         {/* MANDATORY QTY SELECTION SWITCH */}
         <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl select-none text-right flex items-center justify-between flex-row-reverse">

@@ -178,7 +178,7 @@ export function InventoryTab({
     const minWQty = parseFloat(newProdMinWholesaleQty) || 5;
     const sku = newProdSku.trim() || `SKU-${barcode.slice(-4)}`;
     
-    if (!name || !barcode || isNaN(price) || isNaN(qty) || !newProdExpiry) {
+    if (!name || !barcode || isNaN(price) || isNaN(qty) || (!newProdExpiry && !isPhoneShop)) {
       showToast('error', 'الرجاء تعبئة كل خلايا نموذج المنتجات بشكل صحيح!');
       return;
     }
@@ -216,7 +216,7 @@ export function InventoryTab({
             category: newProdCategory,
             priceUSD: price,
             quantity: qty,
-            expiryDate: newProdExpiry,
+            expiryDate: isPhoneShop ? '' : newProdExpiry,
             priceWholesale: priceW,
             minWholesaleQty: minWQty,
             sku,
@@ -248,7 +248,7 @@ export function InventoryTab({
         category: newProdCategory,
         priceUSD: price,
         quantity: qty,
-        expiryDate: newProdExpiry,
+        expiryDate: isPhoneShop ? '' : newProdExpiry,
         priceWholesale: priceW,
         minWholesaleQty: minWQty,
         sku,
@@ -999,7 +999,7 @@ export function InventoryTab({
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-              <div className="w-full sm:w-64 text-right">
+              {!isPhoneShop && <div className="w-full sm:w-64 text-right">
                 <label className="block text-slate-600 mb-1 text-xs font-bold">تاريخ الإنتهاء (YYYY-MM-DD):</label>
                 <input 
                   type="date" 
@@ -1008,7 +1008,7 @@ export function InventoryTab({
                   className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs text-center font-mono focus:ring-1 focus:ring-emerald-500"
                   required
                 />
-              </div>
+              </div>}
               
               <div className="w-full sm:w-auto flex-1 text-right">
                 <label className="block text-slate-600 mb-1 text-xs font-bold">صورة المنتج (اختياري):</label>
@@ -1166,7 +1166,7 @@ export function InventoryTab({
               {lang === 'ar' ? '⚙️ تخصيص عرض أعمدة الجدول الجاري:' : '⚙️ Customize displayed columns:'}
             </span>
             <ColumnSelector
-              columns={invColumns}
+              columns={isPhoneShop ? invColumns.filter(c => c.key !== 'expiry') : invColumns}
               visibleCols={visibleInvCols}
               onChange={(key) => setVisibleInvCols(prev => ({ ...prev, [key]: !prev[key] }))}
               lang={lang}
@@ -1207,7 +1207,7 @@ export function InventoryTab({
               {visibleInvCols.qty_shop !== false && <col style={{ width: colWidths.qty_shop }} />}
               {visibleInvCols.qty_wh !== false && <col style={{ width: colWidths.qty_wh }} />}
               {visibleInvCols.last_sale !== false && <col style={{ width: colWidths.last_sale }} />}
-              {visibleInvCols.expiry !== false && <col style={{ width: colWidths.expiry }} />}
+              {(visibleInvCols.expiry !== false && !isPhoneShop) && <col style={{ width: colWidths.expiry }} />}
               {visibleInvCols.actions !== false && <col style={{ width: colWidths.actions }} />}
             </colgroup>
             <thead className="sticky top-0 bg-slate-50 z-20 shadow-xs">
@@ -1488,7 +1488,7 @@ export function InventoryTab({
                 )}
 
                 {/* 11. Expiry Date */}
-                {visibleInvCols.expiry !== false && (
+                {(visibleInvCols.expiry !== false && !isPhoneShop) && (
                   <th className="p-3 relative group text-right select-none whitespace-nowrap" style={{ width: colWidths.expiry }}>
                     <div className="flex flex-col gap-1">
                       <span className="font-extrabold">{lang === 'ar' ? 'الصلاحية' : 'Expiry'}</span>
@@ -1793,7 +1793,7 @@ export function InventoryTab({
                       )}
 
                       {/* 11. Expiry Date */}
-                      {visibleInvCols.expiry !== false && (
+                      {(visibleInvCols.expiry !== false && !isPhoneShop) && (
                         <td className="p-3 font-mono font-bold text-right overflow-hidden text-ellipsis whitespace-nowrap">
                           {p.isExpired ? (
                             <span className="text-red-600 bg-red-100 px-2 py-0.5 rounded text-[10px] font-black">
