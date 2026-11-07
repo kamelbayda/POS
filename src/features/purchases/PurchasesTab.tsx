@@ -968,8 +968,8 @@ export function PurchasesTab({
       {subTab === 'new' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-right">
           
-          {/* LEFT SIDE/FIRST COLUMN: INVOICE META/HEADER */}
-          <div className="space-y-6 lg:col-span-1">
+          {/* LEFT SIDE/FIRST COLUMN: INVOICE META/HEADER: stays in view while the item lines scroll */}
+          <div className="space-y-6 lg:col-span-1 lg:sticky lg:top-3 lg:self-start lg:max-h-[calc(100dvh-250px)] lg:overflow-y-auto lg:overscroll-contain" id="purchase-invoice-meta">
             <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
               <h3 className="font-extrabold text-slate-800 text-sm border-b pb-2 flex items-center justify-end gap-2 text-right">
                 <FileText className="w-4 h-4 text-[#1D9E75]" />
