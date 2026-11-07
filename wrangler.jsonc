@@ -13,6 +13,7 @@
     "run_worker_first": ["/api/*", "/admin", "/admin/*"]
   },
   "services": [{ "binding": "LICENSING", "service": "pos-licensing" }],
-  // Lets the dashboard's non-production command ("npx wrangler preview") run on other branches
+  // Builds of other branches upload a preview version (scripts/build-web.mjs); this block lets
+  // the dashboard's non-production deploy command run on them too
   "previews": {}
 }
