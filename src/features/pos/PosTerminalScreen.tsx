@@ -99,6 +99,7 @@ export function PosTerminalScreen({
     switchSession,
     addNewSession,
     addToCart,
+    scanCode,
     handleProductClick,
     clearCart,
     triggerCustomerSearch,
@@ -700,15 +701,7 @@ export function PosTerminalScreen({
                   setNumpadOnSave({
                     fn: (bar) => {
                       if (bar) {
-                        const trimmedBar = bar.trim();
-                        setBarcodeInput(trimmedBar);
-                        const p = products.find(prod => prod.barcode === trimmedBar || (prod.barcodes && prod.barcodes.includes(trimmedBar)));
-                        if (p) {
-                          addToCart(p);
-                          showToast('success', `${lang === 'ar' ? 'تم جلب الصنف لـ السلة:' : 'Scanned item:'} ${p.name}`);
-                        } else {
-                          showToast('error', lang === 'ar' ? 'خطأ! لم يتم العثور على باركود صنف مطابق' : 'Barcode not found!');
-                        }
+                        scanCode(bar); // same as a scanner: IMEI, barcode, scale label or bundle
                       }
                     }
                   });
@@ -753,6 +746,13 @@ export function PosTerminalScreen({
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setTerminalProductPage(0);
+                }}
+                onKeyDown={(e) => {
+                  // a scanner (or Enter) with a barcode or IMEI in the search box adds that item
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    e.preventDefault();
+                    if (scanCode(searchQuery, { quietMiss: true })) { setSearchQuery(''); setTerminalProductPage(0); }
+                  }
                 }}
                 className={`w-full border rounded-xl py-2 pr-9 pl-9 text-xs text-right font-extrabold focus:outline-none focus:ring-1 ${
                   theme === 'dark' 

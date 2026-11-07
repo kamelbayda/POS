@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CartItem, CartSession, Product, Invoice, User, SystemSettings, Promotion, Customer } from '../../types';
 import { auth } from '../../firebase';
 import * as storage from '../../lib/storage';
 import { addMonths, normalizeSerial } from '../../lib/serials';
 import { trialInvoicesUsed, TRIAL_LIMIT } from '../../lib/trial';
+
+const codeKey = (s: string) => s.replace(/[\s-]+/g, '').toUpperCase();
+/** Same barcode, ignoring spaces, dashes, letter case and leading zeros of numeric codes. */
+export const sameBarcode = (a: string | undefined, b: string) => {
+  if (!a) return false;
+  const x = codeKey(a), y = codeKey(b);
+  if (x === y) return true;
+  return /^\d+$/.test(x) && /^\d+$/.test(y) && x.replace(/^0+/, '') === y.replace(/^0+/, '');
+};
 
 export interface UsePosRegisterDeps {
   SYS_DATE: string;
@@ -333,8 +342,16 @@ export function usePosRegister({
   // --- BARCODE SCAN EXECUTION ---
   const handleBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const barcode = barcodeInput.trim();
-    if (!barcode) return;
+    scanCode(barcodeInput);
+  };
+
+  /**
+   * A scanned or typed code: bundle offer, scale label, IMEI or product barcode. Adds the match
+   * to the cart and returns true; otherwise shows an error (unless `quietMiss`) and returns false.
+   */
+  const scanCode = (raw: string, { quietMiss = false }: { quietMiss?: boolean } = {}): boolean => {
+    const barcode = raw.trim();
+    if (!barcode) return false;
 
     // Check if matching active bundle promotion barcode
     const matchedPromo = promotions.find(p => p.active && p.type === 'bundle' && p.barcode === barcode);
@@ -351,7 +368,7 @@ export function usePosRegister({
       addToCart(virtualProduct);
       setBarcodeInput('');
       showToast('success', `تم التعرّف على عرض الحزمة [${matchedPromo.name}] بالباركود وإضافته بنجاح!`);
-      return;
+      return true;
     }
 
     // --- ELECTRONIC SCALE BARCODE PARSER ---
@@ -369,7 +386,7 @@ export function usePosRegister({
         if (matchedWeighed.isExpired) {
           setExpiryWarningModal(matchedWeighed);
           setBarcodeInput('');
-          return;
+          return true;
         }
 
         addToCart(matchedWeighed, weightKg);
@@ -380,7 +397,7 @@ export function usePosRegister({
             ? `⚖️ [ميزان] تم إدخال [${matchedWeighed.name}] بوزن: ${weightKg.toFixed(3)} كغم`
             : `⚖️ [Scale] Added [${matchedWeighed.name}] weight: ${weightKg.toFixed(3)} Kg`
         );
-        return;
+        return true;
       }
     }
 
@@ -390,25 +407,54 @@ export function usePosRegister({
     if (serialOwner) {
       addSerialToCart(serialOwner, serial);
       setBarcodeInput('');
-      return;
+      return true;
     }
 
-    const matched = processedProducts.find(p => p.barcode === barcode || (p.barcodes && p.barcodes.includes(barcode)));
+    // Barcodes match without spaces, dashes or letter case, and with or without leading zeros
+    // (a scanner may read a 12-digit UPC as a 13-digit EAN starting with 0)
+    const matched = processedProducts.find(p => sameBarcode(p.barcode, barcode) || (p.barcodes || []).some(b => sameBarcode(b, barcode)));
     if (!matched) {
-      showToast('error', `عفواً! الباركود [${barcode}] غير معرف في قاعدة البيانات.`);
+      if (!quietMiss) showToast('error', `عفواً! الباركود [${barcode}] غير معرف في قاعدة البيانات.`);
       setBarcodeInput('');
-      return;
+      return false;
     }
 
     if (matched.isExpired) {
       setExpiryWarningModal(matched);
       setBarcodeInput('');
-      return;
+      return true;
     }
 
     addToCart(matched);
     setBarcodeInput('');
+    return true;
   };
+
+  // A barcode scanner types the code fast and ends with Enter. When no field has the focus (the
+  // touch screen has no barcode field), catch it here so a scan always reaches the cart.
+  // kept outside the effect: the screen can re-render in the middle of a scan
+  const scanBuffer = useRef({ text: '', last: 0 });
+  useEffect(() => {
+    if (activeTab !== 'pos') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (isNumpadOpen || isTouchPaymentModalOpen || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return;
+      const buf = scanBuffer.current;
+      const now = Date.now();
+      if (now - buf.last > 80) buf.text = ''; // typed by hand, not a scanner
+      buf.last = now;
+      if (e.key === 'Enter') {
+        const code = buf.text;
+        buf.text = '';
+        if (code.length >= 3) { e.preventDefault(); scanCode(code); }
+      } else if (e.key.length === 1) {
+        buf.text += e.key;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   /** Adds one unit of a serial-tracked product with its IMEI. */
   const addSerialToCart = (product: Product, rawSerial: string) => {
@@ -1078,6 +1124,7 @@ export function usePosRegister({
     startRenameSession,
     saveRenameSession,
     handleBarcodeSubmit,
+    scanCode,
     addToCart,
     handleProductClick,
     updateCartQuantity,
