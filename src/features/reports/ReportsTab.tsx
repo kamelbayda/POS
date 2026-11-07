@@ -187,12 +187,12 @@ export function ReportsTab({
           >
             📋 جرد وقيمة المخازن
           </button>
-          <button 
+          {settings.businessType !== 'phones' && <button 
             onClick={() => setReportsSubTab('expiry_report')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'expiry_report' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
             ⏳ تقرير صلاحية المنتجات
-          </button>
+          </button>}
           <button 
             onClick={() => setReportsSubTab('returns_report')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'returns_report' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}

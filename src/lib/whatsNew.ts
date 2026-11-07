@@ -12,6 +12,16 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-07c',
+    date: '2026-11-07',
+    ar: [
+      '📱 محلات الهواتف: أُلغي تاريخ الصلاحية من فواتير المشتريات والمخزن والتقارير والإعدادات، ولا تظهر تنبيهات انتهاء الصلاحية عند البيع.',
+    ],
+    en: [
+      '📱 Phone shops: no more expiry dates in purchases, inventory, reports and settings, and no expiry warnings at the till.',
+    ],
+  },
+  {
     id: '2026-11-07b',
     date: '2026-11-07',
     ar: [

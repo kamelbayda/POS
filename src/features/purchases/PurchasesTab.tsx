@@ -99,6 +99,7 @@ interface PurchasesTabProps {
   lang: 'ar' | 'en';
   showToast: (type: 'success' | 'error' | 'warning', message: string) => void;
   sysDate: string;
+  noExpiry?: boolean; // phone shops: goods have no expiry date
 }
 
 export function PurchasesTab({
@@ -110,7 +111,8 @@ export function PurchasesTab({
   setPurchaseInvoices,
   lang,
   showToast,
-  sysDate
+  sysDate,
+  noExpiry = false
 }: PurchasesTabProps) {
   const isAr = lang === 'ar';
 
@@ -468,7 +470,7 @@ export function PurchasesTab({
       category: newProdCategory,
       priceUSD: sellRetailNum,
       quantity: 0, // starts at zero, will be updated via the invoice submission
-      expiryDate: newProdExpiry || sysDate,
+      expiryDate: noExpiry ? '' : (newProdExpiry || sysDate),
       costPriceUSD: Number(landedCost(quickLine).toFixed(2)), // real unit cost, like saved invoices
       priceWholesale: sellWholesaleNum,
       purchaseTaxRate: quickTaxRate,
@@ -492,7 +494,7 @@ export function PurchasesTab({
         costPriceUSD: costNum,
         newPriceUSD: sellRetailNum,
         newPriceWholesale: sellWholesaleNum,
-        expiryDate: newProdExpiry || sysDate,
+        expiryDate: noExpiry ? '' : (newProdExpiry || sysDate),
         taxRate: quickTaxRate,
         discountPercent: quickDiscount,
         freeQty: quickLine.freeQty,
@@ -711,7 +713,7 @@ export function PurchasesTab({
       costPriceUSD: d.costPriceUSD,
       newPriceUSD: d.newPriceUSD,
       newPriceWholesale: d.newPriceWholesale,
-      expiryDate: d.expiryDate,
+      expiryDate: noExpiry ? undefined : d.expiryDate,
       taxRate: d.taxRate,
       discountPercent: d.discountPercent,
       freeQty: d.freeQty,
@@ -764,7 +766,7 @@ export function PurchasesTab({
           bonusFree: draftVal.bonusFree,
           priceUSD: draftVal.newPriceUSD, // update retail price as requested
           priceWholesale: draftVal.newPriceWholesale, // update wholesale selling price
-          expiryDate: draftVal.expiryDate || prod.expiryDate // update expiry date
+          expiryDate: noExpiry ? prod.expiryDate : (draftVal.expiryDate || prod.expiryDate) // update expiry date
         };
       }
       if (share.units > 0) {
@@ -1450,7 +1452,7 @@ export function PurchasesTab({
                         />
                       </div>
 
-                      <div>
+                      {!noExpiry && <div>
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'تاريخ انتهاء الصلاحية:' : 'Expiry Date:'}</label>
                         <input 
                           type="date" 
@@ -1458,7 +1460,7 @@ export function PurchasesTab({
                           onChange={e => setNewProdExpiry(e.target.value)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
                         />
-                      </div>
+                      </div>}
                     </div>
 
                     {/* Supplier discount and bonus for the new item */}
@@ -1981,8 +1983,8 @@ export function PurchasesTab({
                             />
                           </div>
 
-                          {/* 5. Expiry update date */}
-                          <div className="col-span-2 sm:col-span-1">
+                          {/* 5. Expiry update date (not for phone shops) */}
+                          {!noExpiry && <div className="col-span-2 sm:col-span-1">
                             <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'تاريخ الصلاحية الجديد:' : 'New Batch Expiry:'}</label>
                             <input
                               type="date"
@@ -1990,7 +1992,7 @@ export function PurchasesTab({
                               onChange={e => handleUpdateDraftField(idx, 'expiryDate', e.target.value)}
                               className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono text-slate-700"
                             />
-                          </div>
+                          </div>}
 
                         </div>
 
@@ -2606,7 +2608,7 @@ export function PurchasesTab({
                                     <table className="w-full border-collapse text-right text-[11px]">
                                       <thead>
                                         <tr className="border-b border-slate-100 text-slate-400 font-bold bg-slate-50">
-                                          <th className="p-2 text-center">{isAr ? 'تاريخ الصلاحية الجديد' : 'Expiry set'}</th>
+                                          {!noExpiry && <th className="p-2 text-center">{isAr ? 'تاريخ الصلاحية الجديد' : 'Expiry set'}</th>}
                                           <th className="p-2 text-center text-[#1D9E75]">{isAr ? 'سعر البيع مفرق الجديد ($)' : 'New Ret. Price ($)'}</th>
                                           <th className="p-2 text-center">{isAr ? 'سعر الشراء تكلفة ($)' : 'Unit Cost ($)'}</th>
                                           <th className="p-2 text-center">{isAr ? 'إجمالي تكلفة الصنف ($)' : 'Procurement cost ($)'}</th>
@@ -2620,9 +2622,9 @@ export function PurchasesTab({
                                           return (
                                             <tr key={i.id} className="hover:bg-slate-50">
                                               
-                                              <td className="p-2 text-center font-mono text-slate-600 font-bold">
+                                              {!noExpiry && <td className="p-2 text-center font-mono text-slate-600 font-bold">
                                                 {i.expiryDate ? i.expiryDate : <span className="text-slate-300">—</span>}
-                                              </td>
+                                              </td>}
 
                                               <td className="p-2 text-center font-mono text-emerald-700 font-black">
                                                 {i.newPriceUSD.toFixed(2)} $
@@ -2762,7 +2764,7 @@ export function PurchasesTab({
                   <table className="w-full text-right border-collapse">
                     <thead>
                       <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-[11px]">
-                        <th className="p-3 text-center">{isAr ? 'الصلاحية' : 'Expiry'}</th>
+                        {!noExpiry && <th className="p-3 text-center">{isAr ? 'الصلاحية' : 'Expiry'}</th>}
                         <th className="p-3 text-center">{isAr ? 'سعر البيع الجديد' : 'New Price'}</th>
                         <th className="p-3 text-center">{isAr ? 'سعر الكلفة' : 'Cost Cost'}</th>
                         <th className="p-3 text-center">{isAr ? 'الكمية المستلمة' : 'Supplied Qty'}</th>
@@ -2773,9 +2775,9 @@ export function PurchasesTab({
                     <tbody className="divide-y divide-slate-100">
                       {activePrintPurchase.items.map((it, idx) => (
                         <tr key={it.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 text-center font-mono font-semibold text-slate-600">
+                          {!noExpiry && <td className="p-3 text-center font-mono font-semibold text-slate-600">
                             {it.expiryDate || <span className="text-slate-300">—</span>}
-                          </td>
+                          </td>}
                           <td className="p-3 text-center font-mono font-extrabold text-emerald-600">
                             {it.newPriceUSD.toFixed(1)} $
                           </td>

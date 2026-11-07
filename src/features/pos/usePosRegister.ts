@@ -435,10 +435,10 @@ export function usePosRegister({
 
   // --- ADD TO CART UTILITY ---
   const addToCart = (product: Product, customQty?: number) => {
-    // Check if food is expired directly
+    // Check if food is expired directly (phone shops: goods have no expiry date)
     const expiryDate = new Date(product.expiryDate);
     const currentDate = new Date(SYS_DATE);
-    if (expiryDate < currentDate) {
+    if (settings.businessType !== 'phones' && expiryDate < currentDate) {
       setExpiryWarningModal(product);
       return;
     }

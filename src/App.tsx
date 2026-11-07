@@ -360,16 +360,17 @@ export default function App() {
     });
   }, [categories, posCategories, invoices, products]);
 
-  // Compute expired status on items
+  // Compute expired status on items (phone shops: goods have no expiry date, so never expired)
+  const noExpiry = settings.businessType === 'phones';
   const processedProducts = products.map(p => {
     const expiryDate = new Date(p.expiryDate);
     const currentDate = new Date(SYS_DATE);
-    const isExpired = expiryDate < currentDate;
+    const isExpired = !noExpiry && expiryDate < currentDate;
     
     // Near expiry is true if differences is less or equal to setting days
     const diffTime = expiryDate.getTime() - currentDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const isNearExpiry = !isExpired && diffDays <= settings.expiryAlertDays;
+    const isNearExpiry = !noExpiry && !isExpired && diffDays <= settings.expiryAlertDays;
 
     // Compute dynamic days since last sale across sales invoices
     const matches = invoices.filter(inv => inv.items.some(item => item.productId === p.id));
@@ -1374,6 +1375,7 @@ export default function App() {
                 lang={lang}
                 showToast={showToast}
                 sysDate={SYS_DATE}
+                noExpiry={noExpiry}
               />
             )
           )}
