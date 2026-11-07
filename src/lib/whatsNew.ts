@@ -12,6 +12,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-07d',
+    date: '2026-11-07',
+    ar: [
+      '🔫 إصلاح: قارئ الباركود يعمل الآن على شاشة اللمس أيضاً، فيُضاف الصنف إلى السلة مباشرة عند المسح، سواء كان باركود الصنف أو رقم IMEI للهاتف.',
+      '🔎 مسح الباركود داخل خانة البحث ثم Enter يضيف الصنف إلى السلة، ويُتعرَّف على الباركود حتى لو اختلف بصفر في أوله أو بمسافة.',
+    ],
+    en: [
+      '🔫 Fix: the barcode scanner now works on the touch screen too; a scanned product barcode or phone IMEI goes straight into the cart.',
+      '🔎 Scanning into the search box (or Enter) adds the item, and barcodes match even with a leading zero or a space.',
+    ],
+  },
+  {
     id: '2026-11-07c',
     date: '2026-11-07',
     ar: [
