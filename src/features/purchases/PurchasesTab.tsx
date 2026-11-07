@@ -86,6 +86,7 @@ interface StoredPurchaseDraft {
     serialText?: string;
   }>;
   offer: Array<{ productId: string; qty: number; unitValueUSD: number }>;
+  editingId?: string; // a saved invoice being edited
 }
 
 interface PurchasesTabProps {
@@ -194,10 +195,13 @@ export function PurchasesTab({
   const [draftMarginInputs, setDraftMarginInputs] = useState<{[productId: string]: string}>({});
   const [draftMarkupInputs, setDraftMarkupInputs] = useState<{[productId: string]: string}>({});
   const [transportationCost, setTransportationCost] = useState<string>(savedDraft?.transportationCost || '0');
+  // A saved invoice opened for editing: saving replaces it and corrects the stock
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(savedDraft?.editingId ?? null);
+  const editingInvoice = editingInvoiceId ? purchaseInvoices.find(inv => inv.id === editingInvoiceId) ?? null : null;
 
   // Keep the draft saved while it has anything in it; an empty or saved invoice clears it
   useEffect(() => {
-    const hasContent = draftItems.length > 0 || offerItems.length > 0 || supplierName.trim() !== '' || note.trim() !== '';
+    const hasContent = draftItems.length > 0 || offerItems.length > 0 || supplierName.trim() !== '' || note.trim() !== '' || !!editingInvoiceId;
     if (!hasContent) {
       storage.removeItem(PURCHASE_DRAFT_KEY);
       return;
@@ -206,9 +210,10 @@ export function PurchasesTab({
       supplierName, invoiceNumber, invoiceDate, note, paymentStatus, destination: purchaseDestination, transportationCost,
       items: draftItems.map(({ product, ...line }) => ({ ...line, productId: product.id })),
       offer: offerItems.map(o => ({ productId: o.product.id, qty: o.qty, unitValueUSD: o.unitValueUSD })),
+      ...(editingInvoiceId ? { editingId: editingInvoiceId } : {}),
     };
     storage.setJSON(PURCHASE_DRAFT_KEY, draft);
-  }, [draftItems, offerItems, supplierName, invoiceNumber, invoiceDate, note, paymentStatus, purchaseDestination, transportationCost]);
+  }, [draftItems, offerItems, supplierName, invoiceNumber, invoiceDate, note, paymentStatus, purchaseDestination, transportationCost, editingInvoiceId]);
 
   const discardDraft = () => {
     setDraftItems([]);
@@ -217,7 +222,84 @@ export function PurchasesTab({
     setNote('');
     setTransportationCost('0');
     setInvoiceNumber(`PUR-${Math.floor(100000 + Math.random() * 900000)}`);
-    showToast('success', isAr ? 'انمسحت مسودة فاتورة المشتريات.' : 'Purchase draft discarded.');
+    setInvoiceDate(sysDate);
+    setPaymentStatus('paid');
+    setPurchaseDestination('shop');
+    const wasEditing = !!editingInvoiceId;
+    setEditingInvoiceId(null);
+    showToast('success', wasEditing
+      ? (isAr ? 'انلغى التعديل. الفاتورة الأصلية ما تغيّرت.' : 'Edit cancelled. The saved invoice is unchanged.')
+      : (isAr ? 'انمسحت مسودة فاتورة المشتريات.' : 'Purchase draft discarded.'));
+  };
+
+  /** Opens a saved invoice in the form; saving it replaces the invoice and corrects the stock. */
+  const handleEditInvoice = (inv: PurchaseInvoice) => {
+    const busy = draftItems.length > 0 || offerItems.length > 0;
+    if (busy && editingInvoiceId !== inv.id && !window.confirm(isAr
+      ? 'في فاتورة عم تنكتب هلّق. فتح هالفاتورة للتعديل بيمسح المسودة الحالية. متابعة؟'
+      : 'An invoice is being entered. Opening this one for editing discards the current draft. Continue?')) return;
+    const missing: string[] = [];
+    const lines = [...inv.items].reverse().flatMap(it => { // the form lists the newest line first
+      const product = productById(it.productId);
+      if (!product) { missing.push(it.productName); return []; }
+      return [{
+        product,
+        qty: it.qty,
+        costPriceUSD: it.costPriceUSD,
+        newPriceUSD: it.newPriceUSD,
+        newPriceWholesale: it.newPriceWholesale ?? product.priceWholesale ?? 0,
+        expiryDate: it.expiryDate || '',
+        taxRate: it.taxRate || 0,
+        discountPercent: it.discountPercent || 0,
+        freeQty: it.freeQty || 0,
+        bonusEvery: product.bonusEvery || 0,
+        bonusFree: product.bonusFree || 0,
+        unitsPerCarton: product.unitsPerCarton || 0,
+        ...(it.serials?.length ? { serialText: it.serials.join('\n') } : {}),
+      }];
+    });
+    setDraftItems(lines);
+    setOfferItems((inv.offerFreeItems || []).flatMap(o => {
+      const product = productById(o.productId);
+      if (!product) { missing.push(o.productName); return []; }
+      return [{ product, qty: o.qty, unitValueUSD: o.unitValueUSD }];
+    }));
+    setSupplierName(inv.supplierName);
+    setInvoiceNumber(inv.invoiceNumber);
+    setInvoiceDate(inv.date);
+    setNote(inv.note || '');
+    setPaymentStatus(inv.paymentStatus);
+    setPurchaseDestination(inv.destination || 'shop');
+    setTransportationCost(String(inv.transportationCostUSD || 0));
+    setEditingInvoiceId(inv.id);
+    setSubTab('new');
+    showToast(missing.length ? 'warning' : 'success', missing.length
+      ? (isAr ? `انفتحت الفاتورة للتعديل. أصناف ممحية من المخزون ما رجعت: ${missing.join('، ')}` : `Invoice opened for editing. Deleted products left out: ${missing.join(', ')}`)
+      : (isAr ? `✏️ الفاتورة ${inv.invoiceNumber} مفتوحة للتعديل. عدّل واضغط "حفظ التعديلات".` : `✏️ Invoice ${inv.invoiceNumber} is open for editing.`));
+  };
+
+  /**
+   * Products as they were before `inv` was saved: its received units (paid, bonus and invoice
+   * offer) come off the shop or warehouse stock it went to, and its IMEIs are taken back.
+   * Prices and costs stay; the edited invoice sets them again.
+   */
+  const withoutInvoice = (base: Product[], inv: PurchaseInvoice): Product[] => {
+    const received = new Map<string, number>();
+    const add = (id: string, n: number) => received.set(id, (received.get(id) || 0) + n);
+    inv.items.forEach(it => add(it.productId, it.qty + (it.freeQty || 0)));
+    (inv.offerFreeItems || []).forEach(o => add(o.productId, o.qty));
+    const serials = new Set(inv.items.flatMap(it => it.serials || []));
+    const toWarehouse = inv.destination === 'warehouse';
+    return base.map(prod => {
+      const n = received.get(prod.id) || 0;
+      if (!n && !(prod.serialNumbers || []).some(sn => serials.has(sn))) return prod;
+      return {
+        ...prod,
+        quantity: toWarehouse ? prod.quantity : prod.quantity - n,
+        warehouseQuantity: toWarehouse ? (prod.warehouseQuantity || 0) - n : prod.warehouseQuantity,
+        ...(prod.serialNumbers ? { serialNumbers: prod.serialNumbers.filter(sn => !serials.has(sn)) } : {}),
+      };
+    });
   };
 
   // Category Creation Inline State
@@ -593,6 +675,9 @@ export function PurchasesTab({
       showToast('error', isAr ? 'يرجى كتابة اسم المورّد أو الشركة الموزعة لتوثيق الفاتورة.' : 'Supplier name is required!');
       return;
     }
+    // Editing a saved invoice: start from the stock as it was before it, then apply the new version
+    const baseProducts = editingInvoice ? withoutInvoice(products, editingInvoice) : products;
+
     // Phones: every unit received needs its IMEI, and an IMEI can only exist once
     for (const d of draftItems) {
       if (!d.product.trackSerial) continue;
@@ -602,7 +687,7 @@ export function PurchasesTab({
         showToast('error', isAr ? `[${d.product.name}]: لازم ${needed} رقم IMEI (مكتوب ${list.length}).` : `[${d.product.name}]: ${needed} IMEIs needed (${list.length} entered).`);
         return;
       }
-      const owner = products.find(p => (p.serialNumbers || []).some(sn => list.includes(sn)));
+      const owner = baseProducts.find(p => (p.serialNumbers || []).some(sn => list.includes(sn)));
       if (owner) {
         showToast('error', isAr ? `في IMEI من [${d.product.name}] موجود من قبل عند [${owner.name}].` : `An IMEI of [${d.product.name}] already exists on [${owner.name}].`);
         return;
@@ -639,7 +724,7 @@ export function PurchasesTab({
     const totalInvoiceAmount = sumLines(draftItems, lineTotal) + transCostNum;
 
     const newPurchaseInvoice: PurchaseInvoice = {
-      id: `pur-inv-${Date.now()}`,
+      id: editingInvoice ? editingInvoice.id : `pur-inv-${Date.now()}`,
       invoiceNumber: invoiceNumber,
       supplierName: supplierName.trim(),
       date: invoiceDate,
@@ -659,7 +744,7 @@ export function PurchasesTab({
 
     // 2. Update Master Products: increments stock quantities (to shop or warehouse), set new cost prices, retail prices, wholesale prices, and expiry dates!
     const isToWarehouse = purchaseDestination === 'warehouse';
-    const updatedProducts = products.map(prod => {
+    const updatedProducts = baseProducts.map(prod => {
       const draftVal = draftItems.find(d => d.product.id === prod.id);
       const share = offerShare(prod.id);
       if (draftVal) {
@@ -699,7 +784,9 @@ export function PurchasesTab({
     storage.setJSON('pos_products', updatedProducts);
 
     // 3. Save purchase invoice to purchase ledger
-    const updatedLedger = [newPurchaseInvoice, ...purchaseInvoices];
+    const updatedLedger = editingInvoice
+      ? purchaseInvoices.map(inv => inv.id === editingInvoice.id ? newPurchaseInvoice : inv) // keeps its place in the list
+      : [newPurchaseInvoice, ...purchaseInvoices];
     setPurchaseInvoices(updatedLedger);
     storage.setJSON('pos_purchases', updatedLedger);
 
@@ -710,8 +797,15 @@ export function PurchasesTab({
     setDraftItems([]);
     setOfferItems([]);
     setTransportationCost('0');
+    setEditingInvoiceId(null);
     setSubTab('ledger'); // switch to ledger to view past submissions
 
+    if (editingInvoice) {
+      showToast('success', isAr
+        ? `✏️ انحفظت التعديلات على الفاتورة ${newPurchaseInvoice.invoiceNumber}، والمخزون والأسعار تصحّحوا.`
+        : `✏️ Invoice ${newPurchaseInvoice.invoiceNumber} updated; stock and prices corrected.`);
+      return;
+    }
     showToast('success', isAr 
       ? `تم ترحيل الفاتورة بنجاح! تم استلام البضائع وتخزينها في [${purchaseDestination === 'warehouse' ? 'المستودع/المخزن 📦' : 'المحل مباشرة 🏪'}] وتحديث أسعار لـ ${invoiceItemsToSave.length} أصناف.`
       : `Purchase invoice verified! Stock quantities increased in [${purchaseDestination === 'warehouse' ? 'Warehouse 📦' : 'Shop shelves 🏪'}] and selling prices adjusted for ${invoiceItemsToSave.length} products.`
@@ -881,6 +975,22 @@ export function PurchasesTab({
                 <FileText className="w-4 h-4 text-[#1D9E75]" />
                 {isAr ? 'بيانات فاتورة الشراء وتفاصيل الاستلام' : 'Invoice Metadata'}
               </h3>
+
+              {editingInvoice && (
+                <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 text-right space-y-2" id="purchase-editing-banner">
+                  <div className="text-xs font-black text-amber-900">
+                    ✏️ {isAr ? `عم تعدّل الفاتورة ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})` : `Editing invoice ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})`}
+                  </div>
+                  <div className="text-[10px] text-amber-800 font-bold">
+                    {isAr ? 'لما تحفظ، البرنامج بيشيل كميات الفاتورة القديمة من المخزون وبيحط الجديدة، وبيحدّث الأسعار.' : 'On save, the old quantities come off the stock, the new ones go in, and prices are updated.'}
+                  </div>
+                  <button type="button" id="btn-cancel-purchase-edit"
+                    onClick={() => { if (window.confirm(isAr ? 'إلغاء التعديل؟ الفاتورة المحفوظة بتضل متل ما هي.' : 'Cancel editing? The saved invoice stays as it is.')) discardDraft(); }}
+                    className="text-[10px] font-black text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 px-3 py-1.5 rounded-lg cursor-pointer">
+                    {isAr ? 'إلغاء التعديل' : 'Cancel editing'}
+                  </button>
+                </div>
+              )}
 
               {/* AUTOMATED AI PAPER INVOICE CAMERA SCANNER TRIGGER */}
               <button
@@ -1098,7 +1208,9 @@ export function PurchasesTab({
                 }`}
               >
                 <Check className="w-4 h-4" />
-                {isAr ? 'ترحيل الفاتورة وتحديث مخازن المحل 📥' : 'Save Invoice & Refill Stocks 📥'}
+                {editingInvoice
+                  ? (isAr ? 'حفظ التعديلات على الفاتورة ✏️' : 'Save changes to the invoice ✏️')
+                  : (isAr ? 'ترحيل الفاتورة وتحديث مخازن المحل 📥' : 'Save Invoice & Refill Stocks 📥')}
               </button>
             </div>
           </div>
@@ -2465,6 +2577,7 @@ export function PurchasesTab({
                               <td colSpan={8} className="bg-slate-50/70 p-4 border-t border-b border-slate-200 font-sans">
                                 <div className="bg-white rounded-xl border border-slate-200/80 p-4 space-y-3 shadow-inner">
                                   <h4 className="font-bold text-slate-800 text-xs border-b pb-1.5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
                                     <button
                                       type="button"
                                       onClick={() => setActivePrintPurchase(inv)}
@@ -2472,6 +2585,15 @@ export function PurchasesTab({
                                     >
                                       <span>طباعة وتصدير كـ PDF 📠/📄</span>
                                     </button>
+                                    <button
+                                      type="button"
+                                      data-edit-purchase={inv.id}
+                                      onClick={() => handleEditInvoice(inv)}
+                                      className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-black px-3 py-1.5 rounded-lg border border-amber-200 text-[10px] flex items-center gap-1.5 transition cursor-pointer"
+                                    >
+                                      <span>✏️ {isAr ? 'تعديل الفاتورة' : 'Edit invoice'}</span>
+                                    </button>
+                                    </div>
                                     <div className="flex items-center gap-2">
                                       <span>{inv.supplierName}</span>
                                       <span>←</span>
