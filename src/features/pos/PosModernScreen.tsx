@@ -7,6 +7,7 @@ import { getGridColsStyle, getCardStyle } from './posGrid';
 import React, { useState } from 'react';
 import * as storage from '../../lib/storage';
 import { matchesProductSearch } from '../../lib/productSearch';
+import { categoryIdOf } from '../../lib/categories';
 
 interface PosModernScreenProps {
   /** Cart, sessions and checkout state from usePosRegister. */
@@ -886,7 +887,7 @@ export function PosModernScreen({
                   {paginatedItems.map(item => {
                     if (item.type === 'category') {
                       const cat = item.data as Category;
-                      const count = processedProducts.filter(p => p.category === cat.id).length;
+                      const count = processedProducts.filter(p => categoryIdOf(p.category, categories) === cat.id).length;
                       const cardStyle = getCardStyle(settings.posGridSize || 'auto');
                       return (
                         <div 
@@ -1117,7 +1118,7 @@ export function PosModernScreen({
                   })
               ) : (
                 processedProducts
-                  .filter(p => searchQuery.trim() !== '' || selectedCategory === 'all' || p.category === selectedCategory)
+                  .filter(p => searchQuery.trim() !== '' || selectedCategory === 'all' || categoryIdOf(p.category, categories) === selectedCategory)
                   .filter(p => matchesProductSearch(p, searchQuery))
                   .map(item => {
                     const computedPriceLBP = item.priceUSD * settings.exchangeRate;
@@ -1201,7 +1202,7 @@ export function PosModernScreen({
                 )
               ) : (
                 processedProducts
-                  .filter(p => searchQuery.trim() !== '' || selectedCategory === 'all' || p.category === selectedCategory)
+                  .filter(p => searchQuery.trim() !== '' || selectedCategory === 'all' || categoryIdOf(p.category, categories) === selectedCategory)
                   .filter(p => matchesProductSearch(p, searchQuery)).length === 0 && (
                     <div className="col-span-full py-12 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                       😞 {lang === 'ar' ? 'عفواً! لم يتم العثور على أي منتج مطابق في هذا القسم.' : 'No items found matching the filter.'}

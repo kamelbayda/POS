@@ -152,6 +152,7 @@ import { demoSwap } from './lib/demoData';
 import { trialInvoicesUsed, TRIAL_LIMIT } from './lib/trial';
 import { reportUsage, fetchInbox, markMessageRead, InboxMessage } from './lib/trialPing';
 import { TrialMessageModal } from './modals/TrialMessageModal';
+import { categoryIdOf, UNCATEGORIZED } from './lib/categories';
 
 /** localStorage key of the signed-in account and open page, kept across a refresh. */
 const SESSION_KEY = 'pos_session';
@@ -327,6 +328,13 @@ export default function App() {
   const [simulatedWeight, setSimulatedWeight] = useState<number>(0.500); // weight in kg
   const [isScaleSimulatorOpen, setIsScaleSimulatorOpen] = useState<boolean>(false);
 
+  // Categories shown at the till: the shop's categories, plus "no category" when some products
+  // match none of them (saved under a deleted category), so no product is hidden
+  const posCategories = useMemo(() => {
+    const orphans = products.some(p => categoryIdOf(p.category, categories) === UNCATEGORIZED);
+    return orphans ? [...categories, { id: UNCATEGORIZED, name: lang === 'ar' ? 'بدون قسم' : 'No category', emoji: '❔' }] : categories;
+  }, [categories, products, lang]);
+
   // Dynamic categories sorted by total sold items count (most popular / best-selling sections first)
   const sortedCategoriesBySales = useMemo(() => {
     const salesMap: { [categoryId: string]: number } = {};
@@ -334,7 +342,7 @@ export default function App() {
       if (inv && inv.items) {
         inv.items.forEach(item => {
           const matchingProd = products.find(p => p.id === item.productId);
-          const catId = matchingProd ? matchingProd.category : 'other';
+          const catId = matchingProd ? categoryIdOf(matchingProd.category, categories) : 'other';
           if (catId) {
             salesMap[catId] = (salesMap[catId] || 0) + (item.quantity || 0);
           }
@@ -342,7 +350,7 @@ export default function App() {
       }
     });
 
-    return [...categories].sort((a, b) => {
+    return [...posCategories].sort((a, b) => {
       const qtyB = salesMap[b.id] || 0;
       const qtyA = salesMap[a.id] || 0;
       if (qtyB !== qtyA) {
@@ -350,7 +358,7 @@ export default function App() {
       }
       return a.name.localeCompare(b.name, 'ar');
     });
-  }, [categories, invoices, products]);
+  }, [categories, posCategories, invoices, products]);
 
   // Compute expired status on items
   const processedProducts = products.map(p => {
@@ -1196,7 +1204,7 @@ export default function App() {
               setLang={setLang}
               toggleFullScreen={toggleFullScreen}
               products={products}
-              categories={categories}
+              categories={posCategories}
               settings={settings}
               customers={customers}
               promotions={promotions}
@@ -1223,7 +1231,7 @@ export default function App() {
               SYS_DATE={SYS_DATE}
               lang={lang}
               products={products}
-              categories={categories}
+              categories={posCategories}
               settings={settings}
               promotions={promotions}
               isBarcodeKeyboardOpen={isBarcodeKeyboardOpen}

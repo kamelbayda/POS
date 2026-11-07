@@ -6,6 +6,7 @@ import { useResizableColumns } from '../../hooks/useResizableColumns';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import { operatingCostPerUnit, withOperatingCost } from '../../lib/operatingCost';
 import { parseSerialList } from '../../lib/serials';
+import { categoryIdOf } from '../../lib/categories';
 
 interface InventoryTabProps {
   products: Product[];
@@ -1561,7 +1562,7 @@ export function InventoryTab({
                     (p.sku && p.sku.toLowerCase().includes(q))
                   );
                   
-                  const matchesCategory = !selectedInventoryCategory ? true : p.category === selectedInventoryCategory;
+                  const matchesCategory = !selectedInventoryCategory ? true : categoryIdOf(p.category, categories) === selectedInventoryCategory;
                   let isMatched = matchesQuery && matchesCategory;
                   
                   if (showStagnantOnly) {
@@ -1862,7 +1863,7 @@ export function InventoryTab({
               (p.sku && p.sku.toLowerCase().includes(q))
             );
             
-            const matchesCategory = !selectedInventoryCategory ? true : p.category === selectedInventoryCategory;
+            const matchesCategory = !selectedInventoryCategory ? true : categoryIdOf(p.category, categories) === selectedInventoryCategory;
             let isMatched = matchesQuery && matchesCategory;
             
             if (showStagnantOnly) {

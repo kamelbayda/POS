@@ -12,6 +12,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-07a',
+    date: '2026-11-07',
+    ar: [
+      '🗂️ إصلاح: الأصناف المضافة من فاتورة المشتريات أو من ملف Excel أصبحت تظهر في فئتها على شاشة البيع.',
+      '❔ الأصناف التي حُذفت فئتها تظهر الآن في قسم "بدون قسم"، فلا يختفي أي صنف.',
+    ],
+    en: [
+      '🗂️ Fix: products added from a purchase invoice or an Excel file now show in their category at the till.',
+      '❔ Products whose category was deleted now show under "No category", so no product is hidden.',
+    ],
+  },
+  {
     id: '2026-11-05a',
     date: '2026-11-05',
     ar: [

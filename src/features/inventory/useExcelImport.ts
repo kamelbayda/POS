@@ -3,6 +3,7 @@ import { Product, Category } from '../../types';
 import * as XLSX from 'xlsx';
 import { auth } from '../../firebase';
 import * as storage from '../../lib/storage';
+import { categoryIdOf, UNCATEGORIZED } from '../../lib/categories';
 
 export interface UseExcelImportDeps {
   SYS_DATE: string;
@@ -239,6 +240,13 @@ export function useExcelImport({
       }
     });
 
+    // products keep the category's id (the sheet gives its name), so the till finds them
+    const allCats = [...categories, ...catsToCreate];
+    const catIdFor = (value: string) => {
+      const id = categoryIdOf(value, allCats);
+      return id === UNCATEGORIZED ? value : id;
+    };
+
     let randCounter = 1;
     const finalProdsToSave = [...products];
     const syncOperations: Product[] = [];
@@ -246,7 +254,7 @@ export function useExcelImport({
     parsedProducts.forEach(item => {
       if (item.status === 'invalid') return;
       
-      const p = { ...item.product };
+      const p = { ...item.product, category: catIdFor(item.product.category) };
       if (!p.barcode) {
         let generated = '';
         do {
