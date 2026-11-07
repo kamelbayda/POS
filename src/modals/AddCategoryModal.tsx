@@ -43,7 +43,7 @@ export function AddCategoryModal({
             />
           </div>
 
-          <div>
+          {false && <div>
             <label className="block text-slate-500 mb-1 text-[11px] font-bold">الرمز التعبيري المصاحب:</label>
             <div className="flex gap-1.5 justify-center flex-wrap py-1.5 bg-slate-50 rounded-xl border border-slate-100 mb-2">
               {['🍎', '🥩', '🥛', '🍫', '🥤', '🍞', '🥫', '📦', '🧼', '🔋', '🍦'].map(em => (
@@ -64,7 +64,7 @@ export function AddCategoryModal({
               placeholder="📦"
               className="w-12 mx-auto bg-slate-50 border border-slate-200 rounded-xl py-2 px-1 text-center font-bold"
             />
-          </div>
+          </div>}
         </div>
 
         <div className="flex gap-2 text-xs font-sans">
@@ -82,7 +82,7 @@ export function AddCategoryModal({
             }}
             className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl transition cursor-pointer"
           >
-            تأكيد وبناء الفئة 💾
+            تأكيد وبناء الفئة
           </button>
           <button 
             type="button"

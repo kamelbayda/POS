@@ -1,5 +1,5 @@
 import type { PosRegister } from './usePosRegister';
-import { ShoppingCart, Globe, Sun, Moon, Maximize, Menu, Monitor, X, Plus, Check, Lock, Percent, Truck, CreditCard, User, DollarSign, MessageSquare, Save, Trash2, Tag, Search, Home } from 'lucide-react';
+import { ShoppingCart, Globe, Sun, Moon, Maximize, Menu, Monitor, X, Plus, Check, Lock, Percent, Truck, CreditCard, User, DollarSign, MessageSquare, Save, Trash2, Tag, Search, Home, Pin } from 'lucide-react';
 import { Product, Category, CartItem, SystemSettings, Promotion, Customer, CartSession } from '../../types';
 import React, { useState } from 'react';
 import { BeeCashMark, BeeCashWordmark } from '../../components/BeeCashLogo';
@@ -887,7 +887,7 @@ export function PosTerminalScreen({
                         ? `${lang === 'ar' ? 'نتائج البحث بكل الأقسام' : 'Search results in all categories'} (${filtered.length})`
                         : selectedCategory === 'everything'
                           ? `${lang === 'ar' ? 'كل المنتجات' : 'All products'} (${filtered.length})`
-                          : `${categories.find(c => c.id === selectedCategory)?.emoji || '📁'} ${categories.find(c => c.id === selectedCategory)?.name || ''} (${filtered.length})`}
+                          : `${categories.find(c => c.id === selectedCategory)?.name || ''} (${filtered.length})`}
                     </span>
                     <button type="button" id="btn-terminal-categories-home"
                       onClick={() => { setSearchQuery(''); openCategory('all'); }}
@@ -902,20 +902,20 @@ export function PosTerminalScreen({
                   {showCategoryHome ? (
                     <div className="grid gap-4 py-1 font-sans" id="terminal-category-tiles" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 185px), 1fr))' }}>
                       {(() => {
-                        type Tile = { id: string; icon: string; title: string; sub: string; service?: boolean; open: () => void };
+                        type Tile = { id: string; title: string; sub: string; service?: boolean; open: () => void };
                         const items = lang === 'ar' ? 'صنف' : 'items';
                         const tiles: Tile[] = [
-                          { id: 'everything', icon: '📦', title: lang === 'ar' ? 'كل المنتجات' : 'All products', sub: `${processedProducts.length} ${items}`, open: () => openCategory('everything') },
+                          { id: 'everything', title: lang === 'ar' ? 'كل المنتجات' : 'All products', sub: `${processedProducts.length} ${items}`, open: () => openCategory('everything') },
                           ...categories.map(cat => ({
-                            id: cat.id, icon: cat.emoji || '📁', title: cat.name,
+                            id: cat.id, title: cat.name,
                             sub: `${processedProducts.filter(p => categoryIdOf(p.category, categories) === cat.id).length} ${items}`,
                             open: () => openCategory(cat.id),
                           })),
                           ...(businessType === 'phones' && onOpenTab ? [
-                            { id: 'svc:repairs', icon: '🔧', title: lang === 'ar' ? 'قسم التصليح' : 'Repairs', sub: lang === 'ar' ? 'استلام وتسليم أجهزة' : 'Intake & delivery', service: true, open: () => onOpenTab('repairs') },
-                            { id: 'svc:tradeins', icon: '📲', title: lang === 'ar' ? 'شرا مستعمل' : 'Buy used', sub: lang === 'ar' ? 'شرا جهاز من زبون' : 'Buy a phone', service: true, open: () => onOpenTab('tradeins') },
-                            { id: 'svc:topups', icon: '⚡', title: lang === 'ar' ? 'التشريج' : 'Top-ups', sub: 'Alfa · Touch', service: true, open: () => onOpenTab('topups') },
-                            { id: 'svc:installments', icon: '📅', title: lang === 'ar' ? 'التقسيط' : 'Instalments', sub: lang === 'ar' ? 'خطط وأقساط' : 'Plans & dues', service: true, open: () => onOpenTab('installments') },
+                            { id: 'svc:repairs', title: lang === 'ar' ? 'قسم التصليح' : 'Repairs', sub: lang === 'ar' ? 'استلام وتسليم أجهزة' : 'Intake & delivery', service: true, open: () => onOpenTab('repairs') },
+                            { id: 'svc:tradeins', title: lang === 'ar' ? 'شرا مستعمل' : 'Buy used', sub: lang === 'ar' ? 'شرا جهاز من زبون' : 'Buy a phone', service: true, open: () => onOpenTab('tradeins') },
+                            { id: 'svc:topups', title: lang === 'ar' ? 'التشريج' : 'Top-ups', sub: 'Alfa · Touch', service: true, open: () => onOpenTab('topups') },
+                            { id: 'svc:installments', title: lang === 'ar' ? 'التقسيط' : 'Instalments', sub: lang === 'ar' ? 'خطط وأقساط' : 'Plans & dues', service: true, open: () => onOpenTab('installments') },
                           ] : []),
                         ];
                         const pinned = pinnedTiles.map(id => tiles.find(t => t.id === id)).filter((t): t is Tile => !!t);
@@ -929,10 +929,9 @@ export function PosTerminalScreen({
                                 onClick={e => { e.stopPropagation(); togglePin(t.id); }}
                                 title={isPinned ? (lang === 'ar' ? 'إلغاء التثبيت' : 'Unpin') : (lang === 'ar' ? 'تثبيت بالأول' : 'Pin first')}
                                 className={`absolute top-1.5 left-1.5 w-7 h-7 rounded-full flex items-center justify-center text-sm cursor-pointer transition ${isPinned ? 'bg-amber-400 shadow' : 'opacity-40 hover:opacity-100 hover:bg-slate-200'}`}>
-                                📌
+                                <Pin className={`w-3.5 h-3.5 ${isPinned ? 'text-white' : ''}`} />
                               </button>
-                              <span className="text-4xl">{t.icon}</span>
-                              <span className="font-black text-sm text-center leading-tight">{t.title}</span>
+                              <span className="font-black text-base text-center leading-tight px-6">{t.title}</span>
                               <span className="text-[11px] font-bold text-stone-500">{t.sub}</span>
                             </div>
                           );

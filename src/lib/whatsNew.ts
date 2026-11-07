@@ -15,10 +15,10 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     id: '2026-11-08a',
     date: '2026-11-08',
     ar: [
-      'واجهة أنظف: أُزيلت الرموز التعبيرية الملوّنة من الأزرار والعناوين والرسائل في كل البرنامج، وبقيت أيقونات الأقسام كما هي.',
+      'واجهة أنظف: أُزيلت الرموز التعبيرية الملوّنة من الأزرار والعناوين والرسائل ومربّعات الأقسام في كل البرنامج.',
     ],
     en: [
-      'A cleaner look: the coloured emoji are gone from buttons, titles and messages across the program; category icons stay.',
+      'A cleaner look: the coloured emoji are gone from buttons, titles, messages and category tiles across the program.',
     ],
   },
   {
