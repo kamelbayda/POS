@@ -67,7 +67,7 @@ export function TopupsTab({ lang, sysDate, wallets, setWallets, invoices, custom
     });
     if (!inv) return;
     updateWallet(wallet.id, { balance: r2(wallet.balance - credit) });
-    showToast('success', ar ? `✅ انبعت ${credit}$ ${wallet.name} عالرقم ${number} — قبضت ${finalPrice.toFixed(2)}$` : `Sent ${credit}$ to ${number}`);
+    showToast('success', ar ? `انبعت ${credit}$ ${wallet.name} عالرقم ${number} — قبضت ${finalPrice.toFixed(2)}$` : `Sent ${credit}$ to ${number}`);
     setPhone(''); setAmount(''); setPrice(''); setPayment('cash'); setCustomerId('');
   };
 
@@ -127,7 +127,7 @@ export function TopupsTab({ lang, sysDate, wallets, setWallets, invoices, custom
 
       <form onSubmit={sell} id="topup-form" className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 text-sm">
         <div className="flex items-center justify-between">
-          <h3 className="font-black text-slate-800">{ar ? '📲 تشريج لزبون' : '📲 Top up a customer'}</h3>
+          <h3 className="font-black text-slate-800">{ar ? 'تشريج لزبون' : 'Top up a customer'}</h3>
           <button type="button" onClick={() => setEditRates(v => !v)} className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer">
             <Settings2 className="w-3.5 h-3.5" /> {ar ? 'أسعار المبيع' : 'Selling rates'}
           </button>
@@ -166,7 +166,7 @@ export function TopupsTab({ lang, sysDate, wallets, setWallets, invoices, custom
           {(['cash', 'debt'] as const).map(m => (
             <button key={m} type="button" data-topup-payment={m} onClick={() => setPayment(m)}
               className={`px-4 py-2 rounded-xl border text-xs font-bold cursor-pointer ${payment === m ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-600'}`}>
-              {m === 'cash' ? (ar ? '💵 كاش' : '💵 Cash') : (ar ? '📒 دين على زبون' : '📒 On account')}
+              {m === 'cash' ? (ar ? 'كاش' : 'Cash') : (ar ? 'دين على زبون' : 'On account')}
             </button>
           ))}
           {payment === 'debt' && (
@@ -178,7 +178,7 @@ export function TopupsTab({ lang, sysDate, wallets, setWallets, invoices, custom
         </div>
         {credit > 0 && wallet && (
           <div className={`text-xs font-bold rounded-xl px-3 py-2 ${credit > wallet.balance ? 'text-rose-800 bg-rose-50' : 'text-teal-800 bg-teal-50'}`} id="topup-summary">
-            {credit > wallet.balance && <div className="mb-1">⚠️ {ar ? `رصيد ${wallet.name} ما بيكفّي — اشحن رصيد المحل أوّل.` : `Not enough ${wallet.name} credit.`}</div>}
+            {credit > wallet.balance && <div className="mb-1">{ar ? `رصيد ${wallet.name} ما بيكفّي — اشحن رصيد المحل أوّل.` : `Not enough ${wallet.name} credit.`}</div>}
             {ar ? 'الزبون بيدفع' : 'Customer pays'} {finalPrice.toFixed(2)}$ · {ar ? 'ربحك' : 'profit'} {(finalPrice - credit * wallet.avgCostUSD).toFixed(2)}$ · {ar ? 'بيبقى برصيدك' : 'left'} {(wallet.balance - credit).toFixed(2)}$
           </div>
         )}

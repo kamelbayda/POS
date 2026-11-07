@@ -99,7 +99,7 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang,
     <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs" id="tab-invoices-logs">
       <div className="pb-4 border-b border-slate-100 mb-5 text-right flex flex-col md:flex-row justify-between items-end md:items-center gap-3">
         <div className="text-right">
-          <h3 className="font-bold text-slate-800 text-lg">🧾 مستودع الفواتير ونسخ الزبائن المسجلة</h3>
+          <h3 className="font-bold text-slate-800 text-lg">مستودع الفواتير ونسخ الزبائن المسجلة</h3>
           <p className="text-xs text-slate-400 mt-1">انقر على أيقونة الطابعة لمعاينة تذييل وتفاصيل الفاتورة الحرارية للزبون.</p>
         </div>
         
@@ -113,7 +113,7 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang,
       <div className="bg-emerald-50/55 rounded-2xl border border-emerald-100 p-4 mb-5 space-y-3.5">
         <form onSubmit={handleBarcodeFormSubmit} className="text-right">
           <label className="block text-xs font-black text-slate-700 mb-1.5">
-            🔍 مربع البحث وقارئ الباركود للفاتورة:
+            مربع البحث وقارئ الباركود للفاتورة:
           </label>
           <div className="flex gap-2.5">
             <button
@@ -144,16 +144,16 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang,
             const active = !!until && until >= todayIso;
             return (
               <div className="mt-3 bg-white border-2 border-sky-200 rounded-xl p-3 text-right text-xs space-y-1" id="imei-lookup">
-                <div className="font-black text-sky-900">📱 IMEI <span dir="ltr" className="font-mono">{serialQuery}</span> — {serialHit.item.productName}</div>
+                <div className="font-black text-sky-900">IMEI <span dir="ltr" className="font-mono">{serialQuery}</span> — {serialHit.item.productName}</div>
                 <div className="text-slate-600">
                   انباع بالفاتورة <b className="font-mono">{serialHit.inv.invoiceNumber}</b> بتاريخ <b dir="ltr">{serialHit.inv.date}</b>
                   {serialHit.inv.customerId ? ' (لزبون مسجّل)' : ''}
                 </div>
                 {returned ? (
-                  <div className="font-bold text-amber-700">↩️ هالجهاز ترجّع للمحل.</div>
+                  <div className="font-bold text-amber-700">هالجهاز ترجّع للمحل.</div>
                 ) : until ? (
                   <div className={`font-black ${active ? 'text-emerald-700' : 'text-rose-600'}`}>
-                    🛡️ {active ? 'الكفالة سارية لغاية' : 'الكفالة انتهت بتاريخ'} <span dir="ltr">{until}</span>
+                    {active ? 'الكفالة سارية لغاية' : 'الكفالة انتهت بتاريخ'} <span dir="ltr">{until}</span>
                   </div>
                 ) : (
                   <div className="text-slate-500">بلا كفالة.</div>
@@ -170,7 +170,7 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang,
         {exactMatch && (
           <div className="bg-white border-2 border-[#1D9E75] p-3.5 rounded-xl flex items-center justify-between flex-row-reverse animate-bounce">
             <div className="text-right space-y-0.5">
-              <div className="text-xs font-black text-[#1D9E75]">⚡ تم الكشف عن تطابق رقم الباركود التام!</div>
+              <div className="text-xs font-black text-[#1D9E75]">تم الكشف عن تطابق رقم الباركود التام!</div>
               <div className="text-[11px] text-slate-500 font-mono">فاتورة: <strong className="text-slate-800">{exactMatch.invoiceNumber}</strong> | مجموع: {exactMatch.totalUSD.toFixed(2)}$</div>
             </div>
             <button
@@ -179,7 +179,7 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang,
               }}
               className="bg-[#1D9E75] hover:bg-emerald-600 text-white font-black px-4 py-2 rounded-lg text-xs transition cursor-pointer"
             >
-              فتح معاينة الفاتورة 📑
+              فتح معاينة الفاتورة
             </button>
           </div>
         )}

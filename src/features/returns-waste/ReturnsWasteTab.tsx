@@ -271,11 +271,11 @@ export function ReturnsWasteTab({
             {selectedInvoice && (
               <form onSubmit={handleProcessReturn} className="space-y-3.5 pt-3 border-t border-slate-100">
                 <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100 text-xs text-right space-y-1">
-                  <div className="font-bold text-slate-800">📋 {lang === 'ar' ? 'بيانات الفاتورة المحددة:' : 'Invoice Metadata:'}</div>
+                  <div className="font-bold text-slate-800">{lang === 'ar' ? 'بيانات الفاتورة المحددة:' : 'Invoice Metadata:'}</div>
                   <div>ID: <strong className="font-mono">{selectedInvoice.invoiceNumber}</strong></div>
                   <div>{lang === 'ar' ? 'إجمالي الدفع:' : 'Paid amount:'} <strong className="text-emerald-700 font-mono">{selectedInvoice.totalUSD}$ / {(selectedInvoice.totalLBP).toLocaleString()} LBP</strong></div>
                   {selectedInvoice.customerId && (
-                    <div className="text-amber-700 font-bold">👤 {lang === 'ar' ? 'زبون آجل / معرّف' : 'Linked Customer'}</div>
+                    <div className="text-amber-700 font-bold">{lang === 'ar' ? 'زبون آجل / معرّف' : 'Linked Customer'}</div>
                   )}
                 </div>
 
@@ -566,7 +566,7 @@ export function ReturnsWasteTab({
               >
                 <X className="w-5 h-5" />
               </button>
-              <h4 className="font-bold text-sm text-right">معاينة إيصال مرتجع المبيعات 📑</h4>
+              <h4 className="font-bold text-sm text-right">معاينة إيصال مرتجع المبيعات</h4>
             </div>
 
             {/* Simulated Paper block */}
@@ -654,7 +654,7 @@ export function ReturnsWasteTab({
 
             {/* WA details */}
             <div className="bg-slate-800/60 p-3 rounded-2xl border border-slate-800 space-y-2 mt-2">
-              <label className="block text-slate-400 text-[10.5px] font-bold text-right">إرسال تفاصيل الإرجاع مباشرة للزبون بواتساب 💬</label>
+              <label className="block text-slate-400 text-[10.5px] font-bold text-right">إرسال تفاصيل الإرجاع مباشرة للزبون بواتساب</label>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -733,7 +733,7 @@ export function ReturnsWasteTab({
               >
                 <X className="w-5 h-5" />
               </button>
-              <h4 className="font-bold text-sm text-right">معاينة سند إهلاك وشطب بضاعة تالفة 📑</h4>
+              <h4 className="font-bold text-sm text-right">معاينة سند إهلاك وشطب بضاعة تالفة</h4>
             </div>
 
             {/* Simulated Paper block */}
@@ -812,7 +812,7 @@ export function ReturnsWasteTab({
 
               <div className="text-slate-400 text-[9px] pt-1 block text-center">************************************</div>
               <div className="text-center font-bold text-slate-500 text-[9px] block">
-                تم إتلاف وشطب الكمية من جرد المستودع والرفوف بنجاح ✓
+                تم إتلاف وشطب الكمية من جرد المستودع والرفوف بنجاح
               </div>
             </div>
 

@@ -277,7 +277,7 @@ export function PurchasesTab({
     setSubTab('new');
     showToast(missing.length ? 'warning' : 'success', missing.length
       ? (isAr ? `انفتحت الفاتورة للتعديل. أصناف ممحية من المخزون ما رجعت: ${missing.join('، ')}` : `Invoice opened for editing. Deleted products left out: ${missing.join(', ')}`)
-      : (isAr ? `✏️ الفاتورة ${inv.invoiceNumber} مفتوحة للتعديل. عدّل واضغط "حفظ التعديلات".` : `✏️ Invoice ${inv.invoiceNumber} is open for editing.`));
+      : (isAr ? `الفاتورة ${inv.invoiceNumber} مفتوحة للتعديل. عدّل واضغط "حفظ التعديلات".` : `Invoice ${inv.invoiceNumber} is open for editing.`));
   };
 
   /**
@@ -586,8 +586,8 @@ export function PurchasesTab({
 
     setTransportationCost('0');
     showToast('success', isAr 
-      ? `تم توزيع تكلفة المواصلات (${costAmount.toFixed(2)}$) بنجاح كأعباء إضافية على أسعار رأس مال السلع بالتناسب! 🚚` 
-      : `Successfully distributed transportation cost ($${costAmount.toFixed(2)}) proportionally onto item cost prices! 🚚`
+      ? `تم توزيع تكلفة المواصلات (${costAmount.toFixed(2)}$) بنجاح كأعباء إضافية على أسعار رأس مال السلع بالتناسب!` 
+      : `Successfully distributed transportation cost ($${costAmount.toFixed(2)}) proportionally onto item cost prices!`
     );
   };
 
@@ -627,7 +627,7 @@ export function PurchasesTab({
   };
   const CostSteps = ({ steps, id }: { steps: string[]; id: string }) => (
     <div className="flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-500" id={id}>
-      <span>🧮 {isAr ? 'حساب الكلفة:' : 'Cost:'}</span>
+      <span>{isAr ? 'حساب الكلفة:' : 'Cost:'}</span>
       {steps.map((step, i) => (
         <React.Fragment key={i}>
           {i > 0 && <span className="text-slate-400">{isAr ? '←' : '→'}</span>}
@@ -804,13 +804,13 @@ export function PurchasesTab({
 
     if (editingInvoice) {
       showToast('success', isAr
-        ? `✏️ انحفظت التعديلات على الفاتورة ${newPurchaseInvoice.invoiceNumber}، والمخزون والأسعار تصحّحوا.`
-        : `✏️ Invoice ${newPurchaseInvoice.invoiceNumber} updated; stock and prices corrected.`);
+        ? `انحفظت التعديلات على الفاتورة ${newPurchaseInvoice.invoiceNumber}، والمخزون والأسعار تصحّحوا.`
+        : `Invoice ${newPurchaseInvoice.invoiceNumber} updated; stock and prices corrected.`);
       return;
     }
     showToast('success', isAr 
-      ? `تم ترحيل الفاتورة بنجاح! تم استلام البضائع وتخزينها في [${purchaseDestination === 'warehouse' ? 'المستودع/المخزن 📦' : 'المحل مباشرة 🏪'}] وتحديث أسعار لـ ${invoiceItemsToSave.length} أصناف.`
-      : `Purchase invoice verified! Stock quantities increased in [${purchaseDestination === 'warehouse' ? 'Warehouse 📦' : 'Shop shelves 🏪'}] and selling prices adjusted for ${invoiceItemsToSave.length} products.`
+      ? `تم ترحيل الفاتورة بنجاح! تم استلام البضائع وتخزينها في [${purchaseDestination === 'warehouse' ? 'المستودع/المخزن' : 'المحل مباشرة'}] وتحديث أسعار لـ ${invoiceItemsToSave.length} أصناف.`
+      : `Purchase invoice verified! Stock quantities increased in [${purchaseDestination === 'warehouse' ? 'Warehouse' : 'Shop shelves'}] and selling prices adjusted for ${invoiceItemsToSave.length} products.`
     );
   };
 
@@ -818,13 +818,13 @@ export function PurchasesTab({
   const handleExecuteInvoiceScan = (scannedItemsList: Array<{ barcode: string; qty: number; costPriceUSD: number }>, parsedSupplier: string, customInvRef?: string) => {
     setIsScanningActive(true);
     setScanningProgress(5);
-    setScanningStepName(isAr ? "🔌 تشغيل مستشعرات الرؤية الحاسوبية وتثبيت الكاميرا..." : "Initializing computer vision & activating camera focus...");
+    setScanningStepName(isAr ? "تشغيل مستشعرات الرؤية الحاسوبية وتثبيت الكاميرا..." : "Initializing computer vision & activating camera focus...");
 
     const steps = [
-      { prg: 25, label: isAr ? "📐 تحديد حواف الفاتورة الورقية وقص وتصحيح الزوايا..." : "Detecting invoice boundaries, cropping and leveling perspectives..." },
-      { prg: 55, label: isAr ? "👁️ مسح الأسطر واستخراج الباركود وكميات السلع (AI OCR)..." : "Scanning lines, resolving product barcodes and package quantities (AI OCR)..." },
-      { prg: 80, label: isAr ? "⚙️ مطابقة السلع المستخرجة مع قاعدة بيانات المخزن وتطبيق هامش الربح..." : "Matching extracted items against system master catalog & applying profit margin..." },
-      { prg: 100, label: isAr ? "✅ نجاح المسح! يتم ترحيل قائمة المشتريات للنموذج..." : "Scan completed successfully!" }
+      { prg: 25, label: isAr ? "تحديد حواف الفاتورة الورقية وقص وتصحيح الزوايا..." : "Detecting invoice boundaries, cropping and leveling perspectives..." },
+      { prg: 55, label: isAr ? "مسح الأسطر واستخراج الباركود وكميات السلع (AI OCR)..." : "Scanning lines, resolving product barcodes and package quantities (AI OCR)..." },
+      { prg: 80, label: isAr ? "مطابقة السلع المستخرجة مع قاعدة بيانات المخزن وتطبيق هامش الربح..." : "Matching extracted items against system master catalog & applying profit margin..." },
+      { prg: 100, label: isAr ? "نجاح المسح! يتم ترحيل قائمة المشتريات للنموذج..." : "Scan completed successfully!" }
     ];
 
     let currentStepIdx = 0;
@@ -898,12 +898,12 @@ export function PurchasesTab({
           });
           
           showToast('success', isAr 
-            ? `📸 تم المسح والتعرف تلقائياً على (${matchedDrafts.length}) أصناف وإدراجها بالفاتورة بهامش ربح ${defaultMargin}%.`
-            : `📸 Scan complete! Successfully identified (${matchedDrafts.length}) variants in system index with ${defaultMargin}% default margin.`);
+            ? `تم المسح والتعرف تلقائياً على (${matchedDrafts.length}) أصناف وإدراجها بالفاتورة بهامش ربح ${defaultMargin}%.`
+            : `Scan complete! Successfully identified (${matchedDrafts.length}) variants in system index with ${defaultMargin}% default margin.`);
         } else {
           showToast('warning', isAr 
-            ? "⚠️ تم مسح الفاتورة ولكن لم تتطابق الباركودات المقروءة مع أي أصناف مسجلة بالرفوف حالياً! يرجى إضافة أصناف تسكّن هذه الرموز." 
-            : "⚠️ Scanned successfully but barcodes do not match our system. Please check barcodes!");
+            ? "تم مسح الفاتورة ولكن لم تتطابق الباركودات المقروءة مع أي أصناف مسجلة بالرفوف حالياً! يرجى إضافة أصناف تسكّن هذه الرموز." 
+            : "Scanned successfully but barcodes do not match our system. Please check barcodes!");
         }
 
         // Close state
@@ -955,13 +955,13 @@ export function PurchasesTab({
             onClick={() => setSubTab('ledger')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition ${subTab === 'ledger' ? 'bg-white text-emerald-800' : 'text-white hover:bg-white/10'}`}
           >
-            {isAr ? 'سجل الفواتير والموردين 📑' : 'Ledger Records 📑'}
+            {isAr ? 'سجل الفواتير والموردين' : 'Ledger Records'}
           </button>
           <button 
             onClick={() => setSubTab('new')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition ${subTab === 'new' ? 'bg-white text-emerald-800' : 'text-white hover:bg-white/10'}`}
           >
-            {isAr ? 'إدخال فاتورة شراء جديدة 📤' : 'New Supply Receipt 📤'}
+            {isAr ? 'إدخال فاتورة شراء جديدة' : 'New Supply Receipt'}
           </button>
         </div>
       </div>
@@ -982,7 +982,7 @@ export function PurchasesTab({
               {editingInvoice && (
                 <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 text-right space-y-2" id="purchase-editing-banner">
                   <div className="text-xs font-black text-amber-900">
-                    ✏️ {isAr ? `عم تعدّل الفاتورة ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})` : `Editing invoice ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})`}
+                    {isAr ? `عم تعدّل الفاتورة ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})` : `Editing invoice ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})`}
                   </div>
                   <div className="text-[10px] text-amber-800 font-bold">
                     {isAr ? 'لما تحفظ، البرنامج بيشيل كميات الفاتورة القديمة من المخزون وبيحط الجديدة، وبيحدّث الأسعار.' : 'On save, the old quantities come off the stock, the new ones go in, and prices are updated.'}
@@ -1002,7 +1002,7 @@ export function PurchasesTab({
                 className="w-full bg-gradient-to-r from-indigo-700 to-indigo-600 hover:from-indigo-800 hover:to-indigo-750 text-white py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-md shadow-indigo-500/15 border border-indigo-500/30 relative overflow-hidden"
               >
                 <Camera className="w-4.5 h-4.5 text-yellow-300 animate-bounce shrink-0" />
-                <span>📷 {isAr ? 'مسح فاتورة المورد الورقية بالكاميرا (AI)' : 'Camera OCR / AI Invoice Scanner'}</span>
+                <span>{isAr ? 'مسح فاتورة المورد الورقية بالكاميرا (AI)' : 'Camera OCR / AI Invoice Scanner'}</span>
                 <span className="bg-white/15 text-[9px] px-1.5 py-0.5 rounded-full font-extrabold">NEW</span>
               </button>
 
@@ -1068,7 +1068,6 @@ export function PurchasesTab({
 
                 <div>
                   <label className="block text-slate-700 font-black mb-1 flex items-center justify-end gap-1">
-                    <span>📦</span>
                     <span>{isAr ? 'وجهة تخزين السلع المستلمة:' : 'Storage/Refill Destination:'}</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1077,7 +1076,6 @@ export function PurchasesTab({
                       onClick={() => setPurchaseDestination('shop')}
                       className={`py-2 px-3 rounded-lg text-xs font-bold transition border flex items-center justify-center gap-1.5 cursor-pointer ${purchaseDestination === 'shop' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
                     >
-                      <span>🏪</span>
                       <span>{isAr ? 'المحل مباشرة' : 'Direct to Shop'}</span>
                     </button>
                     <button 
@@ -1085,7 +1083,6 @@ export function PurchasesTab({
                       onClick={() => setPurchaseDestination('warehouse')}
                       className={`py-2 px-3 rounded-lg text-xs font-bold transition border flex items-center justify-center gap-1.5 cursor-pointer ${purchaseDestination === 'warehouse' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
                     >
-                      <span>📦</span>
                       <span>{isAr ? 'المستودع / المخزن' : 'Warehouse'}</span>
                     </button>
                   </div>
@@ -1105,7 +1102,6 @@ export function PurchasesTab({
                 {/* Transportation / Delivery Expenses */}
                 <div className="bg-emerald-50/20 p-3 bg-[#EAF7FA]/20 border border-emerald-100/50 rounded-xl space-y-2 text-right">
                   <label className="block text-slate-700 font-black text-xs flex items-center justify-end gap-1.5">
-                    <span>🚚</span>
                     <span>{isAr ? 'تكاليف المواصلات / الشحن ($):' : 'Transportation / Shipment Cost ($):'}</span>
                   </label>
                   <div className="flex gap-2">
@@ -1129,13 +1125,13 @@ export function PurchasesTab({
                       }`}
                       title={isAr ? 'توزيع وزيادة تكلفة المواصلات على رأس مال المنتجات بالتناسب تلقائياً' : 'Distribute delivery cost proportionally inside items cost prices'}
                     >
-                      {isAr ? 'توزيع تناسبي 🚚' : 'Amortize 🚚'}
+                      {isAr ? 'توزيع تناسبي' : 'Amortize'}
                     </button>
                   </div>
                   <span className="text-[9px] text-slate-550 block leading-relaxed">
                     {isAr 
-                      ? '💡 اضغط "توزيع تناسبي" لزيادة كلفة السلع تلقائياً بناءً على وزنها من تكلفة النقل الإجمالية، أو اتركها لإضافتها لدفتر الفواتير.' 
-                      : '💡 Toggle "Amortize" to add transport expenses on top of unit costs, or leave it to record strictly on the ledger.'}
+                      ? 'اضغط "توزيع تناسبي" لزيادة كلفة السلع تلقائياً بناءً على وزنها من تكلفة النقل الإجمالية، أو اتركها لإضافتها لدفتر الفواتير.' 
+                      : 'Toggle "Amortize" to add transport expenses on top of unit costs, or leave it to record strictly on the ledger.'}
                   </span>
                 </div>
               </div>
@@ -1164,13 +1160,13 @@ export function PurchasesTab({
                     {offerItems.length > 0 && (
                       <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-sky-300" id="purchase-draft-offer">
                         <span className="font-mono">{offerItems.reduce((a, o) => a + o.qty, 0)} ({offerFreeValue(offerForMath).toFixed(2)} $)</span>
-                        <span>{isAr ? '🎁 هدية عرض الفاتورة:' : '🎁 Invoice offer gift:'}</span>
+                        <span>{isAr ? 'هدية عرض الفاتورة:' : 'Invoice offer gift:'}</span>
                       </div>
                     )}
                     {totalFree > 0 && (
                       <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-sky-300" id="purchase-draft-free">
                         <span className="font-mono">{totalFree}</span>
-                        <span>{isAr ? '🎁 بضاعة مجانية (بونص):' : '🎁 Free bonus units:'}</span>
+                        <span>{isAr ? 'بضاعة مجانية (بونص):' : 'Free bonus units:'}</span>
                       </div>
                     )}
                     {totalTax > 0 && (
@@ -1212,8 +1208,8 @@ export function PurchasesTab({
               >
                 <Check className="w-4 h-4" />
                 {editingInvoice
-                  ? (isAr ? 'حفظ التعديلات على الفاتورة ✏️' : 'Save changes to the invoice ✏️')
-                  : (isAr ? 'ترحيل الفاتورة وتحديث مخازن المحل 📥' : 'Save Invoice & Refill Stocks 📥')}
+                  ? (isAr ? 'حفظ التعديلات على الفاتورة' : 'Save changes to the invoice')
+                  : (isAr ? 'ترحيل الفاتورة وتحديث مخازن المحل' : 'Save Invoice & Refill Stocks')}
               </button>
             </div>
           </div>
@@ -1236,7 +1232,7 @@ export function PurchasesTab({
                   className="bg-indigo-50 border border-indigo-150 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 self-end cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  {isAr ? 'إدخال صنف جديد كلياً غير موجود سريعاً 🆕' : 'Catalog New Product 🆕'}
+                  {isAr ? 'إدخال صنف جديد كلياً غير موجود سريعاً' : 'Catalog New Product'}
                 </button>
               </div>
 
@@ -1244,7 +1240,7 @@ export function PurchasesTab({
               {showQuickAddForm && (
                 <div className="bg-indigo-50/50 border border-indigo-100 p-4 rounded-xl text-right animate-fadeIn">
                   <form onSubmit={handleQuickAddProduct} className="space-y-3 font-sans">
-                    <h4 className="text-xs font-black text-indigo-800 border-b border-indigo-100 pb-1.5">{isAr ? '🆕 تسجيل صنف جديد في سجلات السوبرماركت مباشرة' : 'New Catalog Record'}</h4>
+                    <h4 className="text-xs font-black text-indigo-800 border-b border-indigo-100 pb-1.5">{isAr ? 'تسجيل صنف جديد في سجلات السوبرماركت مباشرة' : 'New Catalog Record'}</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
@@ -1278,7 +1274,7 @@ export function PurchasesTab({
                             onClick={() => setShowInlineCategoryInput(!showInlineCategoryInput)}
                             className="text-xs text-indigo-650 hover:underline font-bold"
                           >
-                            {showInlineCategoryInput ? (isAr ? 'إلغاء ✖' : 'Cancel ✖') : (isAr ? '➕ فئة جديدة' : '➕ New Category')}
+                            {showInlineCategoryInput ? (isAr ? 'إلغاء' : 'Cancel') : (isAr ? 'فئة جديدة' : 'New Category')}
                           </button>
                           <label className="block text-slate-500 font-bold">{isAr ? 'القسم / فئة البقالة:' : 'Category:'}</label>
                         </div>
@@ -1317,7 +1313,7 @@ export function PurchasesTab({
                     {/* Bought by the carton: units per carton, cartons and carton price fill the fields below */}
                     <div className="flex flex-wrap items-end gap-3 bg-indigo-50/60 border border-indigo-100 rounded-lg p-2.5">
                       <div className="w-28">
-                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-upc">{isAr ? '📦 حبّة بالكرتونة:' : '📦 Units/carton:'}</label>
+                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-upc">{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
                         <input id="quick-add-upc" type="number" min="0" value={newProdUpc} placeholder="12"
                           onChange={e => {
                             const upc = parseInt(e.target.value) || 0;
@@ -1354,7 +1350,7 @@ export function PurchasesTab({
 
                     <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                       <div>
-                        <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة 📥:' : 'Received Qty 📥:'}</label>
+                        <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة:' : 'Received Qty:'}</label>
                         <input
                           id="quick-add-qty"
                           type="number"
@@ -1481,7 +1477,7 @@ export function PurchasesTab({
                       </div>
                       <div className="flex items-end gap-1.5">
                         <div>
-                          <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-bonus-every">{isAr ? '🎁 بونص: كل' : '🎁 Bonus: every'}</label>
+                          <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-bonus-every">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
                           <input
                             id="quick-add-bonus-every"
                             type="number"
@@ -1524,7 +1520,7 @@ export function PurchasesTab({
                         const free = quickFreeUnits(parseFloat(newProdQty) || 0);
                         return free > 0 ? (
                           <span className="text-[11px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded mb-1">
-                            🎁 {isAr ? `+${free} مجاناً على هالكمية` : `+${free} free on this quantity`}
+                            {isAr ? `+${free} مجاناً على هالكمية` : `+${free} free on this quantity`}
                           </span>
                         ) : null;
                       })()}
@@ -1549,7 +1545,7 @@ export function PurchasesTab({
                         <div className="bg-emerald-50/40 border border-emerald-100 p-4 rounded-xl text-right font-sans space-y-3.5 mt-3">
                           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-emerald-100 pb-2.5 w-full">
                             <div className="text-xs font-black text-emerald-950 flex items-center justify-start gap-1 flex-row-reverse">
-                              <span>💰 احتساب السعر التلقائي بهامش الربح:</span>
+                              <span>احتساب السعر التلقائي بهامش الربح:</span>
                             </div>
                             
                             <div className="flex flex-col gap-2">
@@ -1565,7 +1561,7 @@ export function PurchasesTab({
                                         const targetPrice = qCost / (1 - m / 100);
                                         setNewProdSellRetail(targetPrice.toFixed(2));
                                         setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
-                                        showToast('success', `تم احتساب سعر المبيع بهامش ربح %${m}! ⚡`);
+                                        showToast('success', `تم احتساب سعر المبيع بهامش ربح %${m}!`);
                                       } else {
                                         showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً لتشغيل الحاسبة بشكل صحيح.');
                                       }
@@ -1588,7 +1584,7 @@ export function PurchasesTab({
                                         const targetPrice = qCost * (1 + mk / 100);
                                         setNewProdSellRetail(targetPrice.toFixed(2));
                                         setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
-                                        showToast('success', `تم احتساب سعر المبيع بزيادة %${mk} فوق التكلفة! ⚡`);
+                                        showToast('success', `تم احتساب سعر المبيع بزيادة %${mk} فوق التكلفة!`);
                                       } else {
                                         showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً.');
                                       }
@@ -1629,14 +1625,14 @@ export function PurchasesTab({
                                     const targetPrice = qCost / (1 - m / 100);
                                     setNewProdSellRetail(targetPrice.toFixed(2));
                                     setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
-                                    showToast('success', `تم احتساب سعر المبيع بهامش ربح يدوي %${m}! ⚡`);
+                                    showToast('success', `تم احتساب سعر المبيع بهامش ربح يدوي %${m}!`);
                                   } else {
                                     showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً لتشغيل الحاسبة.');
                                   }
                                 }}
                                 className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded text-[9px] cursor-pointer"
                               >
-                                تطبيق هامش ⚡
+                                تطبيق هامش
                               </button>
                             </div>
 
@@ -1664,14 +1660,14 @@ export function PurchasesTab({
                                     const targetPrice = qCost * (1 + mk / 100);
                                     setNewProdSellRetail(targetPrice.toFixed(2));
                                     setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
-                                    showToast('success', `تم احتساب سعر المبيع بزيادة يدوية %${mk}! ⚡`);
+                                    showToast('success', `تم احتساب سعر المبيع بزيادة يدوية %${mk}!`);
                                   } else {
                                     showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً.');
                                   }
                                 }}
                                 className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded text-[9px] cursor-pointer"
                               >
-                                تطبيق زيادة ⚡
+                                تطبيق زيادة
                               </button>
                             </div>
                           </div>
@@ -1735,7 +1731,7 @@ export function PurchasesTab({
                     setShowProdDropdown(true);
                   }}
                   onFocus={() => setShowProdDropdown(true)}
-                  placeholder={isAr ? '🔎 ابحث باسم الصنف أو بالباركود لإدراجه في فواتير الشراء للتسعير... (أو انقر لعرض الكل)' : '🔎 Scan or search master products index...'}
+                  placeholder={isAr ? 'ابحث باسم الصنف أو بالباركود لإدراجه في فواتير الشراء للتسعير... (أو انقر لعرض الكل)' : 'Scan or search master products index...'}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-3 pr-10 text-xs font-sans text-right placeholder-slate-400"
                 />
                 <Search className="w-4.5 h-4.5 text-slate-400 absolute right-3.5 top-3.5" />
@@ -1748,7 +1744,7 @@ export function PurchasesTab({
                         onClick={() => setShowProdDropdown(false)}
                         className="text-rose-500 font-extrabold hover:underline"
                       >
-                        {isAr ? 'إغلاق القائمة ✕' : 'Close ✕'}
+                        {isAr ? 'إغلاق القائمة' : 'Close'}
                       </button>
                       <span>{isAr ? 'اختر صنفاً متاحاً لإدراجه في فاتورة الشراء:' : 'Select product to put on receipt:'}</span>
                     </div>
@@ -1768,10 +1764,10 @@ export function PurchasesTab({
                         >
                           <div className="flex items-center gap-2">
                             <span className="bg-emerald-50 text-emerald-705 border border-emerald-100 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
-                              🏪 {p.quantity} {isAr ? 'بالمحل' : 'in shop'}
+                              {p.quantity} {isAr ? 'بالمحل' : 'in shop'}
                             </span>
                             <span className="bg-indigo-50 text-indigo-705 border border-indigo-100 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
-                              📦 {p.warehouseQuantity || 0} {isAr ? 'بالمستودع' : 'in WH'}
+                              {p.warehouseQuantity || 0} {isAr ? 'بالمستودع' : 'in WH'}
                             </span>
                             <span className="text-slate-400 font-mono text-[10px]">{p.barcode}</span>
                           </div>
@@ -1798,7 +1794,7 @@ export function PurchasesTab({
                           }}
                           className="text-[#1D9E75] font-extrabold text-xs underline block mx-auto hover:text-emerald-700 font-sans"
                         >
-                          {isAr ? 'انقر هنا لتسجيل هذا الصنف سريعاً بالأرفف 🆕' : 'Quick register this query 🆕'}
+                          {isAr ? 'انقر هنا لتسجيل هذا الصنف سريعاً بالأرفف' : 'Quick register this query'}
                         </button>
                       </div>
                     )}
@@ -1817,7 +1813,7 @@ export function PurchasesTab({
                   {(draftItems.length > 0 || offerItems.length > 0) && (
                     <>
                       <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg" id="purchase-draft-saved">
-                        📝 {isAr ? 'محفوظة كمسودة' : 'Saved as draft'}
+                        {isAr ? 'محفوظة كمسودة' : 'Saved as draft'}
                       </span>
                       <button
                         type="button"
@@ -1859,7 +1855,7 @@ export function PurchasesTab({
                             </span>
                             {item.freeQty > 0 && (
                               <span className="text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded">
-                                🎁 {isAr ? `+${item.freeQty} مجاناً` : `+${item.freeQty} free`}
+                                {isAr ? `+${item.freeQty} مجاناً` : `+${item.freeQty} free`}
                               </span>
                             )}
                             <button
@@ -1889,7 +1885,7 @@ export function PurchasesTab({
                           
                           {/* 1. Qty to buy */}
                           <div>
-                            <label className={`block font-bold mb-1 text-[10px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${item.product.id}`}>{isAr ? 'الكمية المستلمة 📥 (مطلوب):' : 'Received Qty 📥 (required):'}</label>
+                            <label className={`block font-bold mb-1 text-[10px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${item.product.id}`}>{isAr ? 'الكمية المستلمة (مطلوب):' : 'Received Qty (required):'}</label>
                             <input
                               id={`draft-qty-${item.product.id}`}
                               type="number"
@@ -1999,7 +1995,7 @@ export function PurchasesTab({
                         {/* Supplier discount and bonus (free units) */}
                         <div className="flex flex-wrap items-end gap-3 font-sans text-xs bg-white/60 border border-slate-150 rounded-lg p-2.5">
                           <div className="w-24">
-                            <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-upc-${item.product.id}`}>{isAr ? '📦 حبّة بالكرتونة:' : '📦 Units/carton:'}</label>
+                            <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-upc-${item.product.id}`}>{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
                             <input
                               id={`draft-upc-${item.product.id}`}
                               type="number"
@@ -2055,7 +2051,7 @@ export function PurchasesTab({
                           </div>
                           <div className="flex items-end gap-1.5">
                             <div>
-                              <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? '🎁 بونص: كل' : '🎁 Bonus: every'}</label>
+                              <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
                               <input
                                 id={`draft-bonus-every-${item.product.id}`}
                                 type="number"
@@ -2121,7 +2117,7 @@ export function PurchasesTab({
                           return (
                             <div className="bg-sky-50 border border-sky-200 rounded-lg p-2.5 text-xs">
                               <label className="block font-black text-sky-900 mb-1" htmlFor={`draft-serials-${item.product.id}`}>
-                                📱 {isAr ? 'أرقام IMEI (امسح أو اكتب، واحد بكل سطر)' : 'IMEIs (scan or type, one per line)'}
+                                {isAr ? 'أرقام IMEI (امسح أو اكتب، واحد بكل سطر)' : 'IMEIs (scan or type, one per line)'}
                                 <span className={`mr-2 font-mono ${list.length === needed && needed > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{list.length} / {needed}</span>
                               </label>
                               <textarea
@@ -2152,7 +2148,7 @@ export function PurchasesTab({
                             <div className="bg-emerald-50/20 border border-emerald-50/70 p-3 rounded-lg text-right font-sans space-y-2.5 mt-2.5">
                               <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 border-b border-emerald-50/60 pb-2">
                                 <div className="text-[10px] font-extrabold text-emerald-950 flex items-center justify-start gap-1 flex-row-reverse">
-                                  <span>⚙️ حاسبة وبدائل هوامش هذا الصنف:</span>
+                                  <span>حاسبة وبدائل هوامش هذا الصنف:</span>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
@@ -2325,7 +2321,7 @@ export function PurchasesTab({
                 return (
                   <div className="bg-sky-50/60 border-2 border-dashed border-sky-200 rounded-xl p-4 space-y-3 text-xs" id="purchase-offer-box">
                     <div>
-                      <h5 className="font-black text-sky-900 text-sm">{isAr ? '🎁 بضاعة مجانية من عرض الفاتورة' : '🎁 Free goods from an invoice offer'}</h5>
+                      <h5 className="font-black text-sky-900 text-sm">{isAr ? 'بضاعة مجانية من عرض الفاتورة' : 'Free goods from an invoice offer'}</h5>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         {isAr
                           ? 'للعروض على الطلبية كلّها (متلاً: 5 كراتين من كل صنف = 4 كراتين مجاناً). البضاعة بتفوت عالمخزن، وقيمتها بتتوزّع حسم على كل أصناف الفاتورة.'
@@ -2399,7 +2395,7 @@ export function PurchasesTab({
                           return (
                             <div key={`${o.product.id}-${i}`} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
                               <span className="font-bold text-slate-800">
-                                🎁 {o.product.name} — {o.qty} {isAr ? 'حبّة' : 'units'}{upc > 0 ? ` (${Number((o.qty / upc).toFixed(2))} ${isAr ? 'كرتونة' : 'cartons'})` : ''}
+                                {o.product.name} — {o.qty} {isAr ? 'حبّة' : 'units'}{upc > 0 ? ` (${Number((o.qty / upc).toFixed(2))} ${isAr ? 'كرتونة' : 'cartons'})` : ''}
                                 <span className="text-slate-500 font-mono mx-2">{(o.qty * o.unitValueUSD).toFixed(2)}$</span>
                               </span>
                               <button type="button" onClick={() => setOfferItems(prev => prev.filter((_, j) => j !== i))} className="text-rose-500 hover:bg-rose-500 hover:text-white p-1 rounded" aria-label={isAr ? 'حذف' : 'Remove'}>
@@ -2559,11 +2555,11 @@ export function PurchasesTab({
                               <div>{inv.supplierName}</div>
                               {inv.destination === 'warehouse' ? (
                                 <span className="inline-block bg-indigo-100 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded text-[9px] font-black mt-1 font-sans">
-                                  📦 المستودع/المخزن
+                                  المستودع/المخزن
                                 </span>
                               ) : (
                                 <span className="inline-block bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[9px] font-black mt-1 font-sans">
-                                  🏪 رفوف المحل
+                                  رفوف المحل
                                 </span>
                               )}
                             </td>
@@ -2586,7 +2582,7 @@ export function PurchasesTab({
                                       onClick={() => setActivePrintPurchase(inv)}
                                       className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-black px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] flex items-center gap-1.5 transition cursor-pointer"
                                     >
-                                      <span>طباعة وتصدير كـ PDF 📠/📄</span>
+                                      <span>طباعة وتصدير كـ PDF/📄</span>
                                     </button>
                                     <button
                                       type="button"
@@ -2594,7 +2590,7 @@ export function PurchasesTab({
                                       onClick={() => handleEditInvoice(inv)}
                                       className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-black px-3 py-1.5 rounded-lg border border-amber-200 text-[10px] flex items-center gap-1.5 transition cursor-pointer"
                                     >
-                                      <span>✏️ {isAr ? 'تعديل الفاتورة' : 'Edit invoice'}</span>
+                                      <span>{isAr ? 'تعديل الفاتورة' : 'Edit invoice'}</span>
                                     </button>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -2685,14 +2681,14 @@ export function PurchasesTab({
                                       )}
                                       {(inv.offerFreeItems || []).length > 0 && (
                                         <span className="inline-flex items-center gap-1 font-bold bg-sky-50 text-sky-800 border border-sky-200 px-2.5 py-1 rounded">
-                                          🎁 {isAr ? 'عرض الفاتورة: ' : 'Invoice offer: '}
+                                          {isAr ? 'عرض الفاتورة: ' : 'Invoice offer: '}
                                           {(inv.offerFreeItems || []).map(o => `${o.productName} ×${o.qty}`).join('، ')}
                                           <strong className="font-mono text-sky-900">({(inv.offerFreeValueUSD || 0).toFixed(2)} $)</strong>
                                         </span>
                                       )}
                                       {inv.transportationCostUSD !== undefined && inv.transportationCostUSD > 0 && (
                                         <span className="inline-flex items-center gap-1 text-slate-600 font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
-                                          🚚 {isAr ? `تكاليف المواصلات والشحن: ` : `Transportation Cost: `}
+                                          {isAr ? `تكاليف المواصلات والشحن: ` : `Transportation Cost: `}
                                           <strong className="font-mono text-amber-900">{inv.transportationCostUSD.toFixed(2)} $</strong>
                                         </span>
                                       )}
@@ -2843,7 +2839,7 @@ export function PurchasesTab({
                       {transCost > 0 && (
                         <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
                           <span className="font-mono text-amber-800">+{transCost.toFixed(2)} $</span>
-                          <span className="text-slate-500">🚚 {isAr ? 'المواصلات والشحن:' : 'Transportation:'}</span>
+                          <span className="text-slate-500">{isAr ? 'المواصلات والشحن:' : 'Transportation:'}</span>
                         </div>
                       )}
                     </div>
@@ -2871,7 +2867,7 @@ export function PurchasesTab({
                 className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Printer className="w-4 h-4" />
-                <span>طباعة أو سحب كـ PDF 🖨/📄</span>
+                <span>طباعة أو سحب كـ PDF/📄</span>
               </button>
               <button 
                 onClick={() => setActivePrintPurchase(null)}
@@ -2996,7 +2992,7 @@ export function PurchasesTab({
                       className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
                     <Upload className="w-5 h-5 text-indigo-500 mx-auto mb-1.5 animate-bounce" />
-                    <span className="font-sans block text-slate-500 font-extrabold text-[11px]">{isAr ? 'عوضاً عن الكاميرا، ارفع ملف صورة الفاتورة 📁' : 'Or drag and drop document image here 📁'}</span>
+                    <span className="font-sans block text-slate-500 font-extrabold text-[11px]">{isAr ? 'عوضاً عن الكاميرا، ارفع ملف صورة الفاتورة' : 'Or drag and drop document image here'}</span>
                     <span className="text-[10px] block text-slate-400 mt-1">{isAr ? 'بصيغة PNG, JPG أو مصورة مسبقاً' : 'PNG, JPEG, or pre-scanned receipt formats'}</span>
                   </div>
                 </div>
@@ -3004,7 +3000,7 @@ export function PurchasesTab({
                 {/* Left column: Choose from Preset items and templates for rapid demonstration click */}
                 <div className="space-y-4 font-sans text-right">
                   <span className="text-[11px] text-slate-400 dark:text-slate-500 block font-bold mb-2">
-                    {isAr ? '💡 للتجريب السريع، انقر على نموذج فاتورة مورّد جاهز لتشغيل محاكي الذكاء الاصطناعي:' : '💡 Quick Testing: click a supplier receipt preset to execute simulated OCR parsing:'}
+                    {isAr ? 'للتجريب السريع، انقر على نموذج فاتورة مورّد جاهز لتشغيل محاكي الذكاء الاصطناعي:' : 'Quick Testing: click a supplier receipt preset to execute simulated OCR parsing:'}
                   </span>
 
                   <div className="space-y-3">
@@ -3025,7 +3021,7 @@ export function PurchasesTab({
                       <div className="flex items-center justify-between w-full flex-row-reverse">
                         <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded text-[9px] font-black">{isAr ? 'مواد مبردة ألبان' : 'Chilled Dairy'}</span>
                         <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-800 dark:group-hover:text-[#1D9E75] flex items-center gap-1">
-                          <span>🏢 مؤسسة الهدى للألبان والأجبان</span>
+                          <span>مؤسسة الهدى للألبان والأجبان</span>
                         </h5>
                       </div>
                       
@@ -3034,7 +3030,7 @@ export function PurchasesTab({
                         <span className="font-sans text-slate-500 font-bold">{isAr ? 'عدد السلع: 3 أصناف مختلفة' : 'Variants: 3 items'}</span>
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-150/50 dark:bg-slate-800 p-1.5 rounded-lg w-full text-right font-sans leading-relaxed">
-                        {isAr ? '🛒 حليب نيدو مجفف [24 قطعة] • لبنة بلدية [15 قطعة] • قشقوان عكاوي [30 قطعة]' : '🛒 Nido dairy, Labneh wholesale container packs'}
+                        {isAr ? 'حليب نيدو مجفف [24 قطعة] • لبنة بلدية [15 قطعة] • قشقوان عكاوي [30 قطعة]' : 'Nido dairy, Labneh wholesale container packs'}
                       </div>
                     </button>
 
@@ -3053,7 +3049,7 @@ export function PurchasesTab({
                       <div className="flex items-center justify-between w-full flex-row-reverse">
                         <span className="bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded text-[9px] font-black">{isAr ? 'مرطبات ومشروبات' : 'Beverages'}</span>
                         <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-800 dark:group-hover:text-[#1D9E75] flex items-center gap-1">
-                          <span>🥤 بيبسي لبنان للتوزيع والوكيل</span>
+                          <span>بيبسي لبنان للتوزيع والوكيل</span>
                         </h5>
                       </div>
                       
@@ -3062,7 +3058,7 @@ export function PurchasesTab({
                         <span className="font-sans text-slate-500 font-bold">{isAr ? 'عدد السلع: صنفين كبيرين' : 'Variants: 2 items'}</span>
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-150/50 dark:bg-slate-800 p-1.5 rounded-lg w-full text-right font-sans leading-relaxed">
-                        {isAr ? '🛒 بيبسي عائلي 2.25 لتر [72 قطعة] • عصير راني تفاح [48 قطعة]' : '🛒 Pepsi family sizes, Rani apple juice packs'}
+                        {isAr ? 'بيبسي عائلي 2.25 لتر [72 قطعة] • عصير راني تفاح [48 قطعة]' : 'Pepsi family sizes, Rani apple juice packs'}
                       </div>
                     </button>
 
@@ -3082,7 +3078,7 @@ export function PurchasesTab({
                       <div className="flex items-center justify-between w-full flex-row-reverse">
                         <span className="bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded text-[9px] font-black">{isAr ? 'معلبات ومواد جافة' : 'Dry Goods'}</span>
                         <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-800 dark:group-hover:text-[#1D9E75] flex items-center gap-1">
-                          <span>📦 شركة الموزع العام للغذائيات</span>
+                          <span>شركة الموزع العام للغذائيات</span>
                         </h5>
                       </div>
                       
@@ -3091,7 +3087,7 @@ export function PurchasesTab({
                         <span className="font-sans text-slate-500 font-bold">{isAr ? 'عدد السلع: 3 أصناف أساسية' : 'Variants: 3 items'}</span>
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-150/50 dark:bg-slate-800 p-1.5 rounded-lg w-full text-right font-sans leading-relaxed">
-                        {isAr ? '🛒 حلاوة طحينية [36 قطعة] • سردين فيله حار [120 علبة] • أرز بسمتي هندي ممتاز [18 كيس]' : '🛒 Halawa 400g, Sardines, India rice bags'}
+                        {isAr ? 'حلاوة طحينية [36 قطعة] • سردين فيله حار [120 علبة] • أرز بسمتي هندي ممتاز [18 كيس]' : 'Halawa 400g, Sardines, India rice bags'}
                       </div>
                     </button>
 
@@ -3104,14 +3100,14 @@ export function PurchasesTab({
             {/* Modal Footer warning & controls */}
             <div className="flex items-center justify-between border-t dark:border-slate-800 pt-4 text-xs select-none">
               <span className="text-[10px] text-slate-400 font-semibold block text-right">
-                {isAr ? '💡 يتم تطبيق نسبة هامش الربح الافتراضي تلقائياً لتسعير المنتجات فور استخلاص التكلفة من الكاميرا.' : '📌 Margin calculations computed dynamically from dynamic settings.'}
+                {isAr ? 'يتم تطبيق نسبة هامش الربح الافتراضي تلقائياً لتسعير المنتجات فور استخلاص التكلفة من الكاميرا.' : 'Margin calculations computed dynamically from dynamic settings.'}
               </span>
               <button 
                 type="button"
                 onClick={() => setShowInvoiceScannerModal(false)}
                 className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-5 py-2.5 rounded-xl transition font-black cursor-pointer"
               >
-                {isAr ? 'إلغاء وإغلاق ✕' : 'Cancel & Close ✕'}
+                {isAr ? 'إلغاء وإغلاق' : 'Cancel & Close'}
               </button>
             </div>
 

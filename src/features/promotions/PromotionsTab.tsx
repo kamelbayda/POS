@@ -183,7 +183,6 @@ export function PromotionsTab({ products, promotions, onPromotionsChange, today,
         {/* 1. LEFT COLUMN: CREATE PROMO FORM */}
         <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-150/80 shadow-sm space-y-4">
           <h3 className="text-sm font-extrabold text-[#1D9E75] pb-2 border-b border-slate-100 flex items-center gap-1.5 flex-row-reverse">
-            <span>➕</span>
             <span>تصميم وإطلاق عرض ترويجي جديد</span>
           </h3>
 
@@ -274,7 +273,7 @@ export function PromotionsTab({ products, promotions, onPromotionsChange, today,
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-slate-600 text-xs font-bold">📟 باركود الحزمة المخصص (أو اتركه لإنشاء تلقائي):</label>
+                    <label className="block text-slate-600 text-xs font-bold">باركود الحزمة المخصص (أو اتركه لإنشاء تلقائي):</label>
                     <input
                       type="text"
                       value={promoBarcode}
@@ -288,7 +287,6 @@ export function PromotionsTab({ products, promotions, onPromotionsChange, today,
                 {/* SELECTING COMPONENT PRODUCTS */}
                 <div className="border border-amber-100 bg-amber-50/10 p-3 rounded-xl space-y-3">
                   <span className="text-[11px] font-bold text-amber-800 flex items-center gap-1 flex-row-reverse w-full text-right">
-                    <span>📦</span>
                     <span>إضافة مكونات إلى الحزمة:</span>
                   </span>
 
@@ -365,7 +363,7 @@ export function PromotionsTab({ products, promotions, onPromotionsChange, today,
                                 }}
                                 className="text-red-500 hover:text-red-700 text-[10px] font-bold"
                               >
-                                حذف ❌
+                                حذف
                               </button>
                             </div>
                           );
@@ -535,7 +533,7 @@ export function PromotionsTab({ products, promotions, onPromotionsChange, today,
                                 : 'bg-slate-200 border-slate-300 text-slate-600 shadow-none'
                             }`}
                           >
-                            {promo.active ? 'نشط ومفعّل 🟢' : 'معطّل ومغلق 🔴'}
+                            {promo.active ? 'نشط ومفعّل' : 'معطّل ومغلق'}
                           </button>
                         </div>
                       </div>

@@ -129,7 +129,6 @@ export function PosTerminalScreen({
 
           {/* Digital Clock */}
           <div className="text-right font-mono text-xs font-black text-slate-600 dark:text-stone-300 flex items-center gap-1 flex-row-reverse">
-            <span>🕒</span>
             <span>{new Date().toLocaleDateString(lang === 'ar' ? 'ar-LB' : 'en-US', { day: 'numeric', month: 'short' })}</span>
             <span>-</span>
             <span>{new Date().toLocaleTimeString(lang === 'ar' ? 'ar-LB' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}</span>
@@ -203,7 +202,7 @@ export function PosTerminalScreen({
             onClick={() => {
               const nextTheme = theme === 'dark' ? 'light' : 'dark';
               setTheme(nextTheme);
-              showToast('success', lang === 'ar' ? '✓ تم تغيير المظهر المفضل' : `Theme changed to ${nextTheme}`);
+              showToast('success', lang === 'ar' ? 'تم تغيير المظهر المفضل' : `Theme changed to ${nextTheme}`);
             }}
             className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-bold border flex items-center gap-1.5 flex-row-reverse ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-300 hover:text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs'}`}
             title={lang === 'ar' ? 'تبديل المظهر الليلي/النهاري' : 'Toggle Dark/Light Mode'}
@@ -231,7 +230,7 @@ export function PosTerminalScreen({
             className={`p-2 px-3 rounded-xl transition cursor-pointer text-xs font-black border ${theme === 'dark' ? 'bg-rose-950/40 border-rose-900 text-rose-300 hover:bg-rose-900/60' : 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100'}`}
             id="btn-terminal-logout"
           >
-            {lang === 'ar' ? 'تسجيل الخروج 👋' : 'Logout 👋'}
+            {lang === 'ar' ? 'تسجيل الخروج' : 'Logout'}
           </button>
 
         </div>
@@ -257,7 +256,7 @@ export function PosTerminalScreen({
                       showToast('success', lang === 'ar' ? 'تم مسح الصنف الملغي نهائياً!' : 'Item deleted permanently!');
                     } else {
                       setVoidedCartItemIds(prev => [...prev, selectedCartItemId]);
-                      showToast('warning', lang === 'ar' ? '🚨 تم إلغاء الصنف (مشطوب أحمر)' : '🚨 Item voided (red cross)');
+                      showToast('warning', lang === 'ar' ? 'تم إلغاء الصنف (مشطوب أحمر)' : 'Item voided (red cross)');
                     }
                   } else {
                     if (cart.length > 0) {
@@ -354,7 +353,7 @@ export function PosTerminalScreen({
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center text-stone-500 font-bold h-full">
                 <ShoppingCart className="w-12 h-12 text-stone-600 mb-3 animate-bounce shadow-sm" />
-                <span className="text-xs">{lang === 'ar' ? 'سلة المبيعات فارغة. انقر على المنتجات بالتصنيف لتسجيل المبيعات 🛍️' : 'Cash register empty. Tap products to build invoice.'}</span>
+                <span className="text-xs">{lang === 'ar' ? 'سلة المبيعات فارغة. انقر على المنتجات بالتصنيف لتسجيل المبيعات' : 'Cash register empty. Tap products to build invoice.'}</span>
               </div>
             ) : (
               cart.map((item, idx) => {
@@ -405,7 +404,7 @@ export function PosTerminalScreen({
                         </div>
                         {(item.serials || []).length > 0 && (
                           <div className="text-[9px] font-mono text-right mt-0.5 opacity-80" dir="ltr" data-cart-serials>
-                            📱 {(item.serials || []).join(' · ')}
+                            {(item.serials || []).join(' · ')}
                           </div>
                         )}
 
@@ -476,7 +475,6 @@ export function PosTerminalScreen({
                 {selectedCustomerId && (
                   <div className={`p-2 py-1.5 rounded-xl text-xs text-center font-bold flex items-center justify-between gap-1 border ${theme === 'dark' ? 'bg-amber-950/20 border-amber-900/40 text-amber-300' : 'bg-amber-50 border-amber-250 text-amber-800'}`}>
                     <div className="flex items-center gap-1.5 flex-row-reverse">
-                      <span>🔗</span>
                       <span>{lang === 'ar' ? 'الزبون:' : 'Customer:'} {customers.find(c => c.id === selectedCustomerId)?.name || 'زبون محدد'}</span>
                     </div>
                     <button 
@@ -520,7 +518,7 @@ export function PosTerminalScreen({
                         fn: (val) => {
                           const rate = parseFloat(val);
                           setTaxRate(isNaN(rate) || rate < 0 ? 0 : rate);
-                          showToast('success', lang === 'ar' ? `✓ تم تغيير نسبة الضريبة لـ ${val}%` : `Tax rate changed to ${val}%`);
+                          showToast('success', lang === 'ar' ? `تم تغيير نسبة الضريبة لـ ${val}%` : `Tax rate changed to ${val}%`);
                         }
                       });
                       setIsNumpadOpen(true);
@@ -541,7 +539,7 @@ export function PosTerminalScreen({
                         fn: (val) => {
                           const fee = parseFloat(val);
                           setDeliveryUSD(isNaN(fee) || fee < 0 ? 0 : fee);
-                          showToast('success', lang === 'ar' ? `🛵 تم تعيين خدمة الديلفري بقيمة: $${val}` : `Delivery fee updated to $${val}`);
+                          showToast('success', lang === 'ar' ? `تم تعيين خدمة الديلفري بقيمة: $${val}` : `Delivery fee updated to $${val}`);
                         }
                       });
                       setIsNumpadOpen(true);
@@ -617,13 +615,13 @@ export function PosTerminalScreen({
                         const r = prompt(lang === 'ar' ? 'أدخل ملاحظة قصيرة لبيان الفاتورة:' : 'Enter statement comment:', noteInput);
                         if (r !== null) {
                           setNoteInput(r);
-                          showToast('success', lang === 'ar' ? `📝 تم تسجيل الملاحظة: ${r}` : `Invoice comment: ${r}`);
+                          showToast('success', lang === 'ar' ? `تم تسجيل الملاحظة: ${r}` : `Invoice comment: ${r}`);
                         }
                       }}
                       className={`font-bold py-2 rounded-xl transition border flex items-center justify-center gap-1 cursor-pointer text-[10.5px] h-9 shrink-0 ${theme === 'dark' ? 'bg-[#2C2C2E] border-stone-750 text-stone-300 hover:text-white' : 'bg-slate-50 hover:bg-slate-100 border-slate-205 text-slate-700'}`}
                     >
                       <MessageSquare className={`w-3.5 h-3.5 ${noteInput ? 'text-amber-500' : 'text-slate-400'}`} />
-                      <span>{noteInput ? (lang === 'ar' ? 'ملاحظة ✓' : 'Note ✓') : (lang === 'ar' ? 'ملاحظة' : 'Comment')}</span>
+                      <span>{noteInput ? (lang === 'ar' ? 'ملاحظة' : 'Note') : (lang === 'ar' ? 'ملاحظة' : 'Comment')}</span>
                     </button>
 
                   </div>
@@ -791,8 +789,8 @@ export function PosTerminalScreen({
                     : 'bg-white border-slate-300 text-slate-800'
                 }`}
               >
-                <option value="all" className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{lang === 'ar' ? '🏠 الأقسام' : '🏠 Categories'}</option>
-                <option value="everything" className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{lang === 'ar' ? '📦 كل المنتجات' : '📦 All products'}</option>
+                <option value="all" className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{lang === 'ar' ? 'الأقسام' : 'Categories'}</option>
+                <option value="everything" className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{lang === 'ar' ? 'كل المنتجات' : 'All products'}</option>
                 {categories.map(c => (
                   <option key={c.id} value={c.id} className={theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-white text-slate-800'}>{c.name}</option>
                 ))}
@@ -843,7 +841,7 @@ export function PosTerminalScreen({
                           const prod = products.find(p => p.id === promo.productId);
                           if (prod) {
                             handleProductClick(prod);
-                            showToast('success', lang === 'ar' ? `🛒 تمت إضافة المنتج المشمول بالعرض: ${prod.name}` : `🛒 Added promotional item: ${prod.name}`);
+                            showToast('success', lang === 'ar' ? `تمت إضافة المنتج المشمول بالعرض: ${prod.name}` : `Added promotional item: ${prod.name}`);
                           } else {
                             showToast('warning', lang === 'ar' ? 'المنتج غير متوفر حالياً بالسيستم' : 'Product info not found');
                           }
@@ -886,9 +884,9 @@ export function PosTerminalScreen({
                   <div className={`flex items-center justify-between flex-row-reverse gap-2 mb-2 text-xs font-black shrink-0 ${theme === 'dark' ? 'text-stone-300' : 'text-slate-700'}`} id="terminal-browse-bar">
                     <span>
                       {query
-                        ? `🔎 ${lang === 'ar' ? 'نتائج البحث بكل الأقسام' : 'Search results in all categories'} (${filtered.length})`
+                        ? `${lang === 'ar' ? 'نتائج البحث بكل الأقسام' : 'Search results in all categories'} (${filtered.length})`
                         : selectedCategory === 'everything'
-                          ? `📦 ${lang === 'ar' ? 'كل المنتجات' : 'All products'} (${filtered.length})`
+                          ? `${lang === 'ar' ? 'كل المنتجات' : 'All products'} (${filtered.length})`
                           : `${categories.find(c => c.id === selectedCategory)?.emoji || '📁'} ${categories.find(c => c.id === selectedCategory)?.name || ''} (${filtered.length})`}
                     </span>
                     <button type="button" id="btn-terminal-categories-home"
@@ -943,7 +941,7 @@ export function PosTerminalScreen({
                     </div>
                   ) : filtered.length === 0 ? (
                     <div className={`flex flex-col items-center justify-center p-14 font-bold rounded-2xl border border-dashed my-4 ${theme === 'dark' ? 'text-stone-500 bg-[#151517] border-stone-850' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
-                      😞 {lang === 'ar' ? 'عفواً! لم يتم العثور على أي منتج مطابق في المتجر.' : 'No terminal items matched.'}
+                      {lang === 'ar' ? 'عفواً! لم يتم العثور على أي منتج مطابق في المتجر.' : 'No terminal items matched.'}
                     </div>
                   ) : (
                     <div className="grid gap-4 py-1 font-sans" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 185px), 1fr))' }}>
@@ -1078,7 +1076,7 @@ export function PosTerminalScreen({
                         setSelectedCategory('all');
                         setSearchQuery('');
                         setTerminalProductPage(0);
-                        showToast('success', lang === 'ar' ? '🏠 تم العودة للرئيسية وتفريغ البحث' : 'Reset category catalog');
+                        showToast('success', lang === 'ar' ? 'تم العودة للرئيسية وتفريغ البحث' : 'Reset category catalog');
                       }}
                       className={`w-8 h-8 rounded-lg border flex items-center justify-center transition cursor-pointer ${
                         theme === 'dark' 

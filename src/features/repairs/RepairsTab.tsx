@@ -5,12 +5,12 @@ import { normalizeSerial } from '../../lib/serials';
 import { printRepairTicket } from './repairTicketPrint';
 
 export const REPAIR_STATUSES: Array<{ id: RepairStatus; ar: string; en: string; cls: string }> = [
-  { id: 'received', ar: '📥 مستلم', en: 'Received', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
-  { id: 'in_progress', ar: '🔧 عم يتصلّح', en: 'In repair', cls: 'bg-sky-100 text-sky-800 border-sky-200' },
-  { id: 'waiting_parts', ar: '⏳ ناطر قطعة', en: 'Waiting parts', cls: 'bg-amber-100 text-amber-800 border-amber-200' },
-  { id: 'ready', ar: '✅ جاهز', en: 'Ready', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  { id: 'delivered', ar: '🤝 تسلّم', en: 'Delivered', cls: 'bg-violet-100 text-violet-800 border-violet-200' },
-  { id: 'cancelled', ar: '✖ ملغى', en: 'Cancelled', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
+  { id: 'received', ar: 'مستلم', en: 'Received', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
+  { id: 'in_progress', ar: 'عم يتصلّح', en: 'In repair', cls: 'bg-sky-100 text-sky-800 border-sky-200' },
+  { id: 'waiting_parts', ar: 'ناطر قطعة', en: 'Waiting parts', cls: 'bg-amber-100 text-amber-800 border-amber-200' },
+  { id: 'ready', ar: 'جاهز', en: 'Ready', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  { id: 'delivered', ar: 'تسلّم', en: 'Delivered', cls: 'bg-violet-100 text-violet-800 border-violet-200' },
+  { id: 'cancelled', ar: 'ملغى', en: 'Cancelled', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
 ];
 const statusInfo = (s: RepairStatus) => REPAIR_STATUSES.find(x => x.id === s)!;
 
@@ -60,7 +60,7 @@ export function RepairsTab({ lang, sysDate, settings, repairs, setRepairs, custo
     const intl = phone.startsWith('961') ? phone : phone.startsWith('0') ? `961${phone.slice(1)}` : `961${phone}`;
     const left = Math.max(0, (r.finalCostUSD ?? r.estimateUSD) - r.depositUSD);
     const text = kind === 'ready'
-      ? `مرحبا ${r.customerName} 👋\nجهازك ${r.device} صار جاهز للاستلام ✅\nرقم التذكرة: ${r.ticketNumber}\nالمبلغ المتبقي: ${left.toFixed(2)}$\n${settings.shopName}`
+      ? `مرحبا ${r.customerName} 👋\nجهازك ${r.device} صار جاهز للاستلام\nرقم التذكرة: ${r.ticketNumber}\nالمبلغ المتبقي: ${left.toFixed(2)}$\n${settings.shopName}`
       : `مرحبا ${r.customerName} 👋\nاستلمنا جهازك ${r.device} للتصليح.\nرقم التذكرة: ${r.ticketNumber}\nالكلفة التقريبية: ${r.estimateUSD.toFixed(2)}$${r.depositUSD > 0 ? `\nالعربون: ${r.depositUSD.toFixed(2)}$` : ''}\nمنخبرك أول ما يجهز.\n${settings.shopName}`;
     window.open(`https://wa.me/${intl}?text=${encodeURIComponent(text)}`, '_blank');
   };
@@ -167,7 +167,7 @@ export function RepairsTab({ lang, sysDate, settings, repairs, setRepairs, custo
           <input className={`${input} font-mono`} id="rep-estimate" type="number" min="0" step="any" placeholder={ar ? 'الكلفة التقريبية ($)' : 'Estimate ($)'} value={form.estimate} onChange={e => setForm({ ...form, estimate: e.target.value })} />
           <input className={`${input} font-mono`} id="rep-deposit" type="number" min="0" step="any" placeholder={ar ? 'العربون ($)' : 'Deposit ($)'} value={form.deposit} onChange={e => setForm({ ...form, deposit: e.target.value })} />
           <button type="submit" id="btn-save-repair" className="md:col-span-3 bg-sky-600 hover:bg-sky-700 text-white font-black py-2.5 rounded-xl cursor-pointer">
-            {ar ? 'حفظ وطباعة الإيصال 🖨️' : 'Save and print ticket 🖨️'}
+            {ar ? 'حفظ وطباعة الإيصال' : 'Save and print ticket'}
           </button>
         </form>
       )}
@@ -201,14 +201,14 @@ export function RepairsTab({ lang, sysDate, settings, repairs, setRepairs, custo
                 </div>
                 <span className={`px-2.5 py-1 rounded-full text-[11px] font-black border ${st.cls}`} data-repair-status>{ar ? st.ar : st.en}</span>
               </div>
-              <div className="text-slate-600">👤 {r.customerName} · <span dir="ltr" className="font-mono">{r.customerPhone}</span></div>
-              <div className="text-slate-700">🛠️ {r.problem}</div>
-              {r.accessories && <div className="text-xs text-slate-500">🎒 {r.accessories}</div>}
+              <div className="text-slate-600">{r.customerName} · <span dir="ltr" className="font-mono">{r.customerPhone}</span></div>
+              <div className="text-slate-700">{r.problem}</div>
+              {r.accessories && <div className="text-xs text-slate-500">{r.accessories}</div>}
               <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                 <span>📅 <span dir="ltr">{r.date}</span></span>
-                {r.expectedDate && open && <span>⏰ {ar ? 'متوقع' : 'due'} <span dir="ltr">{r.expectedDate}</span></span>}
-                <span>💵 {ar ? 'تقريبي' : 'est.'} {r.estimateUSD.toFixed(2)}$</span>
-                {r.depositUSD > 0 && <span>🧾 {ar ? 'عربون' : 'deposit'} {r.depositUSD.toFixed(2)}$</span>}
+                {r.expectedDate && open && <span>{ar ? 'متوقع' : 'due'} <span dir="ltr">{r.expectedDate}</span></span>}
+                <span>{ar ? 'تقريبي' : 'est.'} {r.estimateUSD.toFixed(2)}$</span>
+                {r.depositUSD > 0 && <span>{ar ? 'عربون' : 'deposit'} {r.depositUSD.toFixed(2)}$</span>}
                 {open && <span className="font-bold text-slate-700">{ar ? 'الباقي' : 'left'} {left.toFixed(2)}$</span>}
                 {r.status === 'delivered' && <span className="font-bold text-violet-700">{ar ? 'تقبّض' : 'paid'} {(r.finalCostUSD || 0).toFixed(2)}$</span>}
               </div>
@@ -219,7 +219,7 @@ export function RepairsTab({ lang, sysDate, settings, repairs, setRepairs, custo
                       className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-bold hover:bg-slate-50 cursor-pointer">{ar ? s.ar : s.en}</button>
                   ))}
                   <button type="button" data-deliver={r.id} onClick={() => openDelivery(r)} className="px-2.5 py-1 rounded-lg bg-violet-600 text-white text-xs font-black cursor-pointer">
-                    🤝 {ar ? 'تسليم للزبون' : 'Deliver'}
+                    {ar ? 'تسليم للزبون' : 'Deliver'}
                   </button>
                   <button type="button" onClick={() => { if (window.confirm(ar ? 'إلغاء التذكرة؟' : 'Cancel ticket?')) update(r.id, { status: 'cancelled' }); }}
                     className="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 text-xs font-bold cursor-pointer">{ar ? 'إلغاء' : 'Cancel'}</button>
@@ -242,7 +242,7 @@ export function RepairsTab({ lang, sysDate, settings, repairs, setRepairs, custo
       {delivering && (
         <div className="fixed inset-0 z-[9999] bg-slate-900/60 flex items-center justify-center p-4" id="repair-deliver-modal">
           <div className="bg-white rounded-2xl p-5 w-full max-w-sm space-y-3 text-sm">
-            <h3 className="font-black text-slate-800">🤝 {ar ? 'تسليم' : 'Deliver'} {delivering.ticketNumber}</h3>
+            <h3 className="font-black text-slate-800">{ar ? 'تسليم' : 'Deliver'} {delivering.ticketNumber}</h3>
             <div className="text-slate-500">{delivering.device} · {delivering.customerName}</div>
             <label className="block font-bold text-slate-600">{ar ? 'الكلفة النهائية للزبون ($)' : 'Final price ($)'}
               <input id="rep-final" type="number" min="0" step="any" value={finalCost} onChange={e => setFinalCost(e.target.value)} className={`${input} font-mono mt-1`} /></label>

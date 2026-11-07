@@ -27,8 +27,8 @@ export function CloudBackupBanner({ lang, SYS_DATE, isAdmin, openCloudSync }: Cl
     <div className="bg-sky-500/10 border-t border-b border-sky-500/20 px-4 sm:px-6 lg:px-4 py-1.5 flex justify-between items-center text-[11px] text-sky-900 font-bold no-print gap-3" id="cloud-backup-banner">
       <span>
         {lang === 'ar'
-          ? '☁️ بياناتك محفوظة على هذا الجهاز فقط. شغّل المزامنة السحابية حتى لا تضيع إذا مُسحت بيانات المتصفح أو تعطّل الجهاز.'
-          : '☁️ Your data is stored on this device only. Turn on cloud sync so it is not lost if browser data is cleared or the computer fails.'}
+          ? 'بياناتك محفوظة على هذا الجهاز فقط. شغّل المزامنة السحابية حتى لا تضيع إذا مُسحت بيانات المتصفح أو تعطّل الجهاز.'
+          : 'Your data is stored on this device only. Turn on cloud sync so it is not lost if browser data is cleared or the computer fails.'}
       </span>
       <span className="flex gap-2 shrink-0">
         <button

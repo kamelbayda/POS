@@ -364,7 +364,7 @@ export function InventoryTab({
                 className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border-none"
               >
                 <Upload className="w-4 h-4" />
-                <span>استيراد الأصناف من Excel 📥</span>
+                <span>استيراد الأصناف من Excel</span>
               </button>
             )}
             {currentUser.role === 'admin' && (
@@ -373,7 +373,7 @@ export function InventoryTab({
               </span>
             )}
           </div>
-          <h3 className="font-bold text-slate-800 text-lg">📦 إدارة مخازن السوبرماركت ومستويات الأسعار</h3>
+          <h3 className="font-bold text-slate-800 text-lg">إدارة مخازن السوبرماركت ومستويات الأسعار</h3>
         </div>
 
         {/* --- COMPUTE AND ALERT PRODUCTS WITH LOW MARGINS (< 5%) --- */}
@@ -396,14 +396,14 @@ export function InventoryTab({
                   <AlertTriangle className="w-5 h-5 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-red-950 text-xs sm:text-sm">⚠️ تحذير: أصناف ذات هامش ربح منخفض للغاية (أقل من 5%)</h4>
+                  <h4 className="font-extrabold text-red-950 text-xs sm:text-sm">تحذير: أصناف ذات هامش ربح منخفض للغاية (أقل من 5%)</h4>
                   <p className="text-[11px] text-red-700 font-bold mt-0.5 leading-relaxed">
                     هناك ({lowMarginProds.length}) سلع في متجرك تقترب أسعار بيعها من سعر تكلفة شرائها أو تقل عنه. تم تمييز هذه الأصناف وتلوينها باللون الأحمر مع حواف تنبيهية حمراء في الجدول العام لتسهيل تعديلها.
                   </p>
                 </div>
               </div>
               <span className="bg-red-600 text-white font-black text-[10px] px-3 py-1.5 rounded-xl shrink-0 self-start sm:self-center animate-bounce">
-                🚨 {lowMarginProds.length} أصناف حرجة
+                {lowMarginProds.length} أصناف حرجة
               </span>
             </div>
           );
@@ -421,14 +421,14 @@ export function InventoryTab({
                   <EyeOff className="w-5 h-5 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-slate-800 text-xs sm:text-sm">📉 تنبيه: بضائع راكدة لم يتم بيعها منذ {stagnantDaysThreshold} يوماً أو أكثر</h4>
+                  <h4 className="font-extrabold text-slate-800 text-xs sm:text-sm">تنبيه: بضائع راكدة لم يتم بيعها منذ {stagnantDaysThreshold} يوماً أو أكثر</h4>
                   <p className="text-[11px] text-slate-500 font-bold mt-0.5 leading-relaxed">
                     هناك ({stagnantProds.length}) سلع في متجرك راكدة لم يُسجّل لها أي حركة بيع خلال {stagnantDaysThreshold} يوماً الماضية. تم تمييز هذه الأصناف وتلوينها باللون الرمادي لتسهيل اتخاذ قرار بشأن ترويجها، أو عمل عروض حسم (Promotions).
                   </p>
                 </div>
               </div>
               <span className="bg-slate-500 text-white font-black text-[10px] px-3 py-1.5 rounded-xl shrink-0 self-start sm:self-center">
-                📢 {stagnantProds.length} أصناف راكدة
+                {stagnantProds.length} أصناف راكدة
               </span>
             </div>
           );
@@ -451,7 +451,7 @@ export function InventoryTab({
                   : 'bg-[#1D9E75] border-transparent text-white hover:bg-emerald-600'
               }`}
             >
-              {isProductFormExpanded ? '▲ إغلاق نموذج الإضافة / التعديل (تصغير العرض)' : '➕ إدراج وإضافة صنف جديد بالرف والمسجل'}
+              {isProductFormExpanded ? '▲ إغلاق نموذج الإضافة / التعديل (تصغير العرض)' : 'إدراج وإضافة صنف جديد بالرف والمسجل'}
             </button>
           </div>
         )}
@@ -464,7 +464,7 @@ export function InventoryTab({
               <Plus className="w-5 h-5 flex-shrink-0" />
               <span>{editingProduct ? `تعديل صنف: [ ${editingProduct.name} ]` : 'إدراج صنف جديد بالرف والمسجل'}</span>
               <span className="mr-auto bg-sky-50 text-sky-700 border border-sky-100 rounded-lg px-2 py-0.5 text-[10px] font-black flex items-center gap-1 select-none">
-                🧮 خلايا تفاعلية: اكتب `=4/2` للحساب التلقائي
+                خلايا تفاعلية: اكتب `=4/2` للحساب التلقائي
               </span>
             </h4>
 
@@ -491,12 +491,12 @@ export function InventoryTab({
                         rand = '29' + Math.floor(1000000000 + Math.random() * 9000000000).toString();
                       } while (products.some(p => p.barcode === rand));
                       setNewProdBarcode(rand);
-                      showToast('success', lang === 'ar' ? 'تم توليد باركود فريد بنجاح! ⚡' : 'Unique random barcode generated successfully!');
+                      showToast('success', lang === 'ar' ? 'تم توليد باركود فريد بنجاح!' : 'Unique random barcode generated successfully!');
                     }}
                     className="text-amber-700 hover:text-amber-800 text-[10px] font-bold cursor-pointer bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200 select-none animate-pulse"
                     title="توليد باركود عشوائي فريد ومناسب للنظام"
                   >
-                    ⚡ توليد تلقائي
+                    توليد تلقائي
                   </button>
                 </div>
                 <input 
@@ -628,7 +628,7 @@ export function InventoryTab({
                 )}
               </div>
               <div>
-                <label className="block text-indigo-800 mb-1 text-xs font-black" title="لما تشتري بالكرتونة، فاتورة المشتريات بتحوّل الكراتين لحبّات لحالها">📦 عدد الحبّات بالكرتونة:</label>
+                <label className="block text-indigo-800 mb-1 text-xs font-black" title="لما تشتري بالكرتونة، فاتورة المشتريات بتحوّل الكراتين لحبّات لحالها">عدد الحبّات بالكرتونة:</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -682,14 +682,14 @@ export function InventoryTab({
               {(isPhoneShop || newProdTrackSerial) && (
                 <div className="col-span-1 sm:col-span-3 xl:col-span-9 bg-sky-50 border border-sky-200 rounded-lg p-3 grid grid-cols-1 sm:grid-cols-4 gap-3" id="prod-serial-box">
                   <div>
-                    <label className="block text-sky-900 mb-1 text-xs font-black">📱 بيتباع بالـ IMEI؟</label>
+                    <label className="block text-sky-900 mb-1 text-xs font-black">بيتباع بالـ IMEI؟</label>
                     <button type="button" id="prod-track-serial" onClick={() => setNewProdTrackSerial(v => !v)}
                       className={`w-full text-xs font-black py-2 px-2.5 rounded-lg border h-9 cursor-pointer ${newProdTrackSerial ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-slate-200 text-slate-500'}`}>
-                      {newProdTrackSerial ? '✓ كل جهاز إلو IMEI' : 'لا (إكسسوار / بالعدد)'}
+                      {newProdTrackSerial ? 'كل جهاز إلو IMEI' : 'لا (إكسسوار / بالعدد)'}
                     </button>
                   </div>
                   <div>
-                    <label className="block text-sky-900 mb-1 text-xs font-black" htmlFor="prod-warranty">🛡️ الكفالة (أشهر):</label>
+                    <label className="block text-sky-900 mb-1 text-xs font-black" htmlFor="prod-warranty">الكفالة (أشهر):</label>
                     <input id="prod-warranty" type="text" inputMode="numeric" value={newProdWarrantyMonths}
                       onChange={e => setNewProdWarrantyMonths(e.target.value.replace(/[^0-9]/g, ''))}
                       className="w-full bg-white border border-sky-200 rounded-lg py-2 px-3 text-sm text-center font-mono font-bold h-9" placeholder="مثلاً: 12" />
@@ -709,7 +709,7 @@ export function InventoryTab({
 
               {/* --- ELECTRONIC SCALE CONFIGURATION --- */}
               <div className="col-span-1 sm:col-span-1 xl:col-span-2">
-                <label className="block text-amber-800 mb-1 text-xs font-black">⚖️ ميزان إلكتروني؟</label>
+                <label className="block text-amber-800 mb-1 text-xs font-black">ميزان إلكتروني؟</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -728,7 +728,6 @@ export function InventoryTab({
                       : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                   }`}
                 >
-                  <span>⚖️</span>
                   <span>{newProdIsWeighed ? 'موزون (سعر لكل كغ)' : 'بيع عادي (بالقطعة)'}</span>
                 </button>
               </div>
@@ -755,7 +754,7 @@ export function InventoryTab({
               <div className="col-span-1 sm:col-span-3 xl:col-span-9 bg-slate-100 p-3 rounded-lg border border-slate-200">
                 <label className="block text-slate-700 text-xs font-bold mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    📊 الباركودات الإضافية (البديلة):
+                    الباركودات الإضافية (البديلة):
                   </span>
                   <span className="text-[10px] text-slate-500 font-normal">
                     (يمكنك إضافة أكثر من باركود للصنف للتسهيل في نقطة البيع)
@@ -832,7 +831,7 @@ export function InventoryTab({
             <div className="bg-emerald-50/40 border border-emerald-100 p-4 rounded-xl text-right font-sans space-y-3.5">
               <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-emerald-100 pb-2.5">
                 <div className="text-xs font-black text-emerald-950 flex items-center justify-start gap-1 flex-row-reverse">
-                  <span>💰 آلة احتساب السعر التلقائي والتسعير بهامش الأرباح:</span>
+                  <span>آلة احتساب السعر التلقائي والتسعير بهامش الأرباح:</span>
                 </div>
                 
                 {/* Preset Actions */}
@@ -849,7 +848,7 @@ export function InventoryTab({
                             const targetPrice = numCost / (1 - m / 100);
                             setNewProdPriceUSD(targetPrice.toFixed(2));
                             setNewProdPriceWholesale((targetPrice * 0.9).toFixed(2));
-                            showToast('success', `تم تحديد السعر بهامش ربح %${m} من سعر المبيع مفرّق! ⚡`);
+                            showToast('success', `تم تحديد السعر بهامش ربح %${m} من سعر المبيع مفرّق!`);
                           } else {
                             showToast('error', 'عفواً! يرجى إدخال سعر التكلفة / رأس المال أولاً ليتم الحساب بناءً عليه.');
                           }
@@ -873,7 +872,7 @@ export function InventoryTab({
                             const targetPrice = numCost * (1 + mk / 100);
                             setNewProdPriceUSD(targetPrice.toFixed(2));
                             setNewProdPriceWholesale((targetPrice * 0.9).toFixed(2));
-                            showToast('success', `تم تحديد السعر بزيادة %${mk} فوق سعر التكلفة! ⚡`);
+                            showToast('success', `تم تحديد السعر بزيادة %${mk} فوق سعر التكلفة!`);
                           } else {
                             showToast('error', 'عفواً! يرجى إدخال سعر التكلفة / رأس المال أولاً ليتم الحساب بناءً عليه.');
                           }
@@ -915,14 +914,14 @@ export function InventoryTab({
                             const targetPrice = numCost / (1 - m / 100);
                             setNewProdPriceUSD(targetPrice.toFixed(2));
                             setNewProdPriceWholesale((targetPrice * 0.9).toFixed(2));
-                            showToast('success', `تم احتساب سعر البيع بنجاح بناءً على هامش ربح يدوي %${m}! ⚡`);
+                            showToast('success', `تم احتساب سعر البيع بنجاح بناءً على هامش ربح يدوي %${m}!`);
                           } else {
                             showToast('error', 'عفواً! يرجى إدخال سعر التكلفة / رأس المال أولاً ليتم الحساب بناءً عليه.');
                           }
                         }}
                         className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-lg text-[10px] cursor-pointer transition-colors"
                       >
-                        تطبيق الهامش ⚡
+                        تطبيق الهامش
                       </button>
                     </div>
 
@@ -953,14 +952,14 @@ export function InventoryTab({
                             const targetPrice = numCost * (1 + mk / 100);
                             setNewProdPriceUSD(targetPrice.toFixed(2));
                             setNewProdPriceWholesale((targetPrice * 0.9).toFixed(2));
-                            showToast('success', `تم احتساب سعر البيع بنجاح بزيادة يدوية %${mk} فوق التكلفة! ⚡`);
+                            showToast('success', `تم احتساب سعر البيع بنجاح بزيادة يدوية %${mk} فوق التكلفة!`);
                           } else {
                             showToast('error', 'عفواً! يرجى إدخال سعر التكلفة / رأس المال أولاً ليتم الحساب بناءً عليه.');
                           }
                         }}
                         className="px-2 py-1 bg-[#1d9e75] hover:bg-[#15805e] text-white font-extrabold rounded-lg text-[10px] cursor-pointer transition-colors"
                       >
-                        تطبيق الزيادة ⚡
+                        تطبيق الزيادة
                       </button>
                     </div>
                   </div>
@@ -1033,7 +1032,7 @@ export function InventoryTab({
                     htmlFor="prod-image-file-input"
                     className="bg-slate-200 hover:bg-slate-300 text-slate-800 text-[11px] font-bold py-1.5 px-3 rounded-lg cursor-pointer transition select-none flex items-center gap-1.5"
                   >
-                    📁 {newProdImage ? 'تغيير الصورة' : 'اختر صورة للمنتج'}
+                    {newProdImage ? 'تغيير الصورة' : 'اختر صورة للمنتج'}
                   </label>
                   {newProdImage && (
                     <div className="relative group">
@@ -1055,7 +1054,7 @@ export function InventoryTab({
                   type="submit"
                   className="flex-1 sm:flex-initial bg-[#1D9E75] hover:bg-[#15805e] text-white font-bold px-6 py-2 rounded-xl text-xs transition cursor-pointer"
                 >
-                  {editingProduct ? 'تحديث الصنف ✔️' : 'إضافة لحساب المحل 💾'}
+                  {editingProduct ? 'تحديث الصنف' : 'إضافة لحساب المحل'}
                 </button>
                 {editingProduct && (
                   <button 
@@ -1081,7 +1080,7 @@ export function InventoryTab({
           )
         ) : (
           <div className="bg-blue-50 border border-blue-100 text-blue-800 text-xs rounded-xl p-3 mb-6 text-right">
-            💡 حساب الكاشير: يمكنك معاينة الأصناف والكميات المتوفرة وتصديرها، بينما يحظر عليك تعديل أو إضافة المنتجات.
+            حساب الكاشير: يمكنك معاينة الأصناف والكميات المتوفرة وتصديرها، بينما يحظر عليك تعديل أو إضافة المنتجات.
           </div>
         )}
 
@@ -1091,7 +1090,7 @@ export function InventoryTab({
             
             {/* Search Field */}
             <div className="space-y-1">
-              <label className="block text-slate-755 text-[11px] font-black">🔍 البحث في الرفوف:</label>
+              <label className="block text-slate-755 text-[11px] font-black">البحث في الرفوف:</label>
               <input
                 type="text"
                 placeholder="ابحث باسم المنتج، الباركود، الفئة المحددة، أو كود SKU..."
@@ -1103,7 +1102,7 @@ export function InventoryTab({
 
             {/* Category Dropdown Filter */}
             <div className="space-y-1">
-              <label id="category-filter-label" className="block text-slate-755 text-[11px] font-black">📂 تصفية حسب الفئة:</label>
+              <label id="category-filter-label" className="block text-slate-755 text-[11px] font-black">تصفية حسب الفئة:</label>
               <select
                 aria-labelledby="category-filter-label"
                 value={selectedInventoryCategory}
@@ -1122,7 +1121,7 @@ export function InventoryTab({
             {/* Stale/Stagnate Threshold Slider */}
             <div className="space-y-1">
               <div className="flex items-center justify-between flex-row-reverse text-[11px] font-black text-slate-750">
-                <span>⏳ حد فترة الركود (أيام عدم البيع):</span>
+                <span>حد فترة الركود (أيام عدم البيع):</span>
                 <span className="font-mono bg-slate-200 text-slate-800 px-2 py-0.5 rounded-lg text-[10px] font-bold">
                   {stagnantDaysThreshold} يوم
                 </span>
@@ -1151,7 +1150,7 @@ export function InventoryTab({
                 />
                 <div className="relative w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-slate-500" />
                 <span className="text-xs font-black text-slate-700">
-                  📦 عرض الأصناف الراكدة فقط ({stagnantDaysThreshold}+ يوم)
+                  عرض الأصناف الراكدة فقط ({stagnantDaysThreshold}+ يوم)
                 </span>
               </label>
             </div>
@@ -1163,7 +1162,7 @@ export function InventoryTab({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4 bg-slate-50 border border-slate-150 p-3 rounded-2xl">
           <div className="flex items-center gap-2.5 flex-row-reverse">
             <span className="text-xs font-extrabold text-slate-700">
-              {lang === 'ar' ? '⚙️ تخصيص عرض أعمدة الجدول الجاري:' : '⚙️ Customize displayed columns:'}
+              {lang === 'ar' ? 'تخصيص عرض أعمدة الجدول الجاري:' : 'Customize displayed columns:'}
             </span>
             <ColumnSelector
               columns={isPhoneShop ? invColumns.filter(c => c.key !== 'expiry') : invColumns}
@@ -1174,7 +1173,7 @@ export function InventoryTab({
             />
           </div>
           <div className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5 flex-row-reverse">
-            <span>💡 {lang === 'ar' ? 'اسحب حواف العناوين لتكبير وتصغير الأعمدة يدويّاً حسب رغبتك' : 'Drag cell edges to resize columns dynamically'}</span>
+            <span>{lang === 'ar' ? 'اسحب حواف العناوين لتكبير وتصغير الأعمدة يدويّاً حسب رغبتك' : 'Drag cell edges to resize columns dynamically'}</span>
           </div>
         </div>
 
@@ -1226,7 +1225,7 @@ export function InventoryTab({
                         }}
                         onPointerDown={e => e.stopPropagation()}
                         onMouseDown={e => e.stopPropagation()}
-                        placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                        placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                         className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                       />
                     </div>
@@ -1251,7 +1250,7 @@ export function InventoryTab({
                         }}
                         onPointerDown={e => e.stopPropagation()}
                         onMouseDown={e => e.stopPropagation()}
-                        placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                        placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                         className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                       />
                     </div>
@@ -1276,7 +1275,7 @@ export function InventoryTab({
                         }}
                         onPointerDown={e => e.stopPropagation()}
                         onMouseDown={e => e.stopPropagation()}
-                        placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                        placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                         className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                       />
                     </div>
@@ -1303,7 +1302,7 @@ export function InventoryTab({
                             }}
                             onPointerDown={e => e.stopPropagation()}
                             onMouseDown={e => e.stopPropagation()}
-                            placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                            placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                             className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                           />
                         </div>
@@ -1326,7 +1325,7 @@ export function InventoryTab({
                             }}
                             onPointerDown={e => e.stopPropagation()}
                             onMouseDown={e => e.stopPropagation()}
-                            placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                            placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                             className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                           />
                         </div>
@@ -1376,7 +1375,7 @@ export function InventoryTab({
                         }}
                         onPointerDown={e => e.stopPropagation()}
                         onMouseDown={e => e.stopPropagation()}
-                        placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                        placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                         className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                       />
                     </div>
@@ -1401,7 +1400,7 @@ export function InventoryTab({
                         }}
                         onPointerDown={e => e.stopPropagation()}
                         onMouseDown={e => e.stopPropagation()}
-                        placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                        placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                         className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                       />
                     </div>
@@ -1416,7 +1415,7 @@ export function InventoryTab({
                 {visibleInvCols.qty_shop !== false && (
                   <th className="p-3 relative group text-center select-none whitespace-nowrap" style={{ width: colWidths.qty_shop }}>
                     <div className="flex flex-col gap-1">
-                      <span className="font-extrabold">{lang === 'ar' ? 'الكمية بالمحل 🏪' : 'Qty Shop 🏪'}</span>
+                      <span className="font-extrabold">{lang === 'ar' ? 'الكمية بالمحل' : 'Qty Shop'}</span>
                       <input
                         type="text"
                         value={colFilters.qty_shop}
@@ -1441,7 +1440,7 @@ export function InventoryTab({
                 {visibleInvCols.qty_wh !== false && (
                   <th className="p-3 relative group text-center select-none whitespace-nowrap" style={{ width: colWidths.qty_wh }}>
                     <div className="flex flex-col gap-1">
-                      <span className="font-extrabold">{lang === 'ar' ? 'الكمية بالمستودع 📦' : 'Qty Wh 📦'}</span>
+                      <span className="font-extrabold">{lang === 'ar' ? 'الكمية بالمستودع' : 'Qty Wh'}</span>
                       <input
                         type="text"
                         value={colFilters.qty_wh}
@@ -1501,7 +1500,7 @@ export function InventoryTab({
                         }}
                         onPointerDown={e => e.stopPropagation()}
                         onMouseDown={e => e.stopPropagation()}
-                        placeholder={lang === 'ar' ? '🔍 تصفية...' : '🔍 Filter...'}
+                        placeholder={lang === 'ar' ? 'تصفية...' : 'Filter...'}
                         className="w-full py-1 px-2 text-[10px] bg-white border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none rounded-lg font-sans font-bold text-slate-700 text-right"
                       />
                     </div>
@@ -1538,7 +1537,7 @@ export function InventoryTab({
                         title={lang === 'ar' ? 'مسح الفلاتر' : 'Clear Filters'}
                         className="w-full py-1 px-1 text-[10px] bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-200 rounded-lg text-slate-600 font-sans font-bold text-center leading-none inline-flex items-center justify-center gap-1 cursor-pointer transition-colors"
                       >
-                        🧹 {lang === 'ar' ? 'مسح' : 'Clear'}
+                        {lang === 'ar' ? 'مسح' : 'Clear'}
                       </button>
                     </div>
                     <div 
@@ -1727,7 +1726,7 @@ export function InventoryTab({
                         <td className="p-3 text-center font-mono font-extrabold overflow-hidden text-ellipsis whitespace-nowrap">
                           {isLowMargin ? (
                             <span className="text-red-700 bg-red-100/80 px-2 py-0.5 rounded text-[10px] font-black inline-flex items-center gap-0.5">
-                              🚨 {marginPercent.toFixed(1)}%
+                              {marginPercent.toFixed(1)}%
                             </span>
                           ) : (
                             <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-black">
@@ -1756,7 +1755,7 @@ export function InventoryTab({
                         <td className="p-3 text-center font-mono font-extrabold overflow-hidden text-ellipsis whitespace-nowrap">
                           {p.quantity <= settings.lowStockThreshold ? (
                             <span className="text-red-700 bg-red-100/50 px-2 py-0.5 rounded text-[11px] font-bold">
-                              {p.quantity} (🚨 منخفض!)
+                              {p.quantity} (منخفض!)
                             </span>
                           ) : (
                             p.quantity
@@ -1786,7 +1785,7 @@ export function InventoryTab({
                             </div>
                           ) : (
                             <span className="bg-slate-200 text-slate-500 px-2 py-0.5 rounded text-[10px] font-black">
-                              لم يُبَع بعد ⚠️
+                              لم يُبَع بعد
                             </span>
                           )}
                         </td>
@@ -1797,11 +1796,11 @@ export function InventoryTab({
                         <td className="p-3 font-mono font-bold text-right overflow-hidden text-ellipsis whitespace-nowrap">
                           {p.isExpired ? (
                             <span className="text-red-600 bg-red-100 px-2 py-0.5 rounded text-[10px] font-black">
-                              منتهي صلاحية ❌ ({p.expiryDate})
+                              منتهي صلاحية ({p.expiryDate})
                             </span>
                           ) : p.isNearExpiry ? (
                             <span className="text-amber-800 bg-amber-100 px-2 py-0.5 rounded text-[10px] font-black">
-                              قريب الإنتهاء ⏳ ({p.expiryDate})
+                              قريب الإنتهاء ({p.expiryDate})
                             </span>
                           ) : (
                             p.expiryDate
@@ -1959,7 +1958,7 @@ export function InventoryTab({
                   onClick={() => setInvCurrentPage(prev => Math.max(prev - 1, 1))}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 bg-white hover:bg-slate-100 disabled:opacity-50 disabled:hover:bg-white transition cursor-pointer"
                 >
-                  {lang === 'ar' ? 'السابق ⬅️' : '⬅️ Prev'}
+                  {lang === 'ar' ? 'السابق' : 'Prev'}
                 </button>
                 
                 {pages.map((p, idx) => {
@@ -1988,7 +1987,7 @@ export function InventoryTab({
                   onClick={() => setInvCurrentPage(prev => Math.min(prev + 1, maxPages))}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 bg-white hover:bg-slate-100 disabled:opacity-50 disabled:hover:bg-white transition cursor-pointer"
                 >
-                  {lang === 'ar' ? '➡️ التالي' : 'Next ➡️'}
+                  {lang === 'ar' ? 'التالي' : 'Next'}
                 </button>
               </div>
 

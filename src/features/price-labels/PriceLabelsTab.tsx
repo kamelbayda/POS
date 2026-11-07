@@ -143,7 +143,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
     } else {
       setPlSelectedProducts([...plSelectedProducts, { productId: prod.id, qty: 1 }]);
     }
-    showToast('success', lang === 'ar' ? `✓ تم إضافة المنتج: ${prod.name}` : `Added ${prod.name}`);
+    showToast('success', lang === 'ar' ? `تم إضافة المنتج: ${prod.name}` : `Added ${prod.name}`);
   };
 
   const triggerBatchPrint = () => {
@@ -237,7 +237,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
     setPlBarcodeHeightValue(18);
     setPlSelectedProducts([]);
     setPlSearchQuery('');
-    showToast('success', lang === 'ar' ? '✓ تم إعادة ضبط قيم وتصميم الملصقات بنجاح!' : 'Layout reset to defaults!');
+    showToast('success', lang === 'ar' ? 'تم إعادة ضبط قيم وتصميم الملصقات بنجاح!' : 'Layout reset to defaults!');
   };
 
   const applyPreset = (preset: 'a4_standard' | 'roll_single' | 'roll_double') => {
@@ -316,7 +316,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
             }`}
             title="قالب ملصقات ورق A4 قياسي 3 أعمدة للرفوف"
           >
-            📄 {lang === 'ar' ? 'قالب ورق A4 (رفوف)' : 'A4 Sheets Grid'}
+            {lang === 'ar' ? 'قالب ورق A4 (رفوف)' : 'A4 Sheets Grid'}
           </button>
           <button
             onClick={() => applyPreset('roll_single')}
@@ -325,7 +325,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
             }`}
             title="ملصق باركود حراري عريض للرول المستمر"
           >
-            🛵 {lang === 'ar' ? 'قالب رول فردي 80مم' : '80mm Single Roll'}
+            {lang === 'ar' ? 'قالب رول فردي 80مم' : '80mm Single Roll'}
           </button>
           <button
             onClick={() => applyPreset('roll_double')}
@@ -334,7 +334,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
             }`}
             title="شريط باركود وطباعة مزدوجة للرول"
           >
-            👥 {lang === 'ar' ? 'قالب رول مزدوج (عمودين)' : 'Double Labels Roll'}
+            {lang === 'ar' ? 'قالب رول مزدوج (عمودين)' : 'Double Labels Roll'}
           </button>
           <button
             onClick={resetPlDesign}
@@ -356,7 +356,6 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
           {/* SECTION 1: LAYOUT & FORMAT */}
           <div className={`p-5 rounded-3xl border ${theme === 'dark' ? 'bg-[#18181b] border-stone-800 text-stone-100' : 'bg-white border-slate-200 text-slate-800'} shadow-xs`}>
             <h3 className="font-extrabold text-[#111112] dark:text-stone-200 text-xs flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-stone-800 w-full mb-3">
-              <span className="text-amber-500">⚙️</span>
               <span>{lang === 'ar' ? 'التنسيق وحجم ورق السلع' : 'Paper Format & Margins'}</span>
             </h3>
             
@@ -579,7 +578,6 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
           {/* SECTION 2: SHOW CHECKBOXES (DISPLAY CONFIGS) */}
           <div className={`p-5 rounded-3xl border ${theme === 'dark' ? 'bg-[#18181b] border-stone-800 text-stone-100' : 'bg-white border-slate-200 text-slate-800'} shadow-xs`}>
             <h3 className="font-extrabold text-[#111112] dark:text-stone-200 text-xs flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-stone-800 w-full mb-3">
-              <span className="text-sky-500">👁️</span>
               <span>{lang === 'ar' ? 'العناصر المرئية على الملصق' : 'Visible Fields Options'}</span>
             </h3>
             
@@ -669,7 +667,6 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
           {/* SECTION 3: TEXT SIZES & ELEMENT HEIGHTS */}
           <div className={`p-5 rounded-3xl border ${theme === 'dark' ? 'bg-[#18181b] border-stone-800 text-stone-100' : 'bg-white border-slate-200 text-slate-800'} shadow-xs`}>
             <h3 className="font-extrabold text-[#111112] dark:text-stone-200 text-xs flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-stone-800 w-full mb-3">
-              <span className="text-yellow-600">📐</span>
               <span>{lang === 'ar' ? 'أحجام النصوص ومقاييس الرسم' : 'Element Fonts & Sizes'}</span>
             </h3>
             
@@ -727,7 +724,6 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
           {/* SECTION 4: PRODUCTS LIST TO PRINT SELECTOR */}
           <div className={`p-5 rounded-3xl border ${theme === 'dark' ? 'bg-[#18181b] border-stone-800 text-stone-100' : 'bg-white border-slate-200 text-slate-800'} shadow-xs`}>
             <h3 className="font-extrabold text-[#111112] dark:text-stone-200 text-xs flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-stone-800 w-full mb-3">
-              <span className="text-[#1D9E75]">📦</span>
               <span>{lang === 'ar' ? 'البضائع والمنتجات المحددة للطباعة' : 'Select Queue Products'}</span>
             </h3>
             
@@ -759,7 +755,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
                   theme === 'dark' ? 'bg-stone-950 border-stone-800 divide-stone-850' : 'bg-white border-slate-150 divide-slate-100'
                 }`}>
                   {filteredSearchProds.length === 0 ? (
-                    <div className="p-3 text-center text-slate-400">{lang === 'ar' ? '⚠️ لا توجد نتائج مطابقة' : 'No matches'}</div>
+                    <div className="p-3 text-center text-slate-400">{lang === 'ar' ? 'لا توجد نتائج مطابقة' : 'No matches'}</div>
                   ) : (
                     filteredSearchProds.map(prod => (
                       <div 
@@ -786,7 +782,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
                   <button
                     onClick={() => {
                       setPlSelectedProducts([]);
-                      showToast('success', lang === 'ar' ? '🗑️ تم إفراغ طابور السلع!' : 'Queue cleared!');
+                      showToast('success', lang === 'ar' ? 'تم إفراغ طابور السلع!' : 'Queue cleared!');
                     }}
                     className="text-rose-500 hover:text-rose-600 font-bold hover:underline cursor-pointer"
                   >
@@ -803,7 +799,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
               {/* Selected items list */}
               {plSelectedProducts.length === 0 ? (
                 <div className="bg-amber-950/25 border border-dashed border-amber-800/40 rounded-2xl p-4 text-center">
-                  <span className="text-[11px] text-amber-500 font-extrabold block">🚨 طابور طباعة السلع فارغ تماماً</span>
+                  <span className="text-[11px] text-amber-500 font-extrabold block">طابور طباعة السلع فارغ تماماً</span>
                   <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
                     {lang === 'ar' 
                       ? 'سيقوم البرنامج بإنتاج وطباعة ملصق واحد (1x) لكل منتج مخزن في النظام تلقائياً لتسهيل عرض الكتالوج بالكامل.' 
@@ -826,7 +822,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
                         <button
                           onClick={() => {
                             setPlSelectedProducts(plSelectedProducts.filter(x => x.productId !== item.productId));
-                            showToast('success', lang === 'ar' ? '✓ تم إزالة الصنف من القائمة' : 'Removed from list');
+                            showToast('success', lang === 'ar' ? 'تم إزالة الصنف من القائمة' : 'Removed from list');
                           }}
                           className="text-slate-400 hover:text-rose-500 p-1 rounded-lg"
                           title="إزالة"
@@ -897,7 +893,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
               className="w-full sm:w-auto bg-[#1D9E75] hover:bg-emerald-600 text-white font-black px-6 py-2.5 rounded-2xl text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-700/10"
             >
               <Printer className="w-4 h-4 text-emerald-100" />
-              <span>{lang === 'ar' ? 'طباعة بطاقات الأسعار مجمعة (PDF/طباعة) 🖨️' : 'Print All Price tags (PDF/Direct) 🖨️'}</span>
+              <span>{lang === 'ar' ? 'طباعة بطاقات الأسعار مجمعة (PDF/طباعة)' : 'Print All Price tags (PDF/Direct)'}</span>
             </button>
           </div>
 
@@ -908,8 +904,8 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
             
             <span className="text-slate-400 dark:text-stone-500 text-[10px] font-bold block mb-4 text-center uppercase tracking-wider">
               {lang === 'ar' 
-                ? '👇 المظهر الحقيقي لورقة الطباعة / رول الملصقات النهائي' 
-                : '👇 Actual visual layout sheet layout matching print size'}
+                ? 'المظهر الحقيقي لورقة الطباعة / رول الملصقات النهائي' 
+                : 'Actual visual layout sheet layout matching print size'}
             </span>
 
             {/* Printable Outer Container / Emulating standard paper size sheets */}

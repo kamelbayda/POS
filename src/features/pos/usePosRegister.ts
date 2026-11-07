@@ -232,7 +232,7 @@ export function usePosRegister({
       setVoidedCartItemIds(target.voidedCartItemIds || []);
       setNoteInput(target.noteInput || '');
       setActiveSessionId(toId);
-      showToast('success', lang === 'ar' ? `🔄 تم الانتقال إلى: ${target.label}` : `🔄 Switched to: ${target.label}`);
+      showToast('success', lang === 'ar' ? `تم الانتقال إلى: ${target.label}` : `Switched to: ${target.label}`);
     }
   };
 
@@ -269,14 +269,14 @@ export function usePosRegister({
     setSessions(prev => [...prev, newSess]);
     setActiveSessionId(newId);
     
-    showToast('success', lang === 'ar' ? `➕ تم فتح فاتورة مبيعات جديدة: ${label}` : `➕ Opened new transaction: ${label}`);
+    showToast('success', lang === 'ar' ? `تم فتح فاتورة مبيعات جديدة: ${label}` : `Opened new transaction: ${label}`);
   };
 
   const deleteSession = (sessionId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     
     if (sessions.length <= 1) {
-      showToast('warning', lang === 'ar' ? '⚠️ يجب إبقاء فاتورة نشطة واحدة على الأقل في النظام!' : '⚠️ Must keep at least one active bill session!');
+      showToast('warning', lang === 'ar' ? 'يجب إبقاء فاتورة نشطة واحدة على الأقل في النظام!' : 'Must keep at least one active bill session!');
       return;
     }
     
@@ -297,7 +297,7 @@ export function usePosRegister({
       setActiveSessionId(target.id);
     }
     
-    showToast('success', lang === 'ar' ? '🗑️ تم إغلاق وحذف الفاتورة بنجاح.' : '🗑️ Bill session closed successfully.');
+    showToast('success', lang === 'ar' ? 'تم إغلاق وحذف الفاتورة بنجاح.' : 'Bill session closed successfully.');
   };
 
   const startRenameSession = (session: CartSession, e: React.MouseEvent) => {
@@ -394,8 +394,8 @@ export function usePosRegister({
         showToast(
           'success',
           lang === 'ar'
-            ? `⚖️ [ميزان] تم إدخال [${matchedWeighed.name}] بوزن: ${weightKg.toFixed(3)} كغم`
-            : `⚖️ [Scale] Added [${matchedWeighed.name}] weight: ${weightKg.toFixed(3)} Kg`
+            ? `[ميزان] تم إدخال [${matchedWeighed.name}] بوزن: ${weightKg.toFixed(3)} كغم`
+            : `[Scale] Added [${matchedWeighed.name}] weight: ${weightKg.toFixed(3)} Kg`
         );
         return true;
       }
@@ -475,7 +475,7 @@ export function usePosRegister({
       u[idx] = { ...u[idx], serials, quantity: serials.length };
       return u;
     });
-    showToast('success', lang === 'ar' ? `📱 ${product.name} • IMEI ${serial}` : `📱 ${product.name} • IMEI ${serial}`);
+    showToast('success', lang === 'ar' ? `${product.name} • IMEI ${serial}` : `${product.name} • IMEI ${serial}`);
     return true;
   };
 
@@ -552,7 +552,7 @@ export function usePosRegister({
               return [...prevCart, { product, quantity: num }];
             });
           }
-          showToast('success', lang === 'ar' ? `✔️ تم إضافة ${num} من [${product.name}] بنجاح!` : `✔️ Added ${num} of [${product.name}]!`);
+          showToast('success', lang === 'ar' ? `تم إضافة ${num} من [${product.name}] بنجاح!` : `Added ${num} of [${product.name}]!`);
         }
       });
       setIsNumpadOpen(true);
@@ -777,8 +777,8 @@ export function usePosRegister({
     // Check if trial is expired
     if (!isActivated && trialInvoicesUsed(invoices) >= TRIAL_LIMIT) {
       showToast('error', lang === 'ar' 
-        ? '🚨 انتهت الفترة التجريبية للنظام (الحد الأقصى 15 فاتورة)! تم فتح نموذج التواصل لتفعيل الاشتراك السنوي.' 
-        : '🚨 System Trial period expired (Max 15 invoices)! Opening contact form for annual subscription.'
+        ? 'انتهت الفترة التجريبية للنظام (الحد الأقصى 15 فاتورة)! تم فتح نموذج التواصل لتفعيل الاشتراك السنوي.' 
+        : 'System Trial period expired (Max 15 invoices)! Opening contact form for annual subscription.'
       );
       setShowPurchaseContactModal(true);
       return;
@@ -896,7 +896,7 @@ export function usePosRegister({
       if (activePaymentMethod === 'debt') {
         showToast('warning', `تم تسجيل دين بقيمة ${cartTotalUSD.toFixed(2)}$ لحساب الزبون [${customerName}].`);
       } else {
-        showToast('success', `تم منح الزبون [${customerName}] ما يقارب ${Math.floor(cartTotalUSD * 10)} نقطة ولاء إضافية 🌟`);
+        showToast('success', `تم منح الزبون [${customerName}] ما يقارب ${Math.floor(cartTotalUSD * 10)} نقطة ولاء إضافية`);
       }
     }
 
@@ -1033,7 +1033,7 @@ export function usePosRegister({
           const isChangeSatisfied = totalPaidEquivalentUSDVal >= cartTotalUSD;
 
           if (!isChangeSatisfied && paymentMethod !== 'debt') {
-            if (confirm(lang === 'ar' ? '⚠️ المبلغ غير كامل بعد لتسجيل عملية بيع مالي كاش! هل ترغب في المحاسبة على أي حال وترك الباقي ديناً؟' : 'Underpaid amount. Sell anyway?')) {
+            if (confirm(lang === 'ar' ? 'المبلغ غير كامل بعد لتسجيل عملية بيع مالي كاش! هل ترغب في المحاسبة على أي حال وترك الباقي ديناً؟' : 'Underpaid amount. Sell anyway?')) {
               setIsTouchPaymentModalOpen(false);
               handleCheckout();
             }

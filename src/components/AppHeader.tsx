@@ -107,7 +107,7 @@ export function AppHeader({
             title={lang === 'ar' ? 'Switch to English' : 'تحويل للغة العربية'}
           >
             <Globe className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>{lang === 'ar' ? 'English 🇺🇸' : 'العربية 🇱🇧'}</span>
+            <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
           </button>
 
           {/* Theme Toggle Button */}
@@ -117,7 +117,7 @@ export function AppHeader({
             title={lang === 'ar' ? 'تبديل المظهر' : 'Toggle Theme'}
           >
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-indigo-600" />}
-            <span>{theme === 'dark' ? (lang === 'ar' ? 'الوضع النهاري ☀️' : 'Light Mode ☀️') : (lang === 'ar' ? 'الوضع الليلي 🌙' : 'Dark Mode 🌙')}</span>
+            <span>{theme === 'dark' ? (lang === 'ar' ? 'الوضع النهاري' : 'Light Mode') : (lang === 'ar' ? 'الوضع الليلي' : 'Dark Mode')}</span>
           </button>
 
           {/* Fullscreen Toggle Button */}
@@ -127,7 +127,7 @@ export function AppHeader({
             title={lang === 'ar' ? 'تبديل ملء الشاشة' : 'Toggle Fullscreen'}
           >
             <Maximize className="w-3.5 h-3.5 text-indigo-600" />
-            <span>{lang === 'ar' ? 'ملء الشاشة 🖥️' : 'Fullscreen 🖥️'}</span>
+            <span>{lang === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}</span>
           </button>
 
           {/* POS Layout Mode Switcher */}
@@ -138,13 +138,13 @@ export function AppHeader({
               if (newVal === 'terminal') {
                 setTheme('dark');
               }
-              showToast('success', lang === 'ar' ? `🖥️ تم تنشيط شاشة نقاط البيع الاحترافية` : `🖥️ Switched to POS Touch Terminal`);
+              showToast('success', lang === 'ar' ? `تم تنشيط شاشة نقاط البيع الاحترافية` : `Switched to POS Touch Terminal`);
             }}
             className="text-xs bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg font-extrabold flex items-center gap-1.5 transition cursor-pointer shrink-0"
             title={lang === 'ar' ? 'تعديل تصميم شاشة البيع المباشر' : 'Toggle POS Screen Layout Division'}
           >
             <Monitor className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{posLayoutMode === 'terminal' ? (lang === 'ar' ? '🖥️ واجهة عادية' : '🖥️ Standard Dashboard') : (lang === 'ar' ? '🖥️ واجهة الكاشير لمس' : '🖥️ Terminal Cashier')}</span>
+            <span>{posLayoutMode === 'terminal' ? (lang === 'ar' ? 'واجهة عادية' : 'Standard Dashboard') : (lang === 'ar' ? 'واجهة الكاشير لمس' : 'Terminal Cashier')}</span>
           </button>
 
           {/* Accessibility / Global Scale Panel Button */}
@@ -154,7 +154,6 @@ export function AppHeader({
               className="text-xs bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 px-3 py-1.5 rounded-lg font-extrabold flex items-center gap-1.5 transition cursor-pointer"
               title={lang === 'ar' ? 'التحكم بحجم الخط والأزرار' : 'Font & Button Size Control'}
             >
-              <span>🔤</span>
               <span>{lang === 'ar' ? 'حجم الخط والأزرار' : 'Sizes'}</span>
             </button>
 
@@ -168,7 +167,7 @@ export function AppHeader({
                         setGlobalFontScale(1.0);
                         setGlobalButtonScale(1.0);
                         setGlobalZoomScale(0.85);
-                        showToast('success', lang === 'ar' ? '♻️ تم إعادة تعيين الأحجام الافتراضية' : '♻️ Default sizes restored');
+                        showToast('success', lang === 'ar' ? 'تم إعادة تعيين الأحجام الافتراضية' : 'Default sizes restored');
                       }}
                       className="text-[10px] text-red-600 dark:text-red-400 font-bold hover:underline"
                     >
@@ -176,7 +175,6 @@ export function AppHeader({
                     </button>
                     <h4 className="font-bold text-xs text-slate-800 dark:text-stone-200 flex items-center gap-1.5">
                       <span>{lang === 'ar' ? 'التحكم بالأحجام العامة' : 'Global UI Scaling'}</span>
-                      <span>📏</span>
                     </h4>
                   </div>
 
@@ -272,25 +270,25 @@ export function AppHeader({
                     <div className="grid grid-cols-4 gap-1 text-[9px] text-center font-bold">
                       <button onClick={() => {
                         setGlobalZoomScale(0.75);
-                        showToast('success', lang === 'ar' ? '🔍 تم تعيين الزوم لـ 75% للشاشات الصغيرة' : '🔍 Zoom set to 75%');
+                        showToast('success', lang === 'ar' ? 'تم تعيين الزوم لـ 75% للشاشات الصغيرة' : 'Zoom set to 75%');
                       }} className="p-1 rounded bg-slate-50 hover:bg-slate-100 dark:bg-stone-800 dark:hover:bg-stone-750 text-slate-600 dark:text-stone-300">
                         75%
                       </button>
                       <button onClick={() => {
                         setGlobalZoomScale(0.85);
-                        showToast('success', lang === 'ar' ? '🔍 تم تعيين الزوم لـ 85% للوضوح العالي' : '🔍 Zoom set to 85%');
+                        showToast('success', lang === 'ar' ? 'تم تعيين الزوم لـ 85% للوضوح العالي' : 'Zoom set to 85%');
                       }} className="p-1 rounded bg-slate-50 hover:bg-slate-100 dark:bg-stone-800 dark:hover:bg-stone-750 text-slate-600 dark:text-stone-300">
                         85%
                       </button>
                       <button onClick={() => {
                         setGlobalZoomScale(1.0);
-                        showToast('success', lang === 'ar' ? '🔍 تم تعيين الزوم لـ 100% الافتراضي' : '🔍 Zoom set to 100%');
+                        showToast('success', lang === 'ar' ? 'تم تعيين الزوم لـ 100% الافتراضي' : 'Zoom set to 100%');
                       }} className="p-1 rounded bg-slate-50 hover:bg-slate-100 dark:bg-stone-800 dark:hover:bg-stone-750 text-slate-600 dark:text-stone-300">
                         100%
                       </button>
                       <button onClick={() => {
                         setGlobalZoomScale(1.15);
-                        showToast('success', lang === 'ar' ? '🔍 تم تعيين الزوم لـ 115% للتكبير' : '🔍 Zoom set to 115%');
+                        showToast('success', lang === 'ar' ? 'تم تعيين الزوم لـ 115% للتكبير' : 'Zoom set to 115%');
                       }} className="p-1 rounded bg-slate-50 hover:bg-slate-100 dark:bg-stone-800 dark:hover:bg-stone-750 text-slate-600 dark:text-stone-300">
                         115%
                       </button>
@@ -317,7 +315,7 @@ export function AppHeader({
               storage.setItem('pos_screen_locked', 'true');
               setLockPasscode('');
               setLockError('');
-              showToast('success', lang === 'ar' ? '🔒 تم تأمين شاشة النظام بنجاح' : '🔒 System terminal locked successfully');
+              showToast('success', lang === 'ar' ? 'تم تأمين شاشة النظام بنجاح' : 'System terminal locked successfully');
             }}
             className="text-xs text-slate-700 hover:text-[#1D9E75] bg-slate-50 hover:bg-slate-100 px-3 py-2 rounded-lg transition font-bold border border-slate-200 cursor-pointer shrink-0 flex items-center gap-1"
             title={lang === 'ar' ? 'تأمين شاشة البيع' : 'Lock Screen'}
@@ -332,13 +330,13 @@ export function AppHeader({
             className="text-xs text-slate-700 hover:text-[#1D9E75] bg-slate-50 hover:bg-slate-100 px-3 py-2 rounded-lg transition font-bold border border-slate-200 cursor-pointer shrink-0"
             title={lang === 'ar' ? 'تبديل المحل' : 'Switch shop'}
           >
-            🏪 {lang === 'ar' ? 'تبديل المحل' : 'Switch shop'}
+            {lang === 'ar' ? 'تبديل المحل' : 'Switch shop'}
           </button>
           <button 
             onClick={handleLogout}
             className="text-xs text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-lg transition font-bold border border-rose-100 cursor-pointer shrink-0"
           >
-            {lang === 'ar' ? 'تسجيل الخروج 👋' : 'Logout 👋'}
+            {lang === 'ar' ? 'تسجيل الخروج' : 'Logout'}
           </button>
         </div>
 
@@ -354,10 +352,10 @@ export function AppHeader({
               <span className="font-sans text-amber-700 font-bold ml-1">
                 {lang === 'ar' 
                   ? Math.max(0, TRIAL_LIMIT - trialInvoicesUsed(invoices)) <= 0 
-                    ? '🚨 انتهت صلاحية الفترة التجريبية (الحد الأقصى 15 فاتورة مبيعات). يرجى تفعيل البرنامج فوراً للمتابعة.'
+                    ? 'انتهت صلاحية الفترة التجريبية (الحد الأقصى 15 فاتورة مبيعات). يرجى تفعيل البرنامج فوراً للمتابعة.'
                     : `تم إصدار ${trialInvoicesUsed(invoices)} من أصل 15 فاتورة تجريبية كحد أقصى. فعّل البرنامج للعمل اللامحدود.` 
                   : Math.max(0, TRIAL_LIMIT - trialInvoicesUsed(invoices)) <= 0
-                    ? '🚨 Trial expired (Max 15 reached). Please activate to resume.'
+                    ? 'Trial expired (Max 15 reached). Please activate to resume.'
                     : `Emitted ${trialInvoicesUsed(invoices)} of 15 allowed trial invoices. Activate for unlimited.`}
               </span>
             </span>
@@ -370,8 +368,8 @@ export function AppHeader({
               className={`${subscriptionPending ? 'bg-amber-500 hover:bg-amber-600' : 'bg-[#1E1B16] hover:bg-black'} text-white font-extrabold text-[10px] py-1 px-3 rounded-lg transition duration-150 cursor-pointer shadow-sm`}
             >
               {subscriptionPending
-                ? (lang === 'ar' ? '⏳ طلب الاشتراك قيد المراجعة' : '⏳ Subscription pending')
-                : (lang === 'ar' ? '⭐ اشترك الآن' : '⭐ Subscribe')}
+                ? (lang === 'ar' ? 'طلب الاشتراك قيد المراجعة' : 'Subscription pending')
+                : (lang === 'ar' ? 'اشترك الآن' : 'Subscribe')}
             </button>
             <button
               type="button"
@@ -379,7 +377,7 @@ export function AppHeader({
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] py-1 px-3 rounded-lg transition duration-150 cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              <span>{lang === 'ar' ? 'تواصل للتفعيل 💬' : 'Contact to Activate 💬'}</span>
+              <span>{lang === 'ar' ? 'تواصل للتفعيل' : 'Contact to Activate'}</span>
             </button>
 
             <button
@@ -394,7 +392,7 @@ export function AppHeader({
               className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-[10px] py-1 px-2.5 rounded-lg transition duration-150 cursor-pointer flex items-center gap-1"
             >
               <Unlock className="w-3.5 h-3.5 text-amber-400" />
-              <span>{lang === 'ar' ? 'إدخل المفتاح 🗝️' : 'Enter Key 🗝️'}</span>
+              <span>{lang === 'ar' ? 'إدخل المفتاح' : 'Enter Key'}</span>
             </button>
           </div>
         </div>
@@ -404,15 +402,15 @@ export function AppHeader({
         <div className="bg-amber-500/10 border-t border-b border-amber-500/20 px-4 sm:px-6 lg:px-4 py-1.5 flex justify-between items-center text-[11px] text-amber-800 font-bold no-print flex-row-reverse gap-3">
           <span>
             {lang === 'ar'
-              ? `⚠️ تم تحديث نظام التفعيل. يرجى إدخال كود تفعيل جديد خلال ${license.graceDaysLeft} يوم للاستمرار بدون انقطاع.`
-              : `⚠️ Activation system updated. Please enter a new activation key within ${license.graceDaysLeft} days.`}
+              ? `تم تحديث نظام التفعيل. يرجى إدخال كود تفعيل جديد خلال ${license.graceDaysLeft} يوم للاستمرار بدون انقطاع.`
+              : `Activation system updated. Please enter a new activation key within ${license.graceDaysLeft} days.`}
           </span>
           <button
             type="button"
             onClick={() => setShowPurchaseContactModal(true)}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] py-1 px-3 rounded-lg transition duration-150 cursor-pointer shrink-0"
           >
-            {lang === 'ar' ? 'طلب كود جديد 💬' : 'Request new key 💬'}
+            {lang === 'ar' ? 'طلب كود جديد' : 'Request new key'}
           </button>
         </div>
       )}

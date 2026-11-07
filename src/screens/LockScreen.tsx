@@ -105,7 +105,7 @@ export function LockScreen({
             {/* Dynamic shift metrics */}
             <div className="space-y-3 pt-3 border-t border-white/5">
               <h4 className="text-xs font-bold text-slate-400 flex items-center gap-1 flex-row-reverse">
-                <span>📈 {lang === 'ar' ? 'موجز الوردية الحالية وبطاقة الأداء:' : 'Session statistics & workflow details'}</span>
+                <span>{lang === 'ar' ? 'موجز الوردية الحالية وبطاقة الأداء:' : 'Session statistics & workflow details'}</span>
               </h4>
 
               <div className="grid grid-cols-2 gap-3">
@@ -142,7 +142,7 @@ export function LockScreen({
 
           {/* Hint message explaining capabilities */}
           <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-xs text-slate-400 leading-relaxed hidden lg:block">
-            💡 {lang === 'ar' 
+            {lang === 'ar' 
               ? 'الشاشة مقفلة بوضع الأمان لحفظ سرية المبيعات والمشتريات. يمكنك استخدام لوحة المفاتيح والضغط على Enter بعد كتابة الرمز مباشرة.' 
               : 'Locked for security. You can type credentials on physical keyboard and press Enter to directly unlock.'}
           </div>
@@ -176,7 +176,7 @@ export function LockScreen({
 
             {/* PIN or password */}
             <div className="grid grid-cols-2 gap-1 p-1 bg-white/5 border border-white/10 rounded-2xl" role="tablist" id="lock-mode-switch">
-              {([['pin', lang === 'ar' ? '🔢 رمز PIN' : '🔢 PIN code'], ['password', lang === 'ar' ? '🔤 كلمة المرور' : '🔤 Password']] as const).map(([m, label]) => (
+              {([['pin', lang === 'ar' ? 'رمز PIN' : 'PIN code'], ['password', lang === 'ar' ? 'كلمة المرور' : 'Password']] as const).map(([m, label]) => (
                 <button
                   key={m}
                   type="button"
@@ -247,7 +247,7 @@ export function LockScreen({
                   exit={{ opacity: 0 }}
                   className="text-red-400 text-xs font-bold bg-red-500/10 border border-red-500/20 py-1.5 px-3 rounded-xl block text-center"
                 >
-                  ⚠️ {lockError}
+                  {lockError}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -291,7 +291,7 @@ export function LockScreen({
                 onClick={handleUnlock}
                 className="flex-1 bg-[#1D9E75] hover:bg-[#15805e] border border-emerald-500/20 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 active:scale-[0.98] cursor-pointer text-sm font-sans"
               >
-                {lang === 'ar' ? 'فتح الشاشة 🔓' : 'Unlock Screen 🔓'}
+                {lang === 'ar' ? 'فتح الشاشة' : 'Unlock Screen'}
               </button>
               <button
                 type="button"

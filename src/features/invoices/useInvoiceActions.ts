@@ -40,7 +40,7 @@ export function useInvoiceActions({
   const handleCancelWholeInvoice = (inv: Invoice) => {
     executeWithAdminAuth(lang === 'ar' ? `إلغاء وتصفير الفاتورة #${inv.invoiceNumber}` : `Cancel Invoice #${inv.invoiceNumber}`, () => {
       const confirmMsg = lang === 'ar' 
-        ? '⚠️ هل أنت متأكد من رغبتك في إلغاء وتصفير هذه الفاتورة بالكامل وإرجاع كافة محتوياتها إلى المخزن؟ سيتم إرجاع كافة البضائع المباعة لجرود المحل وخصم الديون المترتبة.' 
+        ? 'هل أنت متأكد من رغبتك في إلغاء وتصفير هذه الفاتورة بالكامل وإرجاع كافة محتوياتها إلى المخزن؟ سيتم إرجاع كافة البضائع المباعة لجرود المحل وخصم الديون المترتبة.' 
         : 'Are you sure you want to cancel this entire invoice and return all sold items to inventory stock?';
       
       if (!window.confirm(confirmMsg)) return;
@@ -162,7 +162,7 @@ export function useInvoiceActions({
         });
       }
 
-      showToast('success', lang === 'ar' ? '✅ تم إلغاء الفاتورة بالكامل، وتصفير مبالغها، وإرجاع كافة البضائع للمخزن بنجاح!' : 'Invoice cancelled successfully. Stocks restored.');
+      showToast('success', lang === 'ar' ? 'تم إلغاء الفاتورة بالكامل، وتصفير مبالغها، وإرجاع كافة البضائع للمخزن بنجاح!' : 'Invoice cancelled successfully. Stocks restored.');
     });
   };
 
@@ -292,7 +292,7 @@ export function useInvoiceActions({
       syncWriteToCloud('returns', newReturn.id, newReturn);
     }
 
-    showToast('success', lang === 'ar' ? `✅ تم بنجاح إرجاع عدد ${qtyToReturn} من الصنف، وتحديث جرود المخازن والمالية!` : 'Returned item successfully.');
+    showToast('success', lang === 'ar' ? `تم بنجاح إرجاع عدد ${qtyToReturn} من الصنف، وتحديث جرود المخازن والمالية!` : 'Returned item successfully.');
   };
 
   /**
@@ -303,7 +303,7 @@ export function useInvoiceActions({
   const handleDeleteInvoice = (inv: Invoice) => {
     executeWithAdminAuth(lang === 'ar' ? `حذف الفاتورة #${inv.invoiceNumber}` : `Delete invoice #${inv.invoiceNumber}`, () => {
       const msg = lang === 'ar'
-        ? `🗑️ بدّك تمحي الفاتورة ${inv.invoiceNumber} (${inv.totalUSD.toFixed(2)}$) نهائياً؟\n\nالبضاعة يلي فيها بترجع عالمخزن، ودين الزبون بيتصحّح، والفاتورة بتختفي من السجل والتقارير. ما فيك ترجّعها.`
+        ? `بدّك تمحي الفاتورة ${inv.invoiceNumber} (${inv.totalUSD.toFixed(2)}$) نهائياً؟\n\nالبضاعة يلي فيها بترجع عالمخزن، ودين الزبون بيتصحّح، والفاتورة بتختفي من السجل والتقارير. ما فيك ترجّعها.`
         : `Delete invoice ${inv.invoiceNumber} for good? Items go back to stock and it disappears from the log and reports.`;
       if (!window.confirm(msg)) return;
 
@@ -347,7 +347,7 @@ export function useInvoiceActions({
       storage.setJSON('pos_returns', updatedReturns);
       countDeletedInvoice();
 
-      showToast('success', lang === 'ar' ? `🗑️ انمحت الفاتورة ${inv.invoiceNumber} ورجعت بضاعتها عالمخزن.` : `Invoice ${inv.invoiceNumber} deleted.`);
+      showToast('success', lang === 'ar' ? `انمحت الفاتورة ${inv.invoiceNumber} ورجعت بضاعتها عالمخزن.` : `Invoice ${inv.invoiceNumber} deleted.`);
     });
   };
 

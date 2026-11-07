@@ -32,7 +32,7 @@ export function SerialPickerModal({ lang, product, inCart, onPick, onClose }: Se
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col p-5 gap-3 text-start">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-black text-slate-800">📱 {ar ? 'اختار الجهاز (IMEI)' : 'Pick the unit (IMEI)'}</h2>
+            <h2 className="font-black text-slate-800">{ar ? 'اختار الجهاز (IMEI)' : 'Pick the unit (IMEI)'}</h2>
             <div className="text-xs text-slate-500">{product.name} · {ar ? `${available.length} بالمخزون` : `${available.length} in stock`}</div>
           </div>
           <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label={ar ? 'إغلاق' : 'Close'}>

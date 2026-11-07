@@ -81,7 +81,7 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
 
     resetForm();
 
-    showToast('success', lang === 'ar' ? `تم تسجيل المورد الجديد [${newSupplier.name}] بنجاح! 🏢` : `Supplier [${newSupplier.name}] registered successfully!`);
+    showToast('success', lang === 'ar' ? `تم تسجيل المورد الجديد [${newSupplier.name}] بنجاح!` : `Supplier [${newSupplier.name}] registered successfully!`);
   };
 
   const handlePaySupplierDebtSubmit = (e: React.FormEvent) => {
@@ -293,7 +293,7 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
                               </span>
                             )}
                           </h4>
-                          <p className="text-xs font-mono text-slate-400 mt-1">📞 {supp.phone}</p>
+                          <p className="text-xs font-mono text-slate-400 mt-1">{supp.phone}</p>
                         </div>
 
                         {/* Edit and delete */}
@@ -370,7 +370,7 @@ export function SuppliersTab({ suppliers, setSuppliers, lang, showToast }: Suppl
                             }}
                             className="px-3.5 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100 text-[11px] font-extrabold rounded-lg transition cursor-pointer"
                           >
-                            💵 {lang === 'ar' ? 'تسجيل دفعة سداد لحساب المورّد' : 'Register Payment Output'}
+                            {lang === 'ar' ? 'تسجيل دفعة سداد لحساب المورّد' : 'Register Payment Output'}
                           </button>
                         )}
                       </div>

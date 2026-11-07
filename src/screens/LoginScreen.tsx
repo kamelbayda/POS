@@ -95,12 +95,10 @@ export function LoginScreen({
               ? (ar ? 'نظام البيع والمخزون لمحلات التلفونات' : 'Sales and inventory for phone shops')
               : (ar ? 'نظام الكاشير والمخزون للسوبرماركت' : 'Checkout and inventory for supermarkets')}
           </p>
-          {shopName && <div className="mt-2 text-white font-black" id="login-shop-name">🏪 {shopName}</div>}
+          {shopName && <div className="mt-2 text-white font-black" id="login-shop-name">{shopName}</div>}
           <div className="mt-3 inline-flex items-center gap-2 bg-white/10 rounded-full px-3 py-1 text-xs font-bold" id="login-business-type" data-business={businessType}>
             <span>{typeInfo?.icon} {ar ? typeInfo?.ar : typeInfo?.en}</span>
-            {businessLocked ? (
-              <span className="opacity-70">🔒</span>
-            ) : (
+            {businessLocked ? null : (
               <button type="button" id="btn-change-business" onClick={() => setChoosing(true)} className="text-[#FFC21A] hover:underline cursor-pointer">
                 {ar ? 'تغيير' : 'Change'}
               </button>
@@ -108,7 +106,7 @@ export function LoginScreen({
           </div>
           <div>
             <button type="button" id="btn-switch-shop" onClick={onSwitchShop} className="mt-2 text-xs font-bold text-slate-300 hover:text-white hover:underline cursor-pointer">
-              🏪 {ar ? 'تبديل المحل / إضافة محل' : 'Switch / add shop'}
+              {ar ? 'تبديل المحل / إضافة محل' : 'Switch / add shop'}
             </button>
           </div>
         </div>
@@ -166,7 +164,7 @@ export function LoginScreen({
             type="submit" 
             className="w-full bg-[#1D9E75] hover:bg-[#15805e] text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-700/10 hover:shadow-emerald-700/20 active:scale-[0.98] cursor-pointer"
           >
-            {lang === 'ar' ? 'دخول للنظام 🔓' : 'Login to System 🔓'}
+            {lang === 'ar' ? 'دخول للنظام' : 'Login to System'}
           </button>
 
           <button
@@ -184,7 +182,7 @@ export function LoginScreen({
             className="w-full text-center text-sm font-bold text-sky-700 hover:underline cursor-pointer"
             id="btn-join-cloud"
           >
-            {lang === 'ar' ? '☁️ جهاز جديد؟ نزّل بيانات المحل من السحاب' : '☁️ New device? Download the shop from the cloud'}
+            {lang === 'ar' ? 'جهاز جديد؟ نزّل بيانات المحل من السحاب' : 'New device? Download the shop from the cloud'}
           </button>
 
         </form>
@@ -234,7 +232,7 @@ function OwnerSetupForm({ lang, businessType, onCreateOwner, onJoinCloud }: {
   return (
     <form onSubmit={submit} className="p-8 space-y-4 text-right" id="owner-setup-form">
       <div>
-        <h2 className="font-black text-slate-800 text-lg">{ar ? '👋 أهلاً فيك! أنشئ حساب المدير' : '👋 Welcome! Create the admin account'}</h2>
+        <h2 className="font-black text-slate-800 text-lg">{ar ? 'أهلاً فيك! أنشئ حساب المدير' : 'Welcome! Create the admin account'}</h2>
         <p className="text-xs text-slate-500 mt-1 leading-relaxed">
           {ar
             ? 'هيدا حسابك إنت كصاحب المحل. بتفوت فيه بالإيميل وكلمة المرور، ومنو بتضيف حسابات الكاشير بعدين.'
@@ -271,11 +269,11 @@ function OwnerSetupForm({ lang, businessType, onCreateOwner, onJoinCloud }: {
       </div>
 
       <button type="submit" disabled={busy} className="w-full bg-[#1D9E75] hover:bg-[#15805e] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl transition cursor-pointer" id="btn-create-owner">
-        {busy ? (ar ? 'جارٍ الإنشاء…' : 'Creating…') : (ar ? 'إنشاء الحساب والدخول 🚀' : 'Create account and sign in 🚀')}
+        {busy ? (ar ? 'جارٍ الإنشاء…' : 'Creating…') : (ar ? 'إنشاء الحساب والدخول' : 'Create account and sign in')}
       </button>
 
       <button type="button" onClick={onJoinCloud} className="w-full text-center text-sm font-bold text-sky-700 hover:underline cursor-pointer" id="btn-join-cloud">
-        {ar ? '☁️ عندك محل عالسحاب؟ نزّل بياناتو' : '☁️ Already have a shop in the cloud? Download it'}
+        {ar ? 'عندك محل عالسحاب؟ نزّل بياناتو' : 'Already have a shop in the cloud? Download it'}
       </button>
     </form>
   );
@@ -325,7 +323,7 @@ function BusinessChooser({ lang, SYS_DATE, handleToggleLang, current, onChoose, 
             </button>
           )}
           <button type="button" id="btn-chooser-switch-shop" onClick={onSwitchShop} className="sm:col-span-2 text-sm font-bold text-slate-500 hover:underline cursor-pointer">
-            🏪 {ar ? 'محلاتي على هالجهاز' : 'My shops on this device'}
+            {ar ? 'محلاتي على هالجهاز' : 'My shops on this device'}
           </button>
         </div>
       </div>

@@ -188,7 +188,7 @@ export function WarehouseTab({
     setPullNote('');
     
     showToast('success', isAr 
-      ? `تم تحويل [${qtyNum}] قطعة من [${newTransfer.productName}] إلى المحل بنجاح 🚚!`
+      ? `تم تحويل [${qtyNum}] قطعة من [${newTransfer.productName}] إلى المحل بنجاح!`
       : `Successfully transferred [${qtyNum}] pcs of [${newTransfer.productName}] to the shop shelves!`
     );
 
@@ -248,19 +248,19 @@ export function WarehouseTab({
             onClick={() => setActiveSubTab('history')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeSubTab === 'history' ? 'bg-white text-indigo-900' : 'text-white hover:bg-white/10'}`}
           >
-            {isAr ? 'سجل التحويلات 📑' : 'Transfers Log 📑'}
+            {isAr ? 'سجل التحويلات' : 'Transfers Log'}
           </button>
           <button 
             onClick={() => setActiveSubTab('pull')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeSubTab === 'pull' ? 'bg-white text-indigo-900' : 'text-white hover:bg-white/10'}`}
           >
-            {isAr ? 'سحب بضاعة للمحل 🚚' : 'Pull to Shelf 🚚'}
+            {isAr ? 'سحب بضاعة للمحل' : 'Pull to Shelf'}
           </button>
           <button 
             onClick={() => setActiveSubTab('stock')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 ${activeSubTab === 'stock' ? 'bg-white text-indigo-900' : 'text-white hover:bg-white/10'}`}
           >
-            {isAr ? 'جرود وبضائع المخزن 📦' : 'Warehouse Stock 📦'}
+            {isAr ? 'جرود وبضائع المخزن' : 'Warehouse Stock'}
           </button>
         </div>
       </div>
@@ -369,7 +369,7 @@ export function WarehouseTab({
 
                   {/* Column 4: المخزون بالمستودع */}
                   <th className="p-3 text-center relative group select-none" style={{ width: colWidths.storeQty }}>
-                    <span>{isAr ? 'المخزون بالمستودع 📦' : 'In Storeroom 📦'}</span>
+                    <span>{isAr ? 'المخزون بالمستودع' : 'In Storeroom'}</span>
                     <div 
                       onMouseDown={(e) => startResize('storeQty', e)}
                       className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize group-hover:bg-indigo-300 bg-transparent transition-all z-20"
@@ -379,7 +379,7 @@ export function WarehouseTab({
 
                   {/* Column 5: المخزون بالمحل */}
                   <th className="p-3 text-center relative group select-none" style={{ width: colWidths.shopQty }}>
-                    <span>{isAr ? 'المخزون بالمحل 🏪' : 'In Shop shelves 🏪'}</span>
+                    <span>{isAr ? 'المخزون بالمحل' : 'In Shop shelves'}</span>
                     <div 
                       onMouseDown={(e) => startResize('shopQty', e)}
                       className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize group-hover:bg-indigo-300 bg-transparent transition-all z-20"
@@ -464,7 +464,7 @@ export function WarehouseTab({
                               onClick={() => handleQuickPullSelect(p)}
                               className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-black px-3 py-1.5 rounded-lg border border-indigo-150 text-[10px] flex items-center gap-1 mx-auto cursor-pointer transition"
                             >
-                              <span>🚚 {isAr ? 'سحب للمحل' : 'Pull to shelf'}</span>
+                              <span>{isAr ? 'سحب للمحل' : 'Pull to shelf'}</span>
                             </button>
                           ) : (
                             <span className="text-[10px] text-slate-400 font-normal italic">— {isAr ? 'فارغ' : 'Empty'}</span>
@@ -507,7 +507,7 @@ export function WarehouseTab({
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
                 >
-                  {isAr ? 'السابق ⏪' : '⏪ Prev'}
+                  {isAr ? 'السابق' : 'Prev'}
                 </button>
 
                 {(() => {
@@ -542,7 +542,7 @@ export function WarehouseTab({
                   onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredProducts.length / itemsPerPage), prev + 1))}
                   className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
                 >
-                  {isAr ? 'التالي ⏩' : 'Next ⏩'}
+                  {isAr ? 'التالي' : 'Next'}
                 </button>
               </div>
 
@@ -593,7 +593,7 @@ export function WarehouseTab({
                     setShowProdDropdown(true);
                   }}
                   onFocus={() => setShowProdDropdown(true)}
-                  placeholder={isAr ? '🔎 اكتب اسم الصنف أو باركود القطعة المطروحة للتخرين...' : '🔎 Scanner search...'}
+                  placeholder={isAr ? 'اكتب اسم الصنف أو باركود القطعة المطروحة للتخرين...' : 'Scanner search...'}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-3 pr-10 text-xs font-sans text-right"
                 />
                 <Search className="w-4 h-4 text-slate-400 absolute right-3 top-3.5" />
@@ -608,7 +608,7 @@ export function WarehouseTab({
                       onClick={() => setShowProdDropdown(false)}
                       className="text-rose-500 font-extrabold hover:underline"
                     >
-                      {isAr ? 'إغلاق القائمة ✕' : 'Close ✕'}
+                      {isAr ? 'إغلاق القائمة' : 'Close'}
                     </button>
                     <span>{isAr ? 'اختر صنفاً لسحبه من المستودع:' : 'Select component to move:'}</span>
                   </div>
@@ -725,7 +725,7 @@ export function WarehouseTab({
                 }`}
               >
                 <Check className="w-4 h-4" />
-                {isAr ? 'ترحيل عملية السحب والتحويل مخزنياً مفرّق 🚚' : 'Save & Execute Transfer 🚚'}
+                {isAr ? 'ترحيل عملية السحب والتحويل مخزنياً مفرّق' : 'Save & Execute Transfer'}
               </button>
             </div>
 

@@ -152,8 +152,8 @@ export function ShelfTagsTab({ products, promotions, settings, lang, sysDate, sh
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => setStyle('classic')} className={chip(style === 'classic')}>🟨 {t('أصفر وأحمر', 'Yellow & red')}</button>
-              <button onClick={() => setStyle('offer')} className={chip(style === 'offer')}>🟥 {t('أحمر (عروض) للكل', 'Red (offer) for all')}</button>
+              <button onClick={() => setStyle('classic')} className={chip(style === 'classic')}>{t('أصفر وأحمر', 'Yellow & red')}</button>
+              <button onClick={() => setStyle('offer')} className={chip(style === 'offer')}>{t('أحمر (عروض) للكل', 'Red (offer) for all')}</button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {check(t('السعر بالليرة', 'LBP price'), showLbp, setShowLbp)}

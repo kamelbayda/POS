@@ -96,7 +96,7 @@ export function SettingsTab({
 
   const scanAndPopulatePrinters = () => {
     setIsScanningPrinters(true);
-    showToast('warning', lang === 'ar' ? '🔍 جاري الاتصال بخدمة طابعات ويندوز المحلية (Windows Print Spooler)...' : '🔍 Scanning for Windows OS defined printers...');
+    showToast('warning', lang === 'ar' ? 'جاري الاتصال بخدمة طابعات ويندوز المحلية (Windows Print Spooler)...' : 'Scanning for Windows OS defined printers...');
     
     setTimeout(() => {
       const systemPrinters = [
@@ -160,7 +160,7 @@ export function SettingsTab({
       storage.setJSON('pos_settings', updatedSettings);
       
       setIsScanningPrinters(false);
-      showToast('success', lang === 'ar' ? '🎉 تم الربط واكتشاف طابعات الكمبيوتر بنجاح! تم استيراد 14 طابعة معرفة بنظام التشغيل.' : '🎉 Windows system printers imported successfully!');
+      showToast('success', lang === 'ar' ? 'تم الربط واكتشاف طابعات الكمبيوتر بنجاح! تم استيراد 14 طابعة معرفة بنظام التشغيل.' : 'Windows system printers imported successfully!');
     }, 1800);
   };
 
@@ -193,7 +193,7 @@ export function SettingsTab({
         `start chrome.exe --kiosk-printing "${currentUrl}"`,
         'echo.',
         'echo =======================================================================',
-        'echo [✔] تم تهيئة وتفعيل الطباعة بنجاح! جرب طباعة أي فاتورة الآن ستخرج فوراً.',
+        'echo [] تم تهيئة وتفعيل الطباعة بنجاح! جرب طباعة أي فاتورة الآن ستخرج فوراً.',
         '=======================================================================',
         'timeout /t 5 >nul',
         'exit'
@@ -222,7 +222,7 @@ export function SettingsTab({
         `start msedge.exe --kiosk-printing "${currentUrl}"`,
         'echo.',
         'echo =======================================================================',
-        'echo [✔] تم تهيئة وتفعيل الطباعة بنجاح! جرب طباعة أي فاتورة الآن ستخرج فوراً.',
+        'echo [] تم تهيئة وتفعيل الطباعة بنجاح! جرب طباعة أي فاتورة الآن ستخرج فوراً.',
         '=======================================================================',
         'timeout /t 5 >nul',
         'exit'
@@ -238,7 +238,7 @@ export function SettingsTab({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('success', lang === 'ar' ? '📥 تم تحميل أداة التنشير الفوري لـ Windows بنجاح! يرجى تشغيل الملف بعد التحميل مباشرة.' : '📥 Windows script downloaded successfully!');
+    showToast('success', lang === 'ar' ? 'تم تحميل أداة التنشير الفوري لـ Windows بنجاح! يرجى تشغيل الملف بعد التحميل مباشرة.' : 'Windows script downloaded successfully!');
   };
 
   return (
@@ -342,7 +342,7 @@ export function SettingsTab({
               onChange={e => setSettings({ ...settings, posGridSize: e.target.value as any })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm text-center font-bold text-slate-700 focus:outline-none cursor-pointer"
             >
-              <option value="auto">تلقائي ومتجاوب 📱</option>
+              <option value="auto">تلقائي ومتجاوب</option>
               <option value="3x3">3 × 3 (كبير)</option>
               <option value="4x4">4 × 4 (متوسط)</option>
               <option value="5x5">5 × 5 (صغير)</option>
@@ -368,7 +368,7 @@ export function SettingsTab({
         <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl select-none text-right flex items-center justify-between flex-row-reverse">
           <div className="flex-1 pr-3 text-right">
             <label className="block text-slate-800 font-bold text-xs sm:text-sm text-right">
-              💡 {lang === 'ar' ? 'إجبارية تحديد الكمية يدوياً عند البيع:' : 'Force manual quantity specification upon sales:'}
+              {lang === 'ar' ? 'إجبارية تحديد الكمية يدوياً عند البيع:' : 'Force manual quantity specification upon sales:'}
             </label>
             <span className="text-[10px] text-slate-500 font-semibold leading-relaxed block mt-0.5 text-right">
               {lang === 'ar' 
@@ -396,7 +396,7 @@ export function SettingsTab({
         {/* COLOR APP LOGO UPLOAD FOR THE COMPANY */}
         <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl space-y-3 text-right">
           <label className="block text-slate-750 font-extrabold text-xs text-right">
-            🏢 {lang === 'ar' ? 'شعار اللوجو الخاص بالمؤسسة (الملون):' : 'Organization Corporate Logo (Color):'}
+            {lang === 'ar' ? 'شعار اللوجو الخاص بالمؤسسة (الملون):' : 'Organization Corporate Logo (Color):'}
           </label>
           <p className="text-[10px] text-slate-450 leading-relaxed font-semibold text-right">
             {lang === 'ar' 
@@ -440,7 +440,7 @@ export function SettingsTab({
                           ctx.drawImage(img, 0, 0, width, height);
                           const base64 = canvas.toDataURL('image/png');
                           setSettings({ ...settings, shopLogo: base64 });
-                          showToast('success', lang === 'ar' ? '✔️ تم حفظ شعار المؤسسة بنجاح!' : '✔️ Organization logo updated!');
+                          showToast('success', lang === 'ar' ? 'تم حفظ شعار المؤسسة بنجاح!' : 'Organization logo updated!');
                         }
                       };
                       img.src = event.target?.result as string;
@@ -451,7 +451,7 @@ export function SettingsTab({
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
               <p className="text-xs font-bold text-slate-500 text-center select-none">
-                📥 {lang === 'ar' ? 'اضغط لرفع شعار المؤسسة' : 'Upload Corporate Logo'}
+                {lang === 'ar' ? 'اضغط لرفع شعار المؤسسة' : 'Upload Corporate Logo'}
               </p>
               <span className="text-[9px] text-slate-400 mt-1 font-mono">PNG/JPG (Max 1MB)</span>
             </div>
@@ -468,11 +468,11 @@ export function SettingsTab({
                   type="button"
                   onClick={() => {
                     setSettings({ ...settings, shopLogo: undefined });
-                    showToast('success', lang === 'ar' ? '🧹 تم إزالة شعار المؤسسة' : '🧹 Corporate logo removed');
+                    showToast('success', lang === 'ar' ? 'تم إزالة شعار المؤسسة' : 'Corporate logo removed');
                   }}
                   className="text-[10px] text-red-655 font-bold hover:underline"
                 >
-                  {lang === 'ar' ? 'إزالة الشعـار 🗑' : 'Remove 🗑'}
+                  {lang === 'ar' ? 'إزالة الشعـار' : 'Remove'}
                 </button>
               </div>
             ) : (
@@ -517,7 +517,7 @@ export function SettingsTab({
                 onClick={onRecalculatePrices}
                 className="w-full bg-[#1D9E75] hover:bg-[#158060] text-white py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
               >
-                <span>🔄 {lang === 'ar' ? 'تحديث أسعار جميع الأصناف الحالية الآن' : 'Apply to all current items now'}</span>
+                <span>{lang === 'ar' ? 'تحديث أسعار جميع الأصناف الحالية الآن' : 'Apply to all current items now'}</span>
               </button>
             </div>
           </div>
@@ -559,7 +559,7 @@ export function SettingsTab({
         {/* BLACK-AND-WHITE RECEIPT LOGO UPLOAD */}
         <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl space-y-3 text-right">
           <label className="block text-slate-700 font-bold text-xs text-right">
-            🖤 {lang === 'ar' ? 'شعار الفاتورة الحرارية (أسود وأبيض مدمج):' : 'Thermal Receipt Logo (B&W Compact):'}
+            {lang === 'ar' ? 'شعار الفاتورة الحرارية (أسود وأبيض مدمج):' : 'Thermal Receipt Logo (B&W Compact):'}
           </label>
           <p className="text-[10px] text-slate-400 leading-relaxed font-semibold">
             {lang === 'ar' 
@@ -624,7 +624,7 @@ export function SettingsTab({
                           ctx.putImageData(imgData, 0, 0);
                           const monochromeBase64 = canvas.toDataURL('image/png');
                           setSettings({ ...settings, receiptLogoBase64: monochromeBase64 });
-                          showToast('success', lang === 'ar' ? '✔️ تم تحويل الشعار للنمط الثنائي وجاهز للطباعة!' : '✔️ Logo converted and saved!');
+                          showToast('success', lang === 'ar' ? 'تم تحويل الشعار للنمط الثنائي وجاهز للطباعة!' : 'Logo converted and saved!');
                         }
                       };
                       img.src = event.target?.result as string;
@@ -635,7 +635,7 @@ export function SettingsTab({
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
               <p className="text-xs font-bold text-slate-500 text-center select-none">
-                📥 {lang === 'ar' ? 'اضغط لرفع الشعار' : 'Click to Upload Logo'}
+                {lang === 'ar' ? 'اضغط لرفع الشعار' : 'Click to Upload Logo'}
               </p>
               <span className="text-[9px] text-slate-400 mt-1 font-mono">PNG/JPG (Max 1MB)</span>
             </div>
@@ -652,11 +652,11 @@ export function SettingsTab({
                   type="button"
                   onClick={() => {
                     setSettings({ ...settings, receiptLogoBase64: undefined });
-                    showToast('success', lang === 'ar' ? '🧹 تم إزالة الشعار' : '🧹 Logo removed');
+                    showToast('success', lang === 'ar' ? 'تم إزالة الشعار' : 'Logo removed');
                   }}
                   className="text-[10px] text-red-600 font-bold hover:underline"
                 >
-                  {lang === 'ar' ? 'إزالة الشعـار 🗑' : 'Remove 🗑'}
+                  {lang === 'ar' ? 'إزالة الشعـار' : 'Remove'}
                 </button>
               </div>
             ) : (
@@ -670,7 +670,7 @@ export function SettingsTab({
         {/* ACCESSIBILITY & DISPLAY SCALING SYSTEM CONTROLLER */}
         <div className="bg-amber-500/5 border border-amber-500/20 p-5 rounded-2xl space-y-4 text-right">
           <h4 className="font-extrabold text-amber-800 text-xs sm:text-sm flex items-center gap-1.5 flex-row-reverse">
-            <span><span>📏</span> {lang === 'ar' ? 'التحكم بالزوم والخط وحجم الأزرار للبرنامج (دقة الشاشات المختلفة)' : 'UI Accessibility Sizing (Font, Buttons & Overall Screen Zoom)'}</span>
+            <span>{lang === 'ar' ? 'التحكم بالزوم والخط وحجم الأزرار للبرنامج (دقة الشاشات المختلفة)' : 'UI Accessibility Sizing (Font, Buttons & Overall Screen Zoom)'}</span>
           </h4>
           <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
             {lang === 'ar'
@@ -771,25 +771,25 @@ export function SettingsTab({
               <div className="grid grid-cols-4 gap-1 text-[10px] text-center font-extrabold">
                 <button type="button" onClick={() => {
                   setGlobalZoomScale(0.75);
-                  showToast('success', lang === 'ar' ? '🔍 زوم لـ 75%' : '🔍 Zoom set to 75%');
+                  showToast('success', lang === 'ar' ? 'زوم لـ 75%' : 'Zoom set to 75%');
                 }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 0.75 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
                   75% ({lang === 'ar' ? 'صغيرة' : 'Small'})
                 </button>
                 <button type="button" onClick={() => {
                   setGlobalZoomScale(0.85);
-                  showToast('success', lang === 'ar' ? '🔍 زوم لـ 85%' : '🔍 Zoom set to 85%');
+                  showToast('success', lang === 'ar' ? 'زوم لـ 85%' : 'Zoom set to 85%');
                 }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 0.85 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
                   85%
                 </button>
                 <button type="button" onClick={() => {
                   setGlobalZoomScale(1.0);
-                  showToast('success', lang === 'ar' ? '🔍 زوم لـ 100%' : '🔍 Zoom set to 100%');
+                  showToast('success', lang === 'ar' ? 'زوم لـ 100%' : 'Zoom set to 100%');
                 }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 1.0 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
                   100%
                 </button>
                 <button type="button" onClick={() => {
                   setGlobalZoomScale(1.15);
-                  showToast('success', lang === 'ar' ? '🔍 زوم لـ 115%' : '🔍 Zoom set to 115%');
+                  showToast('success', lang === 'ar' ? 'زوم لـ 115%' : 'Zoom set to 115%');
                 }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 1.15 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
                   115%
                 </button>
@@ -798,7 +798,7 @@ export function SettingsTab({
           </div>
 
           <div className="flex justify-end gap-2 text-[10px] text-slate-400 font-semibold pt-1">
-            <span>💡 {lang === 'ar' ? 'يتم حفظ هذه القيم وتفعيلها فورياً ومزامنتها على هذا المتصفح.' : 'Changes apply immediately and persist in this browser.'}</span>
+            <span>{lang === 'ar' ? 'يتم حفظ هذه القيم وتفعيلها فورياً ومزامنتها على هذا المتصفح.' : 'Changes apply immediately and persist in this browser.'}</span>
           </div>
         </div>
 
@@ -808,7 +808,7 @@ export function SettingsTab({
           className="w-full bg-[#1D9E75] hover:bg-[#158060] text-white font-extrabold py-3 px-4 rounded-xl text-xs transition duration-150 cursor-pointer flex items-center justify-center gap-2 shadow-sm mt-4"
         >
             <Save className="w-4 h-4 text-white" />
-            <span>{lang === 'ar' ? '💾 تفعيل وحفظ الإعدادات والمعلمات الفنية' : '💾 Save General Settings & Exchange Rates'}</span>
+            <span>{lang === 'ar' ? 'تفعيل وحفظ الإعدادات والمعلمات الفنية' : 'Save General Settings & Exchange Rates'}</span>
           </button>
         </form>
       </div>
@@ -903,12 +903,12 @@ export function SettingsTab({
               onChange={e => setSettings({ ...settings, businessType: e.target.value as 'supermarket' | 'phones' })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-sm text-right font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <option value="supermarket">🛒 {lang === 'ar' ? 'سوبرماركت' : 'Supermarket'}</option>
-              <option value="phones">📱 {lang === 'ar' ? 'محل تلفونات' : 'Phone shop'}</option>
+              <option value="supermarket">{lang === 'ar' ? 'سوبرماركت' : 'Supermarket'}</option>
+              <option value="phones">{lang === 'ar' ? 'محل تلفونات' : 'Phone shop'}</option>
             </select>
             {licensedBusinessType && (
               <p className="text-[11px] text-slate-500 mt-1 text-right" id="settings-business-type-locked">
-                🔒 {lang === 'ar' ? 'نوع المحل محدّد باشتراكك. لتغييره لازم اشتراك جديد للنوع التاني.' : 'Set by your subscription. Changing it needs a new subscription.'}
+                {lang === 'ar' ? 'نوع المحل محدّد باشتراكك. لتغييره لازم اشتراك جديد للنوع التاني.' : 'Set by your subscription. Changing it needs a new subscription.'}
               </p>
             )}
           </div>
@@ -944,7 +944,7 @@ export function SettingsTab({
             className="w-full bg-[#1D9E75] hover:bg-[#158060] text-white font-extrabold py-3 px-4 rounded-xl text-xs transition duration-150 cursor-pointer flex items-center justify-center gap-2 shadow-sm mt-4 font-sans"
           >
             <Save className="w-4 h-4 text-white" />
-            <span>{lang === 'ar' ? '💾 حفظ وتعميم معلومات المؤسسة الرسمية' : '💾 Save Corporate Information'}</span>
+            <span>{lang === 'ar' ? 'حفظ وتعميم معلومات المؤسسة الرسمية' : 'Save Corporate Information'}</span>
           </button>
         </form>
       </div>
@@ -957,7 +957,7 @@ export function SettingsTab({
             <div className="flex items-center justify-between flex-row-reverse border-b border-amber-100 pb-2">
               <div className="flex items-center gap-1.5 flex-row-reverse">
                 <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase animate-pulse">بيئة المعاينة مدمجة</span>
-                <h4 className="font-bold text-xs sm:text-sm text-slate-800">تنبيه المتصفح لحماية الأجهزة والأمن المالي لدرج الكاش ⚙️</h4>
+                <h4 className="font-bold text-xs sm:text-sm text-slate-800">تنبيه المتصفح لحماية الأجهزة والأمن المالي لدرج الكاش</h4>
               </div>
             </div>
             <p className="text-[11.5px] text-slate-600 leading-relaxed font-sans">
@@ -986,7 +986,7 @@ export function SettingsTab({
               <div className="flex items-center gap-1.5 justify-end pb-3 border-b border-slate-100">
                 <span className="bg-emerald-100 text-[#1D9E75] text-[9px] font-bold px-1.5 py-0.5 rounded">Aronium Core Link</span>
                 <h4 className="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-1">
-                  <span>نمط وتوصيل طابعة الكاشير المادية ⚙️</span>
+                  <span>نمط وتوصيل طابعة الكاشير المادية</span>
                 </h4>
               </div>
               <p className="text-[10.5px] text-slate-500 leading-relaxed font-sans">
@@ -1005,14 +1005,14 @@ export function SettingsTab({
                       onChange={() => {
                         setHardwarePrinterType('system');
                         storage.setItem('pos_hardware_printer_type', 'system');
-                        showToast('success', '✔️ تم اختيار طباعة نظام تشغيل ويندوز (مناسب لكافة الطابعات بما فيها Canon G3030)');
+                        showToast('success', 'تم اختيار طباعة نظام تشغيل ويندوز (مناسب لكافة الطابعات بما فيها Canon G3030)');
                       }}
                       className="accent-[#1D9E75]"
                     />
                     <span className="text-[11px]">طباعة نظام Windows القياسية (رسومية كاملة)</span>
                   </div>
                   <span className="text-[9.5px] text-slate-400 font-bold block mt-0.5 pr-5">
-                    🖥️ مناسبة لـ Canon G3030 وباقي الطابعات العادية. مطابقة 100% للتنسيقات.
+                    مناسبة لـ Canon G3030 وباقي الطابعات العادية. مطابقة 100% للتنسيقات.
                   </span>
                 </label>
 
@@ -1027,14 +1027,14 @@ export function SettingsTab({
                       onChange={() => {
                         setHardwarePrinterType('serial');
                         storage.setItem('pos_hardware_printer_type', 'serial');
-                        showToast('success', '✔️ تم تفعيل طباعة المنفذ التسلسلي الافتراضي Serial/COM');
+                        showToast('success', 'تم تفعيل طباعة المنفذ التسلسلي الافتراضي Serial/COM');
                       }}
                       className="accent-[#1D9E75]"
                     />
                     <span className="text-[11px]">ربط سلكي مباشر بالمنفذ التسلسلي (Serial COM Port)</span>
                   </div>
                   <span className="text-[9.5px] text-slate-400 font-bold block mt-0.5 pr-5">
-                    🔌 مناسبة لجميع الطابعات الحرارية الموصولة بـ COM أو كابل USB افتراضي.
+                    مناسبة لجميع الطابعات الحرارية الموصولة بـ COM أو كابل USB افتراضي.
                   </span>
                 </label>
 
@@ -1049,14 +1049,14 @@ export function SettingsTab({
                       onChange={() => {
                         setHardwarePrinterType('usb');
                         storage.setItem('pos_hardware_printer_type', 'usb');
-                        showToast('success', '✔️ تم تفعيل طباعة WebUSB direct raw POS stream');
+                        showToast('success', 'تم تفعيل طباعة WebUSB direct raw POS stream');
                       }}
                       className="accent-[#1D9E75]"
                     />
                     <span className="text-[11px]">اتصال WebUSB المباشر (خام للأجهزة الحرارية POS)</span>
                   </div>
                   <span className="text-[9.5px] text-slate-400 font-bold block mt-0.5 pr-5">
-                    🖨️ ترسل نبضات ونصوص مباشرة للطابعة، سريعة فدائية.
+                    ترسل نبضات ونصوص مباشرة للطابعة، سريعة فدائية.
                   </span>
                 </label>
               </div>
@@ -1064,7 +1064,7 @@ export function SettingsTab({
               {/* Interactive linkage helpers based on state */}
               {hardwarePrinterType === 'serial' && (
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 mt-2">
-                  <span className="text-[10px] font-extrabold text-slate-700 block text-right">⚙️ إعدادات المنفذ السلكي COM:</span>
+                  <span className="text-[10px] font-extrabold text-slate-700 block text-right">إعدادات المنفذ السلكي COM:</span>
                   <div className="flex gap-2">
                     <select
                       value={baudRate}
@@ -1086,12 +1086,12 @@ export function SettingsTab({
                       onClick={connectSerialPrinter}
                       className="bg-[#1D9E75] hover:bg-[#158060] text-white font-extrabold px-3 py-1 rounded-lg text-[10px] transition cursor-pointer"
                     >
-                      {serialPortInfo ? '🔄 إعادة ربط COM' : '🔌 ربط المنفذ COM'}
+                      {serialPortInfo ? 'إعادة ربط COM' : 'ربط المنفذ COM'}
                     </button>
                   </div>
                   {serialPortInfo && (
                     <p className="text-[9.5px] text-emerald-700 font-bold text-center mt-1">
-                      ✔️ متصل بـ: <span className="font-mono">{serialPortInfo}</span>
+                      متصل بـ: <span className="font-mono">{serialPortInfo}</span>
                     </p>
                   )}
                 </div>
@@ -1099,17 +1099,17 @@ export function SettingsTab({
 
               {hardwarePrinterType === 'usb' && (
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 mt-2">
-                  <span className="text-[10px] font-extrabold text-slate-700 block text-right">⚙️ فحص وتوصيل جهاز USB:</span>
+                  <span className="text-[10px] font-extrabold text-slate-700 block text-right">فحص وتوصيل جهاز USB:</span>
                   <button
                     type="button"
                     onClick={connectUSBPrinter}
                     className="w-full bg-[#1D9E75] hover:bg-[#158060] text-white font-extrabold py-1.5 px-3 rounded-lg text-[10px] transition cursor-pointer flex items-center justify-center gap-1"
                   >
-                    <span>🔌 اقتران كابل طابعة USB</span>
+                    <span>اقتران كابل طابعة USB</span>
                   </button>
                   {usbDeviceName && (
                     <p className="text-[9.5px] text-emerald-700 font-bold text-center mt-1">
-                      ✔️ الجهاز المقترن: <span className="font-mono">{usbDeviceName}</span>
+                      الجهاز المقترن: <span className="font-mono">{usbDeviceName}</span>
                     </p>
                   )}
                 </div>
@@ -1117,7 +1117,7 @@ export function SettingsTab({
 
               {hardwarePrinterType === 'system' && (
                 <div className="bg-amber-50 rounded-xl p-3.5 border border-amber-200 text-[10px] leading-relaxed text-slate-700 space-y-1.5">
-                  <p className="font-extrabold text-amber-900 text-xs">💡 تمكين درج الكاش لـ Canon G3030 وكافة طابعات ويندوز:</p>
+                  <p className="font-extrabold text-amber-900 text-xs">تمكين درج الكاش لـ Canon G3030 وكافة طابعات ويندوز:</p>
                   <p>
                     عند العمل بنمط طابعة نظام تشغيل ويندوز (مناسب تماماً لـ Canon)، لا يمكن للمتصفح إطلاق نبضة مادية لدرج الكاش مباشرة. لكن Windows يملك هذه الميزة مدمجة بخصائص طابعتك:
                   </p>
@@ -1131,7 +1131,7 @@ export function SettingsTab({
                     <li>انقر <strong>تطبيق وموافق (Apply & OK)</strong>.</li>
                   </ul>
                   <p className="text-emerald-800 font-extrabold text-[10.5px] leading-normal pt-1 border-t border-amber-250/50 mt-1">
-                    ✔️ بمجرد الدفع وطباعة الفاتورة صامتاً، سيقوم محرك Windows Spooler المادي بإلقاء نبضة فتح درج الكاش المادي تلقائياً بنسبة 100% وبدون أي مشاكل!
+                    بمجرد الدفع وطباعة الفاتورة صامتاً، سيقوم محرك Windows Spooler المادي بإلقاء نبضة فتح درج الكاش المادي تلقائياً بنسبة 100% وبدون أي مشاكل!
                   </p>
                 </div>
               )}
@@ -1164,7 +1164,7 @@ export function SettingsTab({
                   className="w-full bg-[#1D9E75] hover:bg-emerald-600 text-white font-extrabold py-3 px-3 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-xs border border-emerald-400"
                 >
                   <Printer className="w-4 h-4 animate-bounce" />
-                  <span>🔄 رصد طابعات ويندوز النشطة بالكمبيوتر 🖥️</span>
+                  <span>رصد طابعات ويندوز النشطة بالكمبيوتر</span>
                 </button>
               )}
               <p className="text-[9px] text-slate-500 mt-2 text-center font-medium">
@@ -1182,7 +1182,7 @@ export function SettingsTab({
             <form onSubmit={(e) => {
               e.preventDefault();
               if (!newPrinterName.trim()) {
-                showToast('error', '⚠️ الرجاء تزويد اسم الطابعة التعريفي أولاً');
+                showToast('error', 'الرجاء تزويد اسم الطابعة التعريفي أولاً');
                 return;
               }
               const list = settings.printersList || [];
@@ -1200,7 +1200,7 @@ export function SettingsTab({
               
               setNewPrinterName('');
               setNewPrinterAddress('LPT1');
-              showToast('success', '✔️ تم حفظ الطابعة بنجاج وتضمينها بالنظام!');
+              showToast('success', 'تم حفظ الطابعة بنجاج وتضمينها بالنظام!');
             }} className="space-y-4 font-sans">
               {/* Direct Silent printing override switch (Aronium silent spooling mode) */}
               <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-150 flex flex-col gap-2 mb-2 text-right">
@@ -1214,15 +1214,15 @@ export function SettingsTab({
                       setSettings(updatedSettings);
                       storage.setJSON('pos_settings', updatedSettings);
                       showToast('success', val 
-                        ? '⚡ تم تفعيل ميزة الطباعة الصامتة المباشرة (تخطي حوار المتصفح)' 
-                        : '🌐 تم الرجوع لنمط حوار المتصفح اليدوي عند الطباعة'
+                        ? 'تم تفعيل ميزة الطباعة الصامتة المباشرة (تخطي حوار المتصفح)' 
+                        : 'تم الرجوع لنمط حوار المتصفح اليدوي عند الطباعة'
                       );
                     }}
                     className="sr-only peer"
                   />
                   <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#1D9E75]" dir="ltr"></div>
                   <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 flex-row-reverse">
-                    <span>شريحة الطباعة الصامتة المباشرة ⚡</span>
+                    <span>شريحة الطباعة الصامتة المباشرة</span>
                   </span>
                 </label>
                 <p className="text-[10px] text-slate-500 leading-normal">
@@ -1284,7 +1284,7 @@ export function SettingsTab({
                 type="submit"
                 className="w-full bg-[#1D9E75] hover:bg-emerald-600 text-white font-extrabold py-2.5 rounded-xl text-xs transition cursor-pointer shadow-xs"
               >
-                إضافة طابعة جديدة للبرنامج ⚡
+                إضافة طابعة جديدة للبرنامج
               </button>
             </form>
 
@@ -1307,7 +1307,7 @@ export function SettingsTab({
                           const updatedSettings = { ...settings, printersList: updated };
                           setSettings(updatedSettings);
                           storage.setJSON('pos_settings', updatedSettings);
-                          showToast('success', '🧹 تم إزالة تعريف الطابعة بنجاح.');
+                          showToast('success', 'تم إزالة تعريف الطابعة بنجاح.');
                         }}
                         className="text-red-650 hover:text-red-750 font-bold cursor-pointer underline px-1.5 py-0.5 rounded"
                       >
@@ -1369,7 +1369,7 @@ export function SettingsTab({
                           }}
                           className="bg-slate-200 hover:bg-slate-350 text-slate-750 font-black px-2 py-1 rounded transition text-[10px] cursor-pointer"
                         >
-                          طباعة تجريبية 📋
+                          طباعة تجريبية
                         </button>
                       </div>
 
@@ -1404,15 +1404,15 @@ export function SettingsTab({
                       setSettings(updatedSettings);
                       storage.setJSON('pos_settings', updatedSettings);
                       showToast('success', val 
-                        ? '✔️ تم تفعيل فتح درج الكاش تلقائياً عند طباعة الفاتورة' 
-                        : '🔒 تم تعطيل الفتح التلقائي لدرج النقد'
+                        ? 'تم تفعيل فتح درج الكاش تلقائياً عند طباعة الفاتورة' 
+                        : 'تم تعطيل الفتح التلقائي لدرج النقد'
                       );
                     }}
                     className="sr-only peer"
                   />
                   <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500" dir="ltr"></div>
                   <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 flex-row-reverse">
-                    <span>تفعيل فتح درج النقد 💵</span>
+                    <span>تفعيل فتح درج النقد</span>
                   </span>
                 </label>
                 <p className="text-[10px] text-slate-500 leading-normal">
@@ -1445,7 +1445,7 @@ export function SettingsTab({
                       const updatedSettings = { ...settings, cashDrawerCodes: '27,112,0,148,49' };
                       setSettings(updatedSettings);
                       storage.setJSON('pos_settings', updatedSettings);
-                      showToast('success', '⚡ تم تعيين كود Aronium الافتراضي: 27,112,0,148,49');
+                      showToast('success', 'تم تعيين كود Aronium الافتراضي: 27,112,0,148,49');
                     }}
                     className="text-[9px] bg-slate-100 hover:bg-slate-200 border border-slate-150 text-slate-600 px-1.5 py-0.5 rounded cursor-pointer font-mono"
                   >
@@ -1457,7 +1457,7 @@ export function SettingsTab({
                       const updatedSettings = { ...settings, cashDrawerCodes: '27,112,0,25,250' };
                       setSettings(updatedSettings);
                       storage.setJSON('pos_settings', updatedSettings);
-                      showToast('success', '⚡ تم تعيين كود Epson القياسي: 27,112,0,25,250');
+                      showToast('success', 'تم تعيين كود Epson القياسي: 27,112,0,25,250');
                     }}
                     className="text-[9px] bg-slate-100 hover:bg-slate-200 border border-slate-150 text-slate-600 px-1.5 py-0.5 rounded cursor-pointer font-mono"
                   >
@@ -1474,7 +1474,7 @@ export function SettingsTab({
                 }}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
               >
-                <span>فحص واختبار حركة الدرج 💸</span>
+                <span>فحص واختبار حركة الدرج</span>
               </button>
             </div>
           </div>
@@ -1516,7 +1516,7 @@ export function SettingsTab({
                   </label>
                   
                   <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5 flex-row-reverse">
-                    <span>🧾 طابعة فواتير البيع (رول الكاشير):</span>
+                    <span>طابعة فواتير البيع (رول الكاشير):</span>
                   </span>
                 </div>
 
@@ -1566,7 +1566,7 @@ export function SettingsTab({
                   </label>
                   
                   <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5 flex-row-reverse">
-                    <span>🍳 طابعة المطبخ / البوفيه والمخزن الخلفي:</span>
+                    <span>طابعة المطبخ / البوفيه والمخزن الخلفي:</span>
                   </span>
                 </div>
 
@@ -1616,7 +1616,7 @@ export function SettingsTab({
                   </label>
                   
                   <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5 flex-row-reverse">
-                    <span>📑 طابعة المستندات والمحاسب الإداري (A4):</span>
+                    <span>طابعة المستندات والمحاسب الإداري (A4):</span>
                   </span>
                 </div>
 
@@ -1650,12 +1650,12 @@ export function SettingsTab({
             <div className="flex items-center gap-1.5 justify-end">
               <span className="bg-[#1D9E75] text-[#F1FFF8] text-[9px] font-bold px-1.5 py-0.5 rounded">صيانة وإعداد سريع</span>
               <h4 className="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-1">
-                <span>حل مشكلة استمرار ظهور نافذة الطباعة ⚡</span>
+                <span>حل مشكلة استمرار ظهور نافذة الطباعة</span>
               </h4>
             </div>
             
             <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-xl text-[11px] leading-relaxed text-right space-y-1">
-              <p className="font-extrabold text-xs">⚠️ لماذا يستمر حوار الطباعة بالظهور على حاسوبك؟</p>
+              <p className="font-extrabold text-xs">لماذا يستمر حوار الطباعة بالظهور على حاسوبك؟</p>
               <p>
                 السبب الرئيسي هو أن متصفح Chrome أو Edge يستمر في العمل "كمهمة في الخلفية" أو كأيقونة صامتة بجوار ساعة الويندوز، أو لأنك تشغل البرنامج بوضعية مستعرض داخلي مخصص. عند فتح المتصفح بهذه الحالة، يتجاهل النظام ميزة الطباعة الصامتة كلياً.
               </p>
@@ -1671,7 +1671,6 @@ export function SettingsTab({
                 onClick={() => downloadSilentPrintScript('chrome')}
                 className="bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold py-2.5 px-3 rounded-xl border border-slate-200 flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs hover:border-emerald-300"
               >
-                <span className="text-emerald-600">🌐</span>
                 <span>تحميل أداة التشغيل لـ Chrome</span>
               </button>
               
@@ -1680,13 +1679,12 @@ export function SettingsTab({
                 onClick={() => downloadSilentPrintScript('edge')}
                 className="bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold py-2.5 px-3 rounded-xl border border-slate-200 flex items-center justify-center gap-2 transition cursor-pointer shadow-2xs hover:border-emerald-300"
               >
-                <span className="text-blue-500">🟦</span>
                 <span>تحميل أداة التشغيل لـ MS Edge</span>
               </button>
             </div>
 
             <div className="bg-emerald-500/10 text-emerald-950 p-3.5 rounded-xl text-[10.5px] leading-relaxed font-medium space-y-1.5 border border-emerald-500/20">
-              <p className="font-extrabold text-[#1D9E75] text-[11px]">🔧 خطوات التشغيل بنقرة واحدة:</p>
+              <p className="font-extrabold text-[#1D9E75] text-[11px]">خطوات التشغيل بنقرة واحدة:</p>
               <ul className="list-decimal list-inside pr-1 space-y-1">
                 <li>اضغط على زر المتصفح الذي تفضله أعلاه (ينصح بـ <strong>Chrome</strong> للسرعة القصوى).</li>
                 <li>سيتم تنزيل ملف دُفعة صغير باسم <code className="bg-white/80 px-1 py-0.5 rounded font-mono font-bold text-slate-700">Run_POS_Chrome_SilentPrint.bat</code></li>
@@ -1703,7 +1701,7 @@ export function SettingsTab({
                 type="button"
                 onClick={() => {
                   setActivePrintJobs([]);
-                  showToast('success', '🧹 تم تفريغ سجل مهام الطباعة بنجاح.');
+                  showToast('success', 'تم تفريغ سجل مهام الطباعة بنجاح.');
                 }}
                 className="bg-stone-800 hover:bg-stone-700 text-xs px-2.5 py-1 rounded-lg text-stone-400 hover:text-white font-bold cursor-pointer transition-colors"
               >
@@ -1727,9 +1725,9 @@ export function SettingsTab({
                       <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
                         job.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
                       }`}>
-                        {job.status === 'completed' ? 'تمت الطباعة ✔️' : 'جاري العمل ⚙️'}
+                        {job.status === 'completed' ? 'تمت الطباعة' : 'جاري العمل'}
                       </span>
-                      <span className="font-bold text-stone-100">{job.jobName} ➡️ {job.printerName}</span>
+                      <span className="font-bold text-stone-100">{job.jobName} {job.printerName}</span>
                     </div>
                     <div className="flex justify-between items-center font-mono text-[10px] text-stone-400">
                       <span>{job.timestamp}</span>
@@ -1778,7 +1776,7 @@ export function SettingsTab({
                 <div className="space-y-3">
                   <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-center space-y-2 font-sans text-right">
                     <span className="text-emerald-800 text-xs font-black block text-center">
-                      🎉 {license.daysRemaining === null
+                      {license.daysRemaining === null
                         ? (lang === 'ar' ? 'ترخيص مدى الحياة مفعّل!' : 'Lifetime licence active!')
                         : license.inGracePeriod
                           ? (lang === 'ar' ? 'فترة سماح مؤقتة (نظام التفعيل القديم)' : 'Temporary grace period (old activation)')
@@ -1796,8 +1794,8 @@ export function SettingsTab({
                     {license.isLicensed && license.daysRemaining !== null && (
                       <div className="bg-emerald-600 text-white font-black text-[10px] py-1 px-2.5 rounded-lg inline-block w-full text-center">
                         {lang === 'ar'
-                          ? `⏳ الأيام المتبقية: ${license.daysRemaining} يوم`
-                          : `⏳ Days remaining: ${license.daysRemaining} days`}
+                          ? `الأيام المتبقية: ${license.daysRemaining} يوم`
+                          : `Days remaining: ${license.daysRemaining} days`}
                       </div>
                     )}
                   </div>
@@ -1815,7 +1813,7 @@ export function SettingsTab({
                       onClick={() => openSetupWizard()}
                       className="w-full bg-[#1D9E75]/10 hover:bg-[#1D9E75]/20 text-[#1D9E75] font-extrabold py-2 px-3 rounded-xl text-[10px] transition cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      <span>🔑 {lang === 'ar' ? 'تعديل وتعيين حسابات المدير والكاشير' : 'Re-configure Admin & Cashier Accounts'}</span>
+                      <span>{lang === 'ar' ? 'تعديل وتعيين حسابات المدير والكاشير' : 'Re-configure Admin & Cashier Accounts'}</span>
                     </button>
 
                     <button
@@ -1823,12 +1821,12 @@ export function SettingsTab({
                       onClick={() => {
                         if (confirm(lang === 'ar' ? 'هل أنت متأكد من رغبتك في إلغاء تنشيط وحذف كود التفعيل الحالي والرجوع للنسخة التجريبية؟' : 'Are you sure you want to deactivate current license and return to trial?')) {
                           license.deactivate();
-                          showToast('warning', lang === 'ar' ? '⚠️ تم إلغاء تفعيل ترخيص البرنامج والرجوع للوضع التجريبي' : 'License deactivated. Returned to trial.');
+                          showToast('warning', lang === 'ar' ? 'تم إلغاء تفعيل ترخيص البرنامج والرجوع للوضع التجريبي' : 'License deactivated. Returned to trial.');
                         }
                       }}
                       className="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold py-2 px-3 rounded-xl text-[10px] transition cursor-pointer text-center"
                     >
-                      {lang === 'ar' ? 'إلغاء تنشيط الترخيص الحالي 🗑️' : 'Reset Active License 🗑️'}
+                      {lang === 'ar' ? 'إلغاء تنشيط الترخيص الحالي' : 'Reset Active License'}
                     </button>
                   </div>
                 </div>
@@ -1844,13 +1842,13 @@ export function SettingsTab({
                   {license.clockTampered && (
                     <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl text-[10.5px] text-rose-700 font-bold leading-relaxed text-right">
                       {lang === 'ar'
-                        ? '⚠️ تاريخ ووقت الجهاز غير صحيحين. صحّح التاريخ واتصل بالإنترنت لإعادة التحقق من الترخيص.'
-                        : '⚠️ The computer date/time looks wrong. Fix it and connect to the internet to re-check the licence.'}
+                        ? 'تاريخ ووقت الجهاز غير صحيحين. صحّح التاريخ واتصل بالإنترنت لإعادة التحقق من الترخيص.'
+                        : 'The computer date/time looks wrong. Fix it and connect to the internet to re-check the licence.'}
                     </div>
                   )}
                   <div className="bg-amber-50 border border-amber-150 p-3.5 rounded-xl text-center space-y-1.5">
                     <span className="text-amber-800 text-xs font-black block text-center">
-                      ⏳ {lang === 'ar' ? 'نمط البرنامج: نسخة تجريبية محدودة' : 'Sandbox Trial Mode'}
+                      {lang === 'ar' ? 'نمط البرنامج: نسخة تجريبية محدودة' : 'Sandbox Trial Mode'}
                     </span>
                     <p className="text-[10px] text-amber-700 tracking-wide leading-relaxed font-bold">
                       {lang === 'ar' 
@@ -1875,7 +1873,7 @@ export function SettingsTab({
 
                   <div className="space-y-2 text-right">
                     <label className="block text-slate-700 font-bold text-xs">
-                      🔑 {lang === 'ar' ? 'أدخل رمز تفعيل البرنامج:' : 'Enter Activation Code:'}
+                      {lang === 'ar' ? 'أدخل رمز تفعيل البرنامج:' : 'Enter Activation Code:'}
                     </label>
                     <div className="flex gap-2">
                       <input 
@@ -1927,7 +1925,7 @@ export function SettingsTab({
               <div className="bg-slate-50 border border-slate-200 p-4.5 rounded-2xl space-y-3 font-sans text-right flex flex-col justify-between">
                 <div>
                   <span className="text-xs font-black text-[#1D9E75] block uppercase tracking-wider mb-1">
-                    📨 {lang === 'ar' ? 'فورم تواصل لشراء وتفعيل البرنامج:' : 'Direct Contact Form for Software Purchase:'}
+                    {lang === 'ar' ? 'فورم تواصل لشراء وتفعيل البرنامج:' : 'Direct Contact Form for Software Purchase:'}
                   </span>
                   <p className="text-[10px] text-slate-500 font-medium leading-relaxed mb-3">
                     {lang === 'ar' 
@@ -1937,7 +1935,7 @@ export function SettingsTab({
 
                   <div className="space-y-2.5 text-xs text-right">
                     <div>
-                      <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">👤 {lang === 'ar' ? 'اسمك الكريم / المالك:' : 'Your Name / Shop Owner:'}</label>
+                      <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">{lang === 'ar' ? 'اسمك الكريم / المالك:' : 'Your Name / Shop Owner:'}</label>
                       <input 
                         type="text"
                         value={contactName}
@@ -1949,7 +1947,7 @@ export function SettingsTab({
 
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">📧 {lang === 'ar' ? 'البريد الإلكتروني:' : 'Email Address:'}</label>
+                        <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">{lang === 'ar' ? 'البريد الإلكتروني:' : 'Email Address:'}</label>
                         <input 
                           type="email"
                           value={contactEmail}
@@ -1959,7 +1957,7 @@ export function SettingsTab({
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">📞 {lang === 'ar' ? 'رقم الهاتف / WhatsApp:' : 'Phone Line / WhatsApp:'}</label>
+                        <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">{lang === 'ar' ? 'رقم الهاتف / WhatsApp:' : 'Phone Line / WhatsApp:'}</label>
                         <input 
                           type="text"
                           value={contactPhone}
@@ -1971,7 +1969,7 @@ export function SettingsTab({
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">🏢 {lang === 'ar' ? 'اسم المتجر المراد تفعيله:' : 'Store Name to Activate:'}</label>
+                      <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">{lang === 'ar' ? 'اسم المتجر المراد تفعيله:' : 'Store Name to Activate:'}</label>
                       <input 
                         type="text"
                         value={contactShop || settings.shopName || ''}
@@ -1982,7 +1980,7 @@ export function SettingsTab({
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">📝 {lang === 'ar' ? 'رسالتك أو ملاحظاتك الإضافية للطلب:' : 'Additional message / custom terms:'}</label>
+                      <label className="block text-slate-500 mb-0.5 text-[9.5px] font-bold">{lang === 'ar' ? 'رسالتك أو ملاحظاتك الإضافية للطلب:' : 'Additional message / custom terms:'}</label>
                       <textarea 
                         value={contactMessage}
                         onChange={e => setContactMessage(e.target.value)}
@@ -1997,7 +1995,7 @@ export function SettingsTab({
                   {/* WhatsApp Contact Link */}
                   {(() => {
                     const waMsg = `السلام عليكم أستاذ كامل بيضاء، أرغب في شراء وتفعيل النسخة المعتمدة لبرنامج مبيعات السوبرماركت - الاشتراك السنوي.\n\n` +
-                      `📋 تفاصيل طلب التنشيط:\n` +
+                      `تفاصيل طلب التنشيط:\n` +
                       `- اسم العميل: ${contactName || 'غير محدد'}\n` +
                       `- رقم الهاتف/واتساب: ${contactPhone || 'غير محدد'}\n` +
                       `- البريد الإلكتروني: ${contactEmail || 'غير محدد'}\n` +
@@ -2012,7 +2010,7 @@ export function SettingsTab({
                         rel="noopener noreferrer"
                         className="bg-emerald-650 hover:bg-emerald-600 text-white font-extrabold py-2 px-3 rounded-xl transition hover:scale-[1.02] flex items-center justify-center gap-1 cursor-pointer text-center"
                       >
-                        💬 {lang === 'ar' ? 'واتساب مباشر' : 'Send WhatsApp'}
+                        {lang === 'ar' ? 'واتساب مباشر' : 'Send WhatsApp'}
                       </a>
                     );
                   })()}
@@ -2033,7 +2031,7 @@ export function SettingsTab({
                         href={mailUrl}
                         className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2 px-3 rounded-xl transition hover:scale-[1.02] flex items-center justify-center gap-1 cursor-pointer text-center"
                       >
-                        📧 {lang === 'ar' ? 'بريد إلكتروني' : 'Send Email'}
+                        {lang === 'ar' ? 'بريد إلكتروني' : 'Send Email'}
                       </a>
                     );
                   })()}
@@ -2053,7 +2051,7 @@ export function SettingsTab({
 
       <div className="bg-red-50/55 border border-red-100 p-4 rounded-xl text-right space-y-2">
         <span className="text-red-950 text-xs font-black block flex items-center gap-1.5 justify-end">
-          <span>{lang === 'ar' ? '⚠️ تنبيه حساس: حذف بيانات المتجر الدائمة' : '⚠️ Warning: Permanent Data Deletion'}</span>
+          <span>{lang === 'ar' ? 'تنبيه حساس: حذف بيانات المتجر الدائمة' : 'Warning: Permanent Data Deletion'}</span>
         </span>
         <p className="text-[11px] text-red-700 leading-relaxed font-semibold">
           {lang === 'ar'
@@ -2095,7 +2093,7 @@ export function SettingsTab({
         >
           <Trash2 className="w-5 h-5 text-rose-600 animate-pulse" />
           <span className="text-xs font-black block text-rose-700">{lang === 'ar' ? 'تصفير البرنامج بالكامل' : 'Wipe System Entirely'}</span>
-          <span className="text-[9px] text-rose-500 block">{lang === 'ar' ? 'البدء من الصفر تماماً 💥' : 'Full clean start 💥'}</span>
+          <span className="text-[9px] text-rose-500 block">{lang === 'ar' ? 'البدء من الصفر تماماً' : 'Full clean start'}</span>
         </button>
       </div>
     </div>

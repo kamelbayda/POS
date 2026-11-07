@@ -88,7 +88,7 @@ export function usePrintSpooler({
       if (prog >= 100) {
         clearInterval(interval);
         setActivePrintJobs(prev => prev.map(j => j.id === jobID ? { ...j, status: 'completed' as const, progress: 100 } : j));
-        showToast('success', lang === 'ar' ? `✔️ اكتملت طباعة [${jobName}] على طابعة ${printerName}` : `✔️ Completed printing ${jobName} on ${printerName}`);
+        showToast('success', lang === 'ar' ? `اكتملت طباعة [${jobName}] على طابعة ${printerName}` : `Completed printing ${jobName} on ${printerName}`);
       } else {
         setActivePrintJobs(prev => prev.map(j => j.id === jobID ? { ...j, status: 'printing' as const, progress: prog } : j));
       }

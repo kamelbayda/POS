@@ -24,7 +24,7 @@ export function ExpiryWarningModal({
         </div>
 
         <div className="text-center space-y-2">
-          <h3 className="text-lg font-black text-rose-700">🚫 عذراً! منتهى الصلاحية ومحظر بيعه</h3>
+          <h3 className="text-lg font-black text-rose-700">عذراً! منتهى الصلاحية ومحظر بيعه</h3>
           <p className="text-xs text-slate-500 leading-relaxed font-sans">
             لقد دخل هذا الصنف حيز انتهاء الصلاحية مقارنة بتاريخ اليوم بالدكان ويرفض نظام الـ POS إدراج أي عنصر منه حماية للسلامة.
           </p>
@@ -37,14 +37,14 @@ export function ExpiryWarningModal({
         </div>
 
         <p className="text-[10px] text-rose-600 text-center font-semibold">
-          يرجى سحب الصنف من صالة العرض والمستودع فوراً! ⚠️
+          يرجى سحب الصنف من صالة العرض والمستودع فوراً!
         </p>
 
         <button 
           onClick={() => setExpiryWarningModal(null)}
           className="w-full bg-rose-600 hover:bg-rose-700 text-white font-extrabold py-3 rounded-xl text-xs transition cursor-pointer"
         >
-          فهمت! سأقوم بسحب المعروض للتلف ✔️
+          فهمت! سأقوم بسحب المعروض للتلف
         </button>
       </motion.div>
     </div>

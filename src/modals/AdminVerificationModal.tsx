@@ -61,7 +61,7 @@ export function AdminVerificationModal({
                 adminVerificationAction();
               }
             } else {
-              setAdminVerificationError(lang === 'ar' ? '❌ كلمة المرور خاطئة! حاول مجدداً.' : '❌ Incorrect password. Try again.');
+              setAdminVerificationError(lang === 'ar' ? 'كلمة المرور خاطئة! حاول مجدداً.' : 'Incorrect password. Try again.');
             }
           }}
           className="mt-5 space-y-4"

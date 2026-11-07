@@ -68,14 +68,13 @@ export function TouchPaymentModal({
               </button>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base">{lang === 'ar' ? 'تسوية الفاتورة وحساب المرتجع للزبون' : 'Invoice Settlement'}</span>
-                <span className="text-xl">💵</span>
               </div>
             </div>
 
             {/* Selected Customer indicator (if any) */}
             {selectedCustomerId && (
               <div className={`p-2 py-1.5 my-2 rounded-xl text-xs text-center font-bold border ${theme === 'dark' ? 'bg-amber-950/20 border-amber-900/40 text-amber-300' : 'bg-amber-50 border-amber-200/40 text-amber-800'}`}>
-                🔗 {lang === 'ar' ? 'الزبون المُرتبط:' : 'Linked Customer:'} {customers.find(c => c.id === selectedCustomerId)?.name || 'زبون محدد'}
+                {lang === 'ar' ? 'الزبون المُرتبط:' : 'Linked Customer:'} {customers.find(c => c.id === selectedCustomerId)?.name || 'زبون محدد'}
               </div>
             )}
 
@@ -164,7 +163,7 @@ export function TouchPaymentModal({
                       type="button"
                       onClick={() => {
                         if (m === 'debt' && !selectedCustomerId) {
-                          showToast('warning', lang === 'ar' ? '⚠️ يرجى أولاً ربط زبون لتمكين المبيعات بالدين!' : 'Please associate customer first to pay as debt!');
+                          showToast('warning', lang === 'ar' ? 'يرجى أولاً ربط زبون لتمكين المبيعات بالدين!' : 'Please associate customer first to pay as debt!');
                           triggerCustomerSearch();
                           return;
                         }
@@ -200,7 +199,7 @@ export function TouchPaymentModal({
                 const isChangeSatisfied = totalPaidEquivalentUSDVal >= cartTotalUSD;
 
                 if (!isChangeSatisfied && paymentMethod !== 'debt') {
-                  if (confirm(lang === 'ar' ? '⚠️ المبلغ غير كامل بعد لتسجيل عملية بيع مالي كاش! هل ترغب في المحاسبة على أي حال وترك الباقي ديناً؟' : 'Underpaid amount. Sell anyway?')) {
+                  if (confirm(lang === 'ar' ? 'المبلغ غير كامل بعد لتسجيل عملية بيع مالي كاش! هل ترغب في المحاسبة على أي حال وترك الباقي ديناً؟' : 'Underpaid amount. Sell anyway?')) {
                     setIsTouchPaymentModalOpen(false);
                     handleCheckout();
                   }
@@ -221,7 +220,7 @@ export function TouchPaymentModal({
                 onClick={openCashDrawer}
                 className="flex-1 bg-[#F59E0B] hover:bg-amber-500 text-white font-extrabold py-2.5 rounded-xl transition shadow-md active:translate-y-px text-xs flex items-center justify-center gap-1.5 cursor-pointer h-11"
               >
-                💵 {lang === 'ar' ? 'فتح درج الكاش المباشر' : 'Open Cash Drawer'}
+                {lang === 'ar' ? 'فتح درج الكاش المباشر' : 'Open Cash Drawer'}
               </button>
               {hardwarePrinterType !== 'system' ? (
                 <div className="bg-emerald-50 dark:bg-emerald-950 text-emerald-750 dark:text-emerald-300 text-[10px] font-mono font-extrabold px-2.5 rounded-xl flex items-center justify-center border border-emerald-250 h-11 shrink-0">
@@ -229,7 +228,7 @@ export function TouchPaymentModal({
                 </div>
               ) : (
                 <div className="bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 text-[10px] font-medium px-2 rounded-xl flex items-center justify-center border border-slate-205 dark:border-stone-800 h-11 shrink-0">
-                  طابعة نظام 🖥️
+                  طابعة نظام
                 </div>
               )}
             </div>

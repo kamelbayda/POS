@@ -208,11 +208,11 @@ export function BarcodeLabelModal({
                     barcode: rand
                   });
 
-                  showToast('success', 'تم توليد وحفظ الباركود الجديد للصنف بنجاح! ⚡');
+                  showToast('success', 'تم توليد وحفظ الباركود الجديد للصنف بنجاح!');
                 }}
                 className="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-2 rounded-xl transition text-xs cursor-pointer shadow-md"
               >
-                ⚡ توليد باركود للمنتج الآن
+                توليد باركود للمنتج الآن
               </button>
             </div>
           ) : (
@@ -456,7 +456,7 @@ export function BarcodeLabelModal({
                   className={`flex-[2] bg-amber-500 hover:bg-amber-400 ${theme === 'dark' ? 'text-white' : 'text-slate-950'} py-3 rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer border border-amber-400 shadow-md text-xs font-sans font-black`}
                 >
                   <Printer className="w-4 h-4" />
-                  <span>{settings.directSilentPrint !== false ? 'طباعة صامتة فورية (تلقائي) ⚡' : 'إرسال أمر الطباعة للملصقات 🖨️'}</span>
+                  <span>{settings.directSilentPrint !== false ? 'طباعة صامتة فورية (تلقائي)' : 'إرسال أمر الطباعة للملصقات'}</span>
                 </button>
 
                 {settings.directSilentPrint !== false && (
@@ -503,7 +503,7 @@ export function BarcodeLabelModal({
                     className="bg-slate-900 hover:bg-slate-805 text-slate-300 font-bold px-3 py-3 rounded-2xl transition border border-slate-700 text-xs cursor-pointer font-sans"
                     title="فتح نافذة طباعة المتصفح اليدوية للملصقات"
                   >
-                    معاينة / PDF يدوي 📄
+                    معاينة / PDF يدوي
                   </button>
                 )}
 
@@ -520,7 +520,7 @@ export function BarcodeLabelModal({
 
         {/* 2. Label Preview Presentation (Stays visible during print) */}
         <div className="w-full md:w-80 bg-slate-950 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 border border-slate-800 md:order-1">
-          <span className="text-slate-400 text-[10px] font-bold no-print font-sans text-center">👇 معاينة الملصق على رول الورق الحراري ({barcodeLabelSize === 'custom' ? `${currentWidth}x${currentHeight}mm` : barcodeLabelSize === 'small' ? 'صغير جداً' : barcodeLabelSize === 'large' ? 'كبير' : 'وسط'})</span>
+          <span className="text-slate-400 text-[10px] font-bold no-print font-sans text-center">معاينة الملصق على رول الورق الحراري ({barcodeLabelSize === 'custom' ? `${currentWidth}x${currentHeight}mm` : barcodeLabelSize === 'small' ? 'صغير جداً' : barcodeLabelSize === 'large' ? 'كبير' : 'وسط'})</span>
 
           {/* Paper Roll simulation wrapper */}
           <div id="barcode-paper-roll-print-area" className="w-full max-h-[380px] overflow-x-auto overflow-y-auto space-y-4 p-2 bg-slate-900/40 rounded-xl scrollbar-hidden flex flex-col items-center">

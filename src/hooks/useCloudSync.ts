@@ -115,7 +115,7 @@ export function useCloudSync({ loaded, SYS_DATE, lang, lists, settings, setSetti
         const cloudEmpty = prod.empty && cfg.empty;
         if (cloudEmpty) {
           await uploadEverything();
-          showToast('success', ar ? '☁️ تم رفع بيانات المحل. هلّق فيك تفوت بنفس الحساب من جهاز تاني.' : '☁️ Shop data uploaded. You can now sign in on another device.');
+          showToast('success', ar ? 'تم رفع بيانات المحل. هلّق فيك تفوت بنفس الحساب من جهاز تاني.' : 'Shop data uploaded. You can now sign in on another device.');
         } else {
           const choice = await askChoice();
           if (cancelled) return;
@@ -123,10 +123,10 @@ export function useCloudSync({ loaded, SYS_DATE, lang, lists, settings, setSetti
           if (choice === 'upload') {
             // This device's data goes up; records only the cloud has come down with live sync
             await uploadEverything();
-            showToast('success', ar ? '☁️ تم رفع بيانات هالجهاز ودمجها مع السحاب.' : '☁️ This device\'s data was uploaded and merged with the cloud.');
+            showToast('success', ar ? 'تم رفع بيانات هالجهاز ودمجها مع السحاب.' : 'This device\'s data was uploaded and merged with the cloud.');
           } else {
             await downloadEverything();
-            showToast('success', ar ? '☁️ تم تنزيل بيانات المحل. هالجهاز صار متزامن، وفيك تفوت بإيميلك وكلمة سرّك.' : '☁️ Shop data downloaded. This device is in sync; sign in with your email and password.');
+            showToast('success', ar ? 'تم تنزيل بيانات المحل. هالجهاز صار متزامن، وفيك تفوت بإيميلك وكلمة سرّك.' : 'Shop data downloaded. This device is in sync; sign in with your email and password.');
           }
         }
         if (cancelled) return;

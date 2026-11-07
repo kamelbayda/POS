@@ -150,14 +150,14 @@ export function ReportsTab({
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="text-right space-y-1.5 order-last md:order-first w-full md:w-auto">
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 justify-end sm:justify-start">
-            <h3 className="font-extrabold text-lg text-emerald-400">📊 المركز المحاسبي والمالي المتكامل</h3>
+            <h3 className="font-extrabold text-lg text-emerald-400">المركز المحاسبي والمالي المتكامل</h3>
             <button
               type="button"
               onClick={() => onPrintReport(reportsSubTab)}
               className={`bg-amber-500 hover:bg-amber-400 ${theme === 'dark' ? 'text-white' : 'text-slate-950'} font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center gap-1.5 shadow-md border border-amber-400 font-sans cursor-pointer`}
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>طباعة هذا التقرير 🖨️</span>
+              <span>طباعة هذا التقرير</span>
             </button>
           </div>
           <p className="text-slate-300 text-xs">حسابات الأرباح والخسائر، قيود المصاريف التشغيلية، ومطابقة وتقدير قيمة مخزون المحل.</p>
@@ -167,49 +167,49 @@ export function ReportsTab({
             onClick={() => setReportsSubTab('dashboard')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'dashboard' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            📈 المبيعات والبيع
+            المبيعات والبيع
           </button>
           <button 
             onClick={() => setReportsSubTab('pl')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'pl' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            ⚖️ الأرباح والخسائر والمحاسبة
+            الأرباح والخسائر والمحاسبة
           </button>
           <button 
             onClick={() => setReportsSubTab('expenses')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'expenses' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            💸 المصاريف ({expenses.length})
+            المصاريف ({expenses.length})
           </button>
           <button 
             onClick={() => setReportsSubTab('stock_audit')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'stock_audit' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            📋 جرد وقيمة المخازن
+            جرد وقيمة المخازن
           </button>
           {settings.businessType !== 'phones' && <button 
             onClick={() => setReportsSubTab('expiry_report')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'expiry_report' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            ⏳ تقرير صلاحية المنتجات
+            تقرير صلاحية المنتجات
           </button>}
           <button 
             onClick={() => setReportsSubTab('returns_report')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'returns_report' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            🔄 تقرير المرتجعات ({returns.length})
+            تقرير المرتجعات ({returns.length})
           </button>
           <button 
             onClick={() => setReportsSubTab('waste_report')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'waste_report' ? 'bg-[#1D9E75] text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            🗑️ تقرير التوالف ({waste.length})
+            تقرير التوالف ({waste.length})
           </button>
           <button 
             onClick={() => setReportsSubTab('reorder_report')} 
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${reportsSubTab === 'reorder_report' ? 'bg-[#1D9E75] text-white' : 'text-slate-350 hover:text-white'}`}
           >
-            ⚠️ النواقص وحد الطلب ({products.filter(p => p.quantity <= settings.lowStockThreshold).length})
+            النواقص وحد الطلب ({products.filter(p => p.quantity <= settings.lowStockThreshold).length})
           </button>
         </div>
       </div>
@@ -384,7 +384,7 @@ export function ReportsTab({
                         {isDiscountFormOpen ? (
                           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 space-y-3 text-right">
                             <div className="text-xs font-black text-slate-700 border-b border-slate-200/50 pb-1 flex justify-between items-center">
-                              <span>⚙️ {lang === 'ar' ? 'تخصيص الخصم ' : 'Customize Quick Discount'}</span>
+                              <span>{lang === 'ar' ? 'تخصيص الخصم ' : 'Customize Quick Discount'}</span>
                               <button 
                                 type="button"
                                 onClick={() => setStagnantPromoProduct(null)}
@@ -446,7 +446,7 @@ export function ReportsTab({
                               }}
                               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                             >
-                              <span>⚡ {lang === 'ar' ? 'تفعيل وإطلاق الحملة الآن' : 'Launch Campaign Now'}</span>
+                              <span>{lang === 'ar' ? 'تفعيل وإطلاق الحملة الآن' : 'Launch Campaign Now'}</span>
                             </button>
                           </div>
                         ) : (
@@ -460,7 +460,7 @@ export function ReportsTab({
                             }}
                             className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                           >
-                            <span>⚡ {lang === 'ar' ? 'إطلاق حملة خصم ترويجية' : 'Launch Discount Promo'}</span>
+                            <span>{lang === 'ar' ? 'إطلاق حملة خصم ترويجية' : 'Launch Discount Promo'}</span>
                           </button>
                         )}
                       </div>
@@ -487,7 +487,7 @@ export function ReportsTab({
               className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${dashboardTab === 'overview' ? 'bg-[#1D9E75] text-white shadow-xs' : 'text-slate-600 hover:text-slate-850'}`}
             >
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>📈 التحليلات الإجمالية</span>
+              <span>التحليلات الإجمالية</span>
             </button>
             <button
               type="button"
@@ -495,7 +495,7 @@ export function ReportsTab({
               className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${dashboardTab === 'daily' ? 'bg-[#1D9E75] text-white shadow-xs' : 'text-slate-600 hover:text-slate-850'}`}
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>📅 التقرير اليومي للمبيعات</span>
+              <span>التقرير اليومي للمبيعات</span>
             </button>
             <button
               type="button"
@@ -503,7 +503,7 @@ export function ReportsTab({
               className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${dashboardTab === 'monthly' ? 'bg-[#1D9E75] text-white shadow-xs' : 'text-slate-600 hover:text-slate-850'}`}
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>📆 التقرير الشهري المقارن</span>
+              <span>التقرير الشهري المقارن</span>
             </button>
             <button
               type="button"
@@ -528,7 +528,7 @@ export function ReportsTab({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in" id="dashboard-tab-overview">
               {/* SVG Chart */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 text-right space-y-4">
-                <h4 className="font-bold text-slate-800 text-sm">📈 أداء المبيعات اليومية للأسبوع المنصرم</h4>
+                <h4 className="font-bold text-slate-800 text-sm">أداء المبيعات اليومية للأسبوع المنصرم</h4>
                 
                 {chartPoints.length === 0 ? (
                   <div className="h-44 flex items-center justify-center text-slate-400 text-xs">
@@ -595,7 +595,7 @@ export function ReportsTab({
 
               {/* Top Products */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 text-right space-y-4">
-                <h4 className="font-bold text-slate-800 text-sm">🏆 الأصناف الأكثر بيعاً وطلباً بالمحل (موجز خمسة)</h4>
+                <h4 className="font-bold text-slate-800 text-sm">الأصناف الأكثر بيعاً وطلباً بالمحل (موجز خمسة)</h4>
                 
                 <div className="space-y-3">
                   {topSoldProductsList.length === 0 ? (
@@ -706,7 +706,7 @@ export function ReportsTab({
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
                   <div className="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 text-xs flex justify-between items-center">
                     <span className="text-[10px] text-slate-400 font-mono">آخر تحديث: {new Date().toLocaleDateString('ar-LB')}</span>
-                    <span>📅 كشف المبيعات اليومية التفصيلي للمتجر</span>
+                    <span>كشف المبيعات اليومية التفصيلي للمتجر</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-right text-xs">
@@ -795,7 +795,7 @@ export function ReportsTab({
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
                   <div className="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 text-xs flex justify-between items-center">
                     <span className="text-[10px] text-slate-400 font-mono">سعر الصرف المعتمد: {settings.exchangeRate.toLocaleString()} ل.ل</span>
-                    <span>📆 كشف تقارير المبيعات الشهرية المقارنة والتحليلات</span>
+                    <span>كشف تقارير المبيعات الشهرية المقارنة والتحليلات</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-right text-xs">
@@ -868,7 +868,7 @@ export function ReportsTab({
                 <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
                   <div className="flex flex-col sm:flex-row justify-between items-center border-b border-slate-100 pb-3 gap-2">
                     <span className="text-xs text-slate-400 font-bold text-left">مرتبة ترتيباً تنازلياً حسب كمية المواد المفرغة والمباعة</span>
-                    <h4 className="font-bold text-slate-800 text-sm">🏆 الأصناف وقائمة المنتجات الأكثر مبيعاً وطلباً بالمحل</h4>
+                    <h4 className="font-bold text-slate-800 text-sm">الأصناف وقائمة المنتجات الأكثر مبيعاً وطلباً بالمحل</h4>
                   </div>
 
                   <div className="space-y-3.5">
@@ -1054,7 +1054,7 @@ export function ReportsTab({
           {/* Traditional Ledger Presentation */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="bg-slate-50 border-b border-slate-200 p-4 font-bold text-slate-700 text-sm">
-              ⚖️ جدول كشف أرباح وخسائر النشاط المحاسبي التفصيلي
+              جدول كشف أرباح وخسائر النشاط المحاسبي التفصيلي
             </div>
             
             <div className="p-6 font-sans text-right space-y-4">
@@ -1111,7 +1111,7 @@ export function ReportsTab({
 
                 {/* Final: Net profit */}
                 <div className={`flex justify-between items-center py-4 text-base font-black px-4 rounded-xl shadow-inner mt-4 ${netProfit >= 0 ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}`}>
-                  <span>⚖️ صافي الربح أو الخسارة الفعلي (Net Operational Profit)</span>
+                  <span>صافي الربح أو الخسارة الفعلي (Net Operational Profit)</span>
                   <span className="font-mono text-lg">{netProfit.toFixed(2)} $</span>
                 </div>
 
@@ -1137,7 +1137,7 @@ export function ReportsTab({
             {/* Form Section */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
               <h4 className="font-bold text-slate-800 text-sm flex items-center justify-end gap-1.5 border-b pb-2">
-                <span>➕ تسجيل وصرف قيد جديد</span>
+                <span>تسجيل وصرف قيد جديد</span>
               </h4>
               
               <form onSubmit={handleAddExpense} className="space-y-3 text-right">
@@ -1199,7 +1199,7 @@ export function ReportsTab({
                   type="submit"
                   className="w-full bg-[#1D9E75] hover:bg-emerald-600 text-white font-extrabold py-2 rounded-xl text-xs transition mt-2 cursor-pointer"
                 >
-                  ✅ ترحيل قيد المصروف للبيان مالي
+                  ترحيل قيد المصروف للبيان مالي
                 </button>
               </form>
             </div>
@@ -1210,7 +1210,7 @@ export function ReportsTab({
                 <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-[10px] font-mono font-black">
                   إجمالي المصاريف: {totalExpensesUSD.toFixed(2)}$
                 </span>
-                <h4 className="font-bold text-slate-800 text-sm">💸 سجل قيود ومصاريف المتجر التشغيلية</h4>
+                <h4 className="font-bold text-slate-800 text-sm">سجل قيود ومصاريف المتجر التشغيلية</h4>
               </div>
 
               {expenses.length === 0 ? (
@@ -1276,7 +1276,7 @@ export function ReportsTab({
           {/* Location selector for separate inventory reports */}
           <div className="bg-slate-50 border border-slate-205 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-right">
             <div className="order-last sm:order-first">
-              <h4 className="font-extrabold text-slate-800 text-sm">📍 تقسيم ونطاق جرد وتقييم مخازن السلع:</h4>
+              <h4 className="font-extrabold text-slate-800 text-sm">تقسيم ونطاق جرد وتقييم مخازن السلع:</h4>
               <p className="text-slate-400 text-[11px] mt-0.5">يمكنك فصل تقرير وتقييم سلع أرفف المحل المعروضة عن بضائع الكمية والاحتياطي المتبقية في المستوع الاحتياطي.</p>
             </div>
             <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
@@ -1285,21 +1285,21 @@ export function ReportsTab({
                 onClick={() => setStockAuditReportLoc('shop')}
                 className={`py-2 px-3.5 rounded-xl text-xs font-black transition border flex items-center justify-center gap-1.5 cursor-pointer ${stockAuditReportLoc === 'shop' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'}`}
               >
-                <span>🏪 رفوف المحل</span>
+                <span>رفوف المحل</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStockAuditReportLoc('warehouse')}
                 className={`py-2 px-3.5 rounded-xl text-xs font-black transition border flex items-center justify-center gap-1.5 cursor-pointer ${stockAuditReportLoc === 'warehouse' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'}`}
               >
-                <span>📦 المستودع والاحتياط</span>
+                <span>المستودع والاحتياط</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStockAuditReportLoc('combined')}
                 className={`py-2 px-3.5 rounded-xl text-xs font-black transition border flex items-center justify-center gap-1.5 cursor-pointer ${stockAuditReportLoc === 'combined' ? 'bg-slate-850 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'}`}
               >
-                <span>🌀 جرد موحد (الكل)</span>
+                <span>جرد موحد (الكل)</span>
               </button>
             </div>
           </div>
@@ -1312,7 +1312,7 @@ export function ReportsTab({
                 <Layers className="w-8 h-8" />
               </div>
               <div>
-                <span className="text-xs text-slate-400 block font-bold mb-1">إجمالي رأس مال البضاعة ({stockAuditReportLoc === 'warehouse' ? '📦 مستودع' : stockAuditReportLoc === 'shop' ? '🏪 محل' : '🌀 موحد'})</span>
+                <span className="text-xs text-slate-400 block font-bold mb-1">إجمالي رأس مال البضاعة ({stockAuditReportLoc === 'warehouse' ? 'مستودع' : stockAuditReportLoc === 'shop' ? 'محل' : 'موحد'})</span>
                 <span className="text-2xl font-black font-mono text-amber-800">{invCostValue.toFixed(2)} $</span>
                 <span className="text-[10px] block text-slate-400">قيمة الأصناف الحالية بسعر التكلفة الكامل</span>
               </div>
@@ -1323,7 +1323,7 @@ export function ReportsTab({
                 <DollarSign className="w-8 h-8" />
               </div>
               <div>
-                <span className="text-xs text-slate-400 block font-bold mb-1">إجمالي القيمة البيعية مفرّق ({stockAuditReportLoc === 'warehouse' ? '📦 مستودع' : stockAuditReportLoc === 'shop' ? '🏪 محل' : '🌀 موحد'})</span>
+                <span className="text-xs text-slate-400 block font-bold mb-1">إجمالي القيمة البيعية مفرّق ({stockAuditReportLoc === 'warehouse' ? 'مستودع' : stockAuditReportLoc === 'shop' ? 'محل' : 'موحد'})</span>
                 <span className="text-2xl font-black font-mono text-[#1D9E75]">{invRetailValue.toFixed(2)} $</span>
                 <span className="text-[10px] block text-slate-400">القيمة المتوقعة إذا بيعت بالكامل مفرّق</span>
               </div>
@@ -1466,7 +1466,7 @@ export function ReportsTab({
                       onClick={() => setExpiryReportFilter('expired')}
                       className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition"
                     >
-                      🔍 عرض منتهية الصلاحية فقط ({expiredProducts.length})
+                      عرض منتهية الصلاحية فقط ({expiredProducts.length})
                     </button>
                   </div>
                 )}
@@ -1504,7 +1504,7 @@ export function ReportsTab({
                       <AlertTriangle className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="block text-xs text-slate-400 font-semibold mb-0.5">منتهية الصلاحية 🔴</span>
+                      <span className="block text-xs text-slate-400 font-semibold mb-0.5">منتهية الصلاحية</span>
                       <span className="text-xl font-bold font-mono text-rose-600">{expiredProducts.length} صنف</span>
                     </div>
                   </button>
@@ -1519,7 +1519,7 @@ export function ReportsTab({
                       <Hourglass className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="block text-xs text-slate-400 font-semibold mb-0.5">قريبة الانتهاء 🟡</span>
+                      <span className="block text-xs text-slate-400 font-semibold mb-0.5">قريبة الانتهاء</span>
                       <span className="text-xl font-bold font-mono text-amber-600">{nearExpiryProducts.length} صنف</span>
                     </div>
                   </button>
@@ -1534,7 +1534,7 @@ export function ReportsTab({
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="block text-xs text-slate-400 font-semibold mb-0.5">إجمالي منتجات البقالة الكلي 🟢</span>
+                      <span className="block text-xs text-slate-400 font-semibold mb-0.5">إجمالي منتجات البقالة الكلي</span>
                       <span className="text-xl font-bold font-mono text-emerald-600">{products.filter(p => p.quantity > 0).length} صنف</span>
                     </div>
                   </button>
@@ -1566,19 +1566,19 @@ export function ReportsTab({
                       onClick={() => setExpiryReportFilter('expired')}
                       className={`px-3 py-1 rounded-lg text-xs font-sans font-bold transition flex items-center gap-1.5 border border-rose-100 ${expiryReportFilter === 'expired' ? 'bg-rose-600 text-white' : 'bg-rose-50 hover:bg-rose-100 text-rose-700'}`}
                     >
-                      منتهية 🔴 ({expiredProducts.length})
+                      منتهية ({expiredProducts.length})
                     </button>
                     <button
                       onClick={() => setExpiryReportFilter('near_expiry')}
                       className={`px-3 py-1 rounded-lg text-xs font-sans font-bold transition flex items-center gap-1.5 border border-amber-100 ${expiryReportFilter === 'near_expiry' ? 'bg-amber-500 text-white' : 'bg-amber-50 hover:bg-amber-100 text-amber-700'}`}
                     >
-                      قريبة الانتهاء 🟡 ({nearExpiryProducts.length})
+                      قريبة الانتهاء ({nearExpiryProducts.length})
                     </button>
                     <button
                       onClick={() => setExpiryReportFilter('safe')}
                       className={`px-3 py-1 rounded-lg text-xs font-sans font-bold transition flex items-center gap-1.5 border border-emerald-100 ${expiryReportFilter === 'safe' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'}`}
                     >
-                      آمنة 🟢 ({safeProducts.length})
+                      آمنة ({safeProducts.length})
                     </button>
                   </div>
                 </div>
@@ -1612,19 +1612,19 @@ export function ReportsTab({
                             if (p.expiryDate) {
                               if (p.daysDiff < 0) {
                                 badgeClass = "bg-rose-50 border border-rose-200 text-rose-700 font-black";
-                                statusName = "منتهية الصلاحية 🔴";
+                                statusName = "منتهية الصلاحية";
                                 daysMessage = `منذ ${Math.abs(p.daysDiff)} يوم`;
                               } else if (p.daysDiff === 0) {
                                 badgeClass = "bg-amber-100 border border-amber-300 text-amber-800 font-black animate-pulse";
-                                statusName = "تنتهي اليوم ⚠️";
+                                statusName = "تنتهي اليوم";
                                 daysMessage = "اليوم!";
                               } else if (p.daysDiff <= 90) {
                                 badgeClass = "bg-amber-50 border border-amber-200 text-amber-700 font-bold";
-                                statusName = "قريبة الانتهاء 🟡";
+                                statusName = "قريبة الانتهاء";
                                 daysMessage = `متبقي ${p.daysDiff} يوم`;
                               } else {
                                 badgeClass = "bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold";
-                                statusName = "صالحة وسليمة 🟢";
+                                statusName = "صالحة وسليمة";
                                 daysMessage = `متبقي ${p.daysDiff} يوم`;
                               }
                             }
@@ -1656,7 +1656,7 @@ export function ReportsTab({
                                         }}
                                         className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold px-2 py-1 rounded text-[10px] transition cursor-pointer"
                                       >
-                                        إتلاف 🗑️
+                                        إتلاف
                                       </button>
                                     </div>
                                   ) : (
@@ -1773,7 +1773,7 @@ export function ReportsTab({
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                      <span>🔄 {lang === 'ar' ? 'سجل العمليات المرتجعة المسجلة بالكامل' : 'Registered Claims & Returns'}</span>
+                      <span>{lang === 'ar' ? 'سجل العمليات المرتجعة المسجلة بالكامل' : 'Registered Claims & Returns'}</span>
                     </h4>
                     <div className="relative w-full sm:w-80">
                       <input
@@ -1814,9 +1814,9 @@ export function ReportsTab({
                                 <td className="p-3 text-center">
                                   <span className="inline-block bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold">
                                     {ret.reason === 'damaged' || ret.reason?.includes('عطب') 
-                                      ? (lang === 'ar' ? '⚠️ بضاعة معطوبة / تالفة' : 'Damaged Goods') 
+                                      ? (lang === 'ar' ? 'بضاعة معطوبة / تالفة' : 'Damaged Goods') 
                                       : ret.reason === 'customer_change' 
-                                        ? (lang === 'ar' ? '👤 رغبة الزبون' : 'Customer Preference')
+                                        ? (lang === 'ar' ? 'رغبة الزبون' : 'Customer Preference')
                                         : (ret.reason || '—')}
                                   </span>
                                 </td>
@@ -1827,10 +1827,10 @@ export function ReportsTab({
                                       : 'bg-blue-50 text-blue-700 border border-blue-100'
                                   }`}>
                                     {ret.action === 'cash' || ret.refundMethod === 'cash' 
-                                      ? (lang === 'ar' ? '💵 كاش نقدي' : 'Cash') 
+                                      ? (lang === 'ar' ? 'كاش نقدي' : 'Cash') 
                                       : ret.action === 'swap' 
-                                        ? (lang === 'ar' ? '🔁 تبديل السلعة' : 'Swap') 
-                                        : (lang === 'ar' ? '💳 رصيد حساب / آجل' : 'Store Credit')}
+                                        ? (lang === 'ar' ? 'تبديل السلعة' : 'Swap') 
+                                        : (lang === 'ar' ? 'رصيد حساب / آجل' : 'Store Credit')}
                                   </span>
                                 </td>
                                 <td className="p-3 text-center font-mono font-bold text-slate-500">
@@ -1934,7 +1934,7 @@ export function ReportsTab({
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                      <span>🗑️ {lang === 'ar' ? 'قائمة الجرود التالفة والهدر المسجل بالمخزن' : 'Waste & Spoiled Items Register'}</span>
+                      <span>{lang === 'ar' ? 'قائمة الجرود التالفة والهدر المسجل بالمخزن' : 'Waste & Spoiled Items Register'}</span>
                     </h4>
                     <div className="relative w-full sm:w-80">
                       <input
@@ -1982,8 +1982,8 @@ export function ReportsTab({
                                       : 'bg-rose-50 text-rose-700 border border-rose-100'
                                   }`}>
                                     {w.compensationStatus === 'compensated' 
-                                      ? (lang === 'ar' ? '✔️ معوض من الموزع' : 'Compensated') 
-                                      : (lang === 'ar' ? '🛑 خسارة على المحل' : 'Total loss')}
+                                      ? (lang === 'ar' ? 'معوض من الموزع' : 'Compensated') 
+                                      : (lang === 'ar' ? 'خسارة على المحل' : 'Total loss')}
                                   </span>
                                 </td>
                                 <td className="p-3 text-center font-mono font-bold text-slate-500">
@@ -1992,10 +1992,10 @@ export function ReportsTab({
                                 <td className="p-3 text-center">
                                   <span className="inline-block bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold">
                                     {w.reason === 'expired' || w.type === 'expired'
-                                      ? (lang === 'ar' ? '⏳ انتهاء الصلاحية' : 'Expired product')
+                                      ? (lang === 'ar' ? 'انتهاء الصلاحية' : 'Expired product')
                                       : w.reason === 'theft_loss'
-                                        ? (lang === 'ar' ? '👥 سرقة وضياع' : 'Theft or loss')
-                                        : (lang === 'ar' ? '📦 مكسور / تلف الرفوف' : 'Damaged / broken')}
+                                        ? (lang === 'ar' ? 'سرقة وضياع' : 'Theft or loss')
+                                        : (lang === 'ar' ? 'مكسور / تلف الرفوف' : 'Damaged / broken')}
                                   </span>
                                 </td>
                                 <td className="p-3 text-center font-mono font-black text-rose-600">
@@ -2103,7 +2103,7 @@ export function ReportsTab({
                   <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="text-right">
                       <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                        <span>⚠️ {lang === 'ar' ? 'قائمة النواقص وتوصيات إعادة الطلب الحرجة' : 'Low Stock Warning & Ordering Advice'}</span>
+                        <span>{lang === 'ar' ? 'قائمة النواقص وتوصيات إعادة الطلب الحرجة' : 'Low Stock Warning & Ordering Advice'}</span>
                       </h4>
                       <p className="text-[10px] text-slate-400 mt-0.5">
                         {lang === 'ar' 
@@ -2141,7 +2141,7 @@ export function ReportsTab({
                         {filteredReorders.length === 0 ? (
                           <tr>
                             <td colSpan={8} className="p-8 text-center text-slate-400 col-span-8">
-                              {lang === 'ar' ? 'كل منتجات مخزنك آمنة وفوق حد الطلب حالياً! 🎉' : 'Amazing! All products are well stocked above limits.'}
+                              {lang === 'ar' ? 'كل منتجات مخزنك آمنة وفوق حد الطلب حالياً!' : 'Amazing! All products are well stocked above limits.'}
                             </td>
                           </tr>
                         ) : (
@@ -2171,8 +2171,8 @@ export function ReportsTab({
                                       : 'bg-amber-50 text-amber-700 border border-amber-100'
                                   }`}>
                                     {p.quantity === 0 
-                                      ? (lang === 'ar' ? '🚨 نفذ بالكامل' : 'Out of Stock') 
-                                      : (lang === 'ar' ? '⚠️ رصيد منخفض' : 'Low Stock')}
+                                      ? (lang === 'ar' ? 'نفذ بالكامل' : 'Out of Stock') 
+                                      : (lang === 'ar' ? 'رصيد منخفض' : 'Low Stock')}
                                   </span>
                                 </td>
                                 <td className="p-3 text-center font-mono font-bold text-slate-500">

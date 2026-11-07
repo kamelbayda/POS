@@ -262,10 +262,10 @@ export function FirebaseSyncTab({
     try {
       if (isRegistering) {
         await createUserWithEmailAndPassword(auth, email, passwordVal);
-        showToast('success', isAr ? '🎉 تم إنشاء حسابك السحابي بنجاح! يمكنك الآن رفع بياناتك.' : '🎉 Cloud account created! You can now upload your data.');
+        showToast('success', isAr ? 'تم إنشاء حسابك السحابي بنجاح! يمكنك الآن رفع بياناتك.' : 'Cloud account created! You can now upload your data.');
       } else {
         await signInWithEmailAndPassword(auth, email, passwordVal);
-        showToast('success', isAr ? '👋 تم تسجيل الدخول للمزامنة السحابية بنجاح.' : '👋 Signed in to cloud sync.');
+        showToast('success', isAr ? 'تم تسجيل الدخول للمزامنة السحابية بنجاح.' : 'Signed in to cloud sync.');
       }
       setShowEmailAuth(false);
       setPasswordVal('');
@@ -287,7 +287,7 @@ export function FirebaseSyncTab({
     setEmailLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      showToast('success', isAr ? '📧 أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك.' : '📧 Password reset link sent to your email.');
+      showToast('success', isAr ? 'أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك.' : 'Password reset link sent to your email.');
     } catch (err: any) {
       showToast('error', authErrorMessage(err, isAr));
     } finally {
@@ -317,7 +317,7 @@ export function FirebaseSyncTab({
     try {
       await signOut(auth);
       setFbUser(null);
-      showToast('warning', isAr ? 'تم تسجيل الخروج وفصل الخادم السحابي 👋' : 'Disconnected from Firebase Cloud 👋');
+      showToast('warning', isAr ? 'تم تسجيل الخروج وفصل الخادم السحابي' : 'Disconnected from Firebase Cloud');
     } catch (err) {
       showToast('error', 'Logout Error');
     }
@@ -364,8 +364,8 @@ export function FirebaseSyncTab({
       await batchWrite([[shopDoc('settings', 'global_config'), settings]]);
 
       showToast('success', isAr 
-        ? '🚀 تم ترحيل ورفع كافة البيانات المحلية إلى خادم Firebase بنجاح!' 
-        : '🚀 All local database tables migrated to Firebase successfully!'
+        ? 'تم ترحيل ورفع كافة البيانات المحلية إلى خادم Firebase بنجاح!' 
+        : 'All local database tables migrated to Firebase successfully!'
       );
       fetchCloudCounts();
     } catch (error) {
@@ -464,8 +464,8 @@ export function FirebaseSyncTab({
       }
 
       showToast('success', isAr 
-        ? '📥 تم ترحيل وسحب كامل البيانات المستضافة سحابياً إلى التخزين المحلي بنجاح!' 
-        : '📥 All Firebase remote tables loaded and written to browser storage!'
+        ? 'تم ترحيل وسحب كامل البيانات المستضافة سحابياً إلى التخزين المحلي بنجاح!' 
+        : 'All Firebase remote tables loaded and written to browser storage!'
       );
     } catch (error) {
       console.error(error);
@@ -483,10 +483,10 @@ export function FirebaseSyncTab({
         liveSync.status === 'live' ? 'bg-emerald-50 border-emerald-200' : liveSync.status === 'declined' ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`}>
         <div className="text-sm">
           <div className="font-black text-slate-800">
-            {liveSync.status === 'live' && (isAr ? '🟢 المزامنة المباشرة شغّالة' : '🟢 Live sync is on')}
-            {liveSync.status === 'aligning' && (isAr ? '⏳ عم يجهّز المزامنة…' : '⏳ Preparing sync…')}
-            {liveSync.status === 'declined' && (isAr ? '🟡 هالجهاز مش مربوط بالمزامنة المباشرة' : '🟡 This device is not linked to live sync')}
-            {liveSync.status === 'off' && (isAr ? '⚪ المزامنة المباشرة مطفية (سجّل دخول تحت)' : '⚪ Live sync is off (sign in below)')}
+            {liveSync.status === 'live' && (isAr ? 'المزامنة المباشرة شغّالة' : 'Live sync is on')}
+            {liveSync.status === 'aligning' && (isAr ? 'عم يجهّز المزامنة…' : 'Preparing sync…')}
+            {liveSync.status === 'declined' && (isAr ? 'هالجهاز مش مربوط بالمزامنة المباشرة' : 'This device is not linked to live sync')}
+            {liveSync.status === 'off' && (isAr ? 'المزامنة المباشرة مطفية (سجّل دخول تحت)' : 'Live sync is off (sign in below)')}
           </div>
           <div className="text-xs text-slate-600 mt-1">
             {isAr
@@ -510,7 +510,7 @@ export function FirebaseSyncTab({
         <div className="relative z-10 space-y-2">
           <div className="flex items-center gap-2.5 justify-end">
             <span className="bg-yellow-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider">
-              {isAr ? 'قاعدة بيانات سحابية متكاملة ☁️' : 'PRO CLOUD BACKEND ☁️'}
+              {isAr ? 'قاعدة بيانات سحابية متكاملة' : 'PRO CLOUD BACKEND'}
             </span>
             <Cloud className="w-8 h-8" />
           </div>
@@ -538,14 +538,14 @@ export function FirebaseSyncTab({
                 <>
                   <Wifi className="w-10 h-10 text-emerald-500 animate-bounce" />
                   <span className="text-emerald-700 font-extrabold text-xs bg-emerald-50 px-2.5 py-1 rounded-full block">
-                    {isAr ? '📶 متصل بالإنترنت وقاعدة البيانات السحابية الحية' : '📶 Online & Cloud Synced'}
+                    {isAr ? 'متصل بالإنترنت وقاعدة البيانات السحابية الحية' : 'Online & Cloud Synced'}
                   </span>
                 </>
               ) : (
                 <>
                   <WifiOff className="w-10 h-10 text-amber-500 animate-pulse" />
                   <span className="text-amber-700 font-extrabold text-xs bg-amber-50 px-2.5 py-1 rounded-full block">
-                    {isAr ? '📡 غير متصل (يعمل على الكاش المؤقت بأمان)' : '📡 Offline (Safe Storage Active)'}
+                    {isAr ? 'غير متصل (يعمل على الكاش المؤقت بأمان)' : 'Offline (Safe Storage Active)'}
                   </span>
                 </>
               )}
@@ -554,7 +554,7 @@ export function FirebaseSyncTab({
 
           <div className="space-y-2">
             <span className="text-[10px] text-slate-400 font-semibold block text-center">
-              {isAr ? '🎮 اختبر ميزة العمل دون إنترنت الآن:' : '🎮 Test Offline workflow right now:'}
+              {isAr ? 'اختبر ميزة العمل دون إنترنت الآن:' : 'Test Offline workflow right now:'}
             </span>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -566,7 +566,7 @@ export function FirebaseSyncTab({
                   : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                 }`}
               >
-                <span>🔌 {isAr ? 'شغل أوفلاين' : 'Go Offline'}</span>
+                <span>{isAr ? 'شغل أوفلاين' : 'Go Offline'}</span>
               </button>
               <button
                 onClick={() => handleToggleNetwork(true)}
@@ -577,7 +577,7 @@ export function FirebaseSyncTab({
                   : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                 }`}
               >
-                <span>⚡ {isAr ? 'شغل متصل' : 'Go Live'}</span>
+                <span>{isAr ? 'شغل متصل' : 'Go Live'}</span>
               </button>
             </div>
           </div>
@@ -606,12 +606,12 @@ export function FirebaseSyncTab({
                     )}
                   </div>
                   <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-100 py-0.5 px-2 rounded block text-center">
-                    {isAr ? '✅ السيرفر السحابي متصل ويعمل حالياً بنظام الكاش' : '✅ Cloud synchronization is enabled'}
+                    {isAr ? 'السيرفر السحابي متصل ويعمل حالياً بنظام الكاش' : 'Cloud synchronization is enabled'}
                   </span>
                 </div>
               ) : (
                 <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-center text-xs text-slate-500 border border-slate-100">
-                  <span>🔒 {isAr ? 'المزامنة السحابية مغلقة حالياً' : 'Cloud Sync inactive'}</span>
+                  <span>{isAr ? 'المزامنة السحابية مغلقة حالياً' : 'Cloud Sync inactive'}</span>
                   <span className="block text-[10px] text-slate-400">
                     {isAr ? 'قم بربط حسابك لحماية بيانات متجرك وتمثيلها سحابياً.' : 'Connect to synchronize store ledger and scale branches.'}
                   </span>
@@ -627,14 +627,14 @@ export function FirebaseSyncTab({
                 className="w-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>{isAr ? 'فصل الخادم السحابي 👋' : 'Disconnect Cloud Session 👋'}</span>
+                <span>{isAr ? 'فصل الخادم السحابي' : 'Disconnect Cloud Session'}</span>
               </button>
             ) : showEmailAuth ? (
               <form onSubmit={handleEmailAuthSubmit} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div className="text-right text-[11px] font-black text-slate-700 mb-1">
                   {isRegistering 
-                    ? (isAr ? '📝 إنشاء حساب سحابي جديد لمحلّك:' : '📝 Create new cloud account:') 
-                    : (isAr ? '🔑 تسجيل دخول بحساب سحابي مفّعل:' : '🔑 Sign in to cloud database:')}
+                    ? (isAr ? 'إنشاء حساب سحابي جديد لمحلّك:' : 'Create new cloud account:') 
+                    : (isAr ? 'تسجيل دخول بحساب سحابي مفّعل:' : 'Sign in to cloud database:')}
                 </div>
                 
                 <div>
@@ -668,7 +668,7 @@ export function FirebaseSyncTab({
                       disabled={emailLoading}
                       className="text-[10px] text-rose-600 hover:text-rose-750 hover:underline font-bold transition cursor-pointer text-right"
                     >
-                      {isAr ? 'نسيت كلمة المرور؟ إعادة تعيينها عبر البريد 📧' : 'Forgot password? Reset via Email 📧'}
+                      {isAr ? 'نسيت كلمة المرور؟ إعادة تعيينها عبر البريد' : 'Forgot password? Reset via Email'}
                     </button>
                   </div>
                 )}
@@ -724,11 +724,11 @@ export function FirebaseSyncTab({
                   className="w-full bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
                   <LogIn className="w-3.5 h-3.5 text-blue-600" />
-                  <span>{isAr ? 'تسجيل دخول بالـ Google 🌐' : 'Log in with Google 🌐'}</span>
+                  <span>{isAr ? 'تسجيل دخول بالـ Google' : 'Log in with Google'}</span>
                 </button>
 
                 <div className="text-center text-[9px] text-slate-400 font-bold py-0.5">
-                  {isAr ? '🔓 مرن وتوافقي مع تطبيق الكمبيوتر السطحي (EXE):' : '🔓 Full compatibility fallback for local Desktop App:'}
+                  {isAr ? 'مرن وتوافقي مع تطبيق الكمبيوتر السطحي (EXE):' : 'Full compatibility fallback for local Desktop App:'}
                 </div>
 
                 <button
@@ -740,7 +740,7 @@ export function FirebaseSyncTab({
                   className="w-full bg-gradient-to-r from-indigo-50 to-indigo-100/70 hover:from-indigo-100 hover:to-indigo-150 text-indigo-850 border border-indigo-200/50 py-2 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{isAr ? 'الربط بالبريد الإلكتروني والرقم السري 🔑' : 'Sync style Email & Password 🔑'}</span>
+                  <span>{isAr ? 'الربط بالبريد الإلكتروني والرقم السري' : 'Sync style Email & Password'}</span>
                 </button>
 
                 <div className="h-[1px] bg-slate-100 my-1"></div>
@@ -750,7 +750,7 @@ export function FirebaseSyncTab({
                   onClick={handleAnonymousLogin}
                   className="w-full bg-[#1D9E75]/10 text-[#1D9E75] hover:bg-[#1D9E75]/20 py-1.5 rounded-xl text-[10px] font-black transition flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  <span>🚀 {isAr ? 'إنشاء قاعدة سحابية تجريبية للضيف فورا' : 'Create guest cloud database'}</span>
+                  <span>{isAr ? 'إنشاء قاعدة سحابية تجريبية للضيف فورا' : 'Create guest cloud database'}</span>
                 </button>
               </div>
             )}
@@ -787,7 +787,7 @@ export function FirebaseSyncTab({
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed border'
                 }`}
               >
-                <span>📤 {isAr ? 'رفع البضائع وفواتيرك الحالية للسحاب' : 'Upload Data to Firebase'}</span>
+                <span>{isAr ? 'رفع البضائع وفواتيرك الحالية للسحاب' : 'Upload Data to Firebase'}</span>
               </button>
               
               <button
@@ -799,7 +799,7 @@ export function FirebaseSyncTab({
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 }`}
               >
-                <span>📥 {isAr ? 'سحب فواتير وبضائع السحاب للمتجر' : 'Load from Firebase Cloud'}</span>
+                <span>{isAr ? 'سحب فواتير وبضائع السحاب للمتجر' : 'Load from Firebase Cloud'}</span>
               </button>
             </div>
           )}
@@ -856,7 +856,7 @@ export function FirebaseSyncTab({
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-500">{fbUser ? cloudCounts.products : '🔒'}</td>
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">{products.length}</td>
                 <td className="py-3 px-4 font-bold flex items-center justify-end gap-1.5">
-                  <span>🍏 {isAr ? 'المنتجات والمخزون' : 'Active Products'}</span>
+                  <span>{isAr ? 'المنتجات والمخزون' : 'Active Products'}</span>
                 </td>
               </tr>
 
@@ -880,7 +880,7 @@ export function FirebaseSyncTab({
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-500">{fbUser ? cloudCounts.categories : '🔒'}</td>
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">{categories.length}</td>
                 <td className="py-3 px-4 font-bold flex items-center justify-end gap-1.5">
-                  <span>📂 {isAr ? 'فئات المنتجات' : 'Inventory Categories'}</span>
+                  <span>{isAr ? 'فئات المنتجات' : 'Inventory Categories'}</span>
                 </td>
               </tr>
 
@@ -904,7 +904,7 @@ export function FirebaseSyncTab({
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-500">{fbUser ? cloudCounts.invoices : '🔒'}</td>
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">{invoices.length}</td>
                 <td className="py-3 px-4 font-bold flex items-center justify-end gap-1.5">
-                  <span>🧾 {isAr ? 'فواتير المبيعات' : 'Sales Invoices'}</span>
+                  <span>{isAr ? 'فواتير المبيعات' : 'Sales Invoices'}</span>
                 </td>
               </tr>
 
@@ -928,7 +928,7 @@ export function FirebaseSyncTab({
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-500">{fbUser ? cloudCounts.customers : '🔒'}</td>
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">{customers.length}</td>
                 <td className="py-3 px-4 font-bold flex items-center justify-end gap-1.5">
-                  <span>👥 {isAr ? 'الزبائن وحساب الديون' : 'Customer Directory'}</span>
+                  <span>{isAr ? 'الزبائن وحساب الديون' : 'Customer Directory'}</span>
                 </td>
               </tr>
 
@@ -952,7 +952,7 @@ export function FirebaseSyncTab({
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-500">{fbUser ? cloudCounts.suppliers : '🔒'}</td>
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">{suppliers.length}</td>
                 <td className="py-3 px-4 font-bold flex items-center justify-end gap-1.5">
-                  <span>🚛 {isAr ? 'بيانات الموردين' : 'Wholesaler Suppliers'}</span>
+                  <span>{isAr ? 'بيانات الموردين' : 'Wholesaler Suppliers'}</span>
                 </td>
               </tr>
 
@@ -976,7 +976,7 @@ export function FirebaseSyncTab({
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-500">{fbUser ? cloudCounts.purchases : '🔒'}</td>
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">{purchaseInvoices.length}</td>
                 <td className="py-3 px-4 font-bold flex items-center justify-end gap-1.5">
-                  <span>🛒 {isAr ? 'فواتير المشتريات' : 'Purchase Invoices'}</span>
+                  <span>{isAr ? 'فواتير المشتريات' : 'Purchase Invoices'}</span>
                 </td>
               </tr>
 
@@ -1000,7 +1000,7 @@ export function FirebaseSyncTab({
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-500">{fbUser ? cloudCounts.expenses : '🔒'}</td>
                 <td className="py-3 px-4 text-center font-mono font-bold text-slate-700">{expenses.length}</td>
                 <td className="py-3 px-4 font-bold flex items-center justify-end gap-1.5">
-                  <span>💵 {isAr ? 'المصاريف التشغيلية' : 'Operating Expenses'}</span>
+                  <span>{isAr ? 'المصاريف التشغيلية' : 'Operating Expenses'}</span>
                 </td>
               </tr>
 

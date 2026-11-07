@@ -236,14 +236,14 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
                     onClick={cancelEditUser}
                     className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer"
                   >
-                    {lang === 'ar' ? 'إلغاء التعديل ❌' : 'Cancel ❌'}
+                    {lang === 'ar' ? 'إلغاء التعديل' : 'Cancel'}
                   </button>
                 )}
                 <button 
                   type="submit"
                   className={`${editingUser ? 'flex-1' : 'w-full'} bg-[#1D9E75] hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer`}
                 >
-                  {editingUser ? (lang === 'ar' ? 'حفظ التعديلات 💾' : 'Save 💾') : (lang === 'ar' ? 'حفظ وإدراج المستخدم 💾' : 'Save User 💾')}
+                  {editingUser ? (lang === 'ar' ? 'حفظ التعديلات' : 'Save') : (lang === 'ar' ? 'حفظ وإدراج المستخدم' : 'Save User')}
                 </button>
               </div>
             </form>
@@ -309,7 +309,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
                       <span className="text-xs text-slate-400 font-mono block">اسم الدخول: @{u.username}</span>
                       {u.email
                         ? <span className="text-xs text-emerald-700 font-mono block" dir="ltr">{u.email}</span>
-                        : <span className="text-[11px] text-amber-600 font-bold block">{lang === 'ar' ? '⚠️ بلا إيميل: ما بينفع يسترجع الحساب' : '⚠️ No email: cannot recover the account'}</span>}
+                        : <span className="text-[11px] text-amber-600 font-bold block">{lang === 'ar' ? 'بلا إيميل: ما بينفع يسترجع الحساب' : 'No email: cannot recover the account'}</span>}
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
                         u.role === 'admin' ? 'bg-indigo-50 text-indigo-700 border border-indigo-150' : u.role === 'accountant' ? 'bg-emerald-50 text-emerald-700 border border-emerald-150' : 'bg-amber-50 text-amber-700 border border-amber-100'
                       }`}>

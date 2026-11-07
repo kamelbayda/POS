@@ -32,15 +32,15 @@ export function SetupWizardModal({
               {lang === 'ar' ? 'تخصيص أمان المالك الجديد' : 'New Owner Security Customization'}
             </span>
             <h2 className="text-xl font-bold text-slate-800 leading-tight">
-              {lang === 'ar' ? '🛡️ إعداد حسابات المدير والكاشير للترخيص الجديد' : '🛡️ Setup Authorized Admin & Cashier Accounts'}
+              {lang === 'ar' ? 'إعداد حسابات المدير والكاشير للترخيص الجديد' : 'Setup Authorized Admin & Cashier Accounts'}
             </h2>
           </div>
         </div>
 
         <p className="text-xs text-slate-500 leading-relaxed font-semibold">
           {lang === 'ar' 
-            ? '🎉 أهلاً بك! لقد تم تنشيط الاشتراك السنوي بنجاح لمتجرك الموقر. كخطوة أمنية إلزامية لحماية الصندوق، يرجى استبدال كود المبيعات وكلمات المرور الافتراضية الآن بتعيين اسم وباسكود خاص بالمدير وتعيين اسم وباسكود الكاشير المسؤول:'
-            : '🎉 Congratulations! Your annual subscription is successfully activated. As a mandatory safety step to prevent unauthorized cash manipulation, please customize administrator and cashier real names and passcodes below:'}
+            ? 'أهلاً بك! لقد تم تنشيط الاشتراك السنوي بنجاح لمتجرك الموقر. كخطوة أمنية إلزامية لحماية الصندوق، يرجى استبدال كود المبيعات وكلمات المرور الافتراضية الآن بتعيين اسم وباسكود خاص بالمدير وتعيين اسم وباسكود الكاشير المسؤول:'
+            : 'Congratulations! Your annual subscription is successfully activated. As a mandatory safety step to prevent unauthorized cash manipulation, please customize administrator and cashier real names and passcodes below:'}
         </p>
 
         <form 
@@ -96,7 +96,7 @@ export function SetupWizardModal({
             {/* Cashier Block */}
             <div className="bg-[#1D9E75]/5 border border-emerald-200/40 p-5 rounded-2xl space-y-3.5 text-right">
               <span className="text-[10px] font-black uppercase text-emerald-600 tracking-wider block border-b border-emerald-200/50 pb-1.5">
-                🛒 {lang === 'ar' ? '٢. حساب الكاشير وبائع المبيعات:' : '2. Point of Sales Cashier Staff:'}
+                {lang === 'ar' ? '٢. حساب الكاشير وبائع المبيعات:' : '2. Point of Sales Cashier Staff:'}
               </span>
 
               <div className="space-y-1">

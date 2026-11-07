@@ -59,7 +59,7 @@ export function InvoiceReceiptModal({
 
               {/* Paper Size Control Selector */}
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/65 space-y-3">
-                <label className="block text-slate-300 font-bold text-xs">📏 تحديد حجم ورق الطباعة المعياري:</label>
+                <label className="block text-slate-300 font-bold text-xs">تحديد حجم ورق الطباعة المعياري:</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {(['80mm', '58mm', 'a4', 'a5'] as const).map(sz => (
                     <button
@@ -78,7 +78,7 @@ export function InvoiceReceiptModal({
 
               {/* Typography styling and spacing sliders */}
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/65 space-y-4">
-                <span className="font-bold text-slate-350 block text-xs">🎨 التنسيق البصري وهوامش الطباعة:</span>
+                <span className="font-bold text-slate-350 block text-xs">التنسيق البصري وهوامش الطباعة:</span>
 
                 {/* Font scale adjustment */}
                 <div className="space-y-1">
@@ -148,7 +148,7 @@ export function InvoiceReceiptModal({
 
               {/* Visibility toggles */}
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/65 space-y-2.5">
-                <span className="font-bold text-slate-350 block text-xs">👁️ إخفاء وإظهار مكونات الفاتورة:</span>
+                <span className="font-bold text-slate-350 block text-xs">إخفاء وإظهار مكونات الفاتورة:</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -182,13 +182,13 @@ export function InvoiceReceiptModal({
                     <span>إلغاء الفواتير وإرجاع الأصناف</span>
                   </span>
                   {showInvoiceReceipt.totalUSD <= 0 && (
-                    <span className="bg-rose-500/15 py-0.5 px-2 text-[9px] font-black rounded text-rose-300 border border-rose-500/20">ملغاة تماماً ✖</span>
+                    <span className="bg-rose-500/15 py-0.5 px-2 text-[9px] font-black rounded text-rose-300 border border-rose-500/20">ملغاة تماماً</span>
                   )}
                 </div>
 
                 {showInvoiceReceipt.totalUSD <= 0 ? (
                   <p className="text-[10px] text-slate-400 bg-rose-950/20 p-2.5 rounded-lg border border-rose-900/25 leading-relaxed">
-                    ⚠️ هذه الفاتورة تم إلغاؤها وتصفيرها بالكامل مسبقاً، وتم إرجاع جميع أصنافها إلى جرد المستودع العام تلقائياً ولا توجد كميات متبقية للارتجاع.
+                    هذه الفاتورة تم إلغاؤها وتصفيرها بالكامل مسبقاً، وتم إرجاع جميع أصنافها إلى جرد المستودع العام تلقائياً ولا توجد كميات متبقية للارتجاع.
                   </p>
                 ) : (
                   <div className="space-y-3.5">
@@ -202,7 +202,7 @@ export function InvoiceReceiptModal({
                     </button>
 
                     <div className="border-t border-slate-900/60 pt-3 space-y-2">
-                      <span className="text-[10px] font-bold text-slate-350 block">🔄 إرجاع صنف واحد مع اختيار الكمية:</span>
+                      <span className="text-[10px] font-bold text-slate-350 block">إرجاع صنف واحد مع اختيار الكمية:</span>
                       <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
                         {showInvoiceReceipt.items.filter(itm => (itm.quantity - (itm.returnedQty || 0)) > 0).map((itm, idx) => {
                           const maxAvailable = itm.quantity - (itm.returnedQty || 0);
@@ -326,7 +326,7 @@ export function InvoiceReceiptModal({
                     }}
                     className="bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold py-2 rounded-xl transition text-[10px] flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
                   >
-                    <span>نسخ الفاتورة كنص ذكي 📋</span>
+                    <span>نسخ الفاتورة كنص ذكي</span>
                   </button>
 
                   <button
@@ -364,14 +364,14 @@ export function InvoiceReceiptModal({
                     }}
                     className="bg-slate-800 hover:bg-slate-755 text-slate-300 font-bold py-2 rounded-xl transition text-[10px] flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
                   >
-                    <span>تصدير كملف (.txt) 💾</span>
+                    <span>تصدير كملف (.txt)</span>
                   </button>
                 </div>
               </div>
 
               {/* WhatsApp Integration Module */}
               <div className="bg-slate-800 p-3.5 rounded-2xl space-y-2 text-right text-xs no-print border border-slate-700 font-sans w-full">
-                <span className="font-bold text-emerald-400 block">💬 إرسال الفاتورة عبر WhatsApp للزبون:</span>
+                <span className="font-bold text-emerald-400 block">إرسال الفاتورة عبر WhatsApp للزبون:</span>
                 <div className="flex gap-2 items-center">
                   <button
                     type="button"
@@ -452,11 +452,11 @@ export function InvoiceReceiptModal({
                         caption: `فاتورة ${showInvoiceReceipt.invoiceNumber} - ${settings.shopName}`,
                         phone: phoneInput?.value,
                       });
-                      if (outcome === 'shared') showToast('success', 'تم إرسال صورة الفاتورة ✅');
+                      if (outcome === 'shared') showToast('success', 'تم إرسال صورة الفاتورة');
                       if (outcome === 'fallback') {
                         showToast('success', phoneInput?.value.trim()
-                          ? 'نزلت صورة الفاتورة وانتسخت 📋 الصقها (أو أرفقها) بمحادثة الزبون على WhatsApp'
-                          : 'نزلت صورة الفاتورة وانتسخت 📋 فيك تبعتها لأي حدا على WhatsApp');
+                          ? 'نزلت صورة الفاتورة وانتسخت الصقها (أو أرفقها) بمحادثة الزبون على WhatsApp'
+                          : 'نزلت صورة الفاتورة وانتسخت فيك تبعتها لأي حدا على WhatsApp');
                       }
                     } catch {
                       showToast('error', 'ما زبط تحويل الفاتورة لصورة، جرّب كمان مرة.');
@@ -467,7 +467,7 @@ export function InvoiceReceiptModal({
                   className="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-60 text-white font-black px-3 py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
-                  <span>{isSharingImage ? 'جارٍ تجهيز الصورة…' : '📷 إرسال الفاتورة كصورة'}</span>
+                  <span>{isSharingImage ? 'جارٍ تجهيز الصورة…' : 'إرسال الفاتورة كصورة'}</span>
                 </button>
                 <span className="block text-[10px] text-slate-400 leading-relaxed">
                   عالتلفون والتابليت بتفتح قائمة المشاركة: اختار WhatsApp وبعدين الزبون.
@@ -595,7 +595,7 @@ export function InvoiceReceiptModal({
                             <span key={sn} className="block font-mono font-bold text-[9px] text-stone-700" dir="ltr" data-receipt-imei>IMEI {sn}</span>
                           ))}
                           {item.warrantyUntil && (
-                            <span className="block text-[9px] font-bold text-stone-700" data-receipt-warranty>🛡️ كفالة لغاية <span dir="ltr">{item.warrantyUntil}</span></span>
+                            <span className="block text-[9px] font-bold text-stone-700" data-receipt-warranty>كفالة لغاية <span dir="ltr">{item.warrantyUntil}</span></span>
                           )}
                         </span>
                         <span className="col-span-2 text-center font-mono font-extrabold text-stone-850">×{item.quantity}</span>
@@ -637,7 +637,7 @@ export function InvoiceReceiptModal({
                   {showReceiptCalculations && (
                     <div className="border rounded-xl p-2.5 mt-2.5 text-[10px] space-y-1 text-right bg-stone-100 border-stone-250 text-stone-700 font-sans">
                       <div className="font-black text-stone-905 border-b border-stone-300 pb-1 mb-1 text-center text-[10px] flex items-center justify-center gap-1">
-                        <span>🔄 تفصيل المدفوعات ومطابقة الصرف</span>
+                        <span>تفصيل المدفوعات ومطابقة الصرف</span>
                       </div>
                       <div className="flex flex-row-reverse justify-between font-bold leading-none text-stone-900">
                         <span dir="ltr" className="font-mono">1$ = {showInvoiceReceipt.exchangeRate.toLocaleString()} ل.ل</span>
@@ -1018,7 +1018,7 @@ export function InvoiceReceiptModal({
             className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
           >
             <Printer className="w-4 h-4" />
-            <span>{settings.directSilentPrint !== false ? 'طباعة تلقائية صامتة (فوري) ⚡' : 'طباعة الفاتورة 🖨️'}</span>
+            <span>{settings.directSilentPrint !== false ? 'طباعة تلقائية صامتة (فوري)' : 'طباعة الفاتورة'}</span>
           </button>
 
           {settings.directSilentPrint !== false && (
@@ -1048,7 +1048,7 @@ export function InvoiceReceiptModal({
               className="px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 border border-slate-200 text-xs font-sans font-bold"
               title="فتح نافذة حوار طباعة المتصفح اليدوية"
             >
-              <span>طباعة يدوية / حفظ PDF 📄</span>
+              <span>طباعة يدوية / حفظ PDF</span>
             </button>
           )}
 

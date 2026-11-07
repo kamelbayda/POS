@@ -41,7 +41,6 @@ export function PurchaseContactModal({
         className="bg-white rounded-3xl p-6 w-full max-w-lg text-right border border-emerald-150 shadow-2xl space-y-4 font-sans max-h-[90vh] overflow-y-auto scrollbar-thin"
       >
         <div className="text-center space-y-2 border-b border-slate-100 pb-3">
-          <span className="text-4xl">📨</span>
           <h3 className="text-base font-black text-slate-800">
             {lang === 'ar' ? 'نموذج تواصل لشراء وتفعيل الاشتراك السنوي' : 'Annual License Purchase & Contact Form'}
           </h3>
@@ -54,7 +53,7 @@ export function PurchaseContactModal({
 
         <div className="space-y-3.5 text-right">
           <div>
-            <label className="block text-slate-500 mb-1 text-[11px] font-bold">👤 {lang === 'ar' ? 'اسمك الكريم / المالك:' : 'Your Name / Shop Owner:'}</label>
+            <label className="block text-slate-500 mb-1 text-[11px] font-bold">{lang === 'ar' ? 'اسمك الكريم / المالك:' : 'Your Name / Shop Owner:'}</label>
             <input 
               type="text"
               value={contactName}
@@ -66,7 +65,7 @@ export function PurchaseContactModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-500 mb-1 text-[11px] font-bold">📧 {lang === 'ar' ? 'البريد الإلكتروني:' : 'Email Address:'}</label>
+              <label className="block text-slate-500 mb-1 text-[11px] font-bold">{lang === 'ar' ? 'البريد الإلكتروني:' : 'Email Address:'}</label>
               <input 
                 type="email"
                 value={contactEmail}
@@ -76,7 +75,7 @@ export function PurchaseContactModal({
               />
             </div>
             <div>
-              <label className="block text-slate-500 mb-1 text-[11px] font-bold">📞 {lang === 'ar' ? 'رقم الهاتف / WhatsApp:' : 'Phone Line / WhatsApp:'}</label>
+              <label className="block text-slate-500 mb-1 text-[11px] font-bold">{lang === 'ar' ? 'رقم الهاتف / WhatsApp:' : 'Phone Line / WhatsApp:'}</label>
               <input 
                 type="text"
                 value={contactPhone}
@@ -88,7 +87,7 @@ export function PurchaseContactModal({
           </div>
 
           <div>
-            <label className="block text-slate-500 mb-1 text-[11px] font-bold">🏢 {lang === 'ar' ? 'اسم المتجر المراد تفعيله:' : 'Store Name to Activate:'}</label>
+            <label className="block text-slate-500 mb-1 text-[11px] font-bold">{lang === 'ar' ? 'اسم المتجر المراد تفعيله:' : 'Store Name to Activate:'}</label>
             <input 
               type="text"
               value={contactShop || settings.shopName || ''}
@@ -99,7 +98,7 @@ export function PurchaseContactModal({
           </div>
 
           <div>
-            <label className="block text-slate-500 mb-1 text-[11px] font-bold">📝 {lang === 'ar' ? 'رسالتك أو ملاحظاتك الإضافية للطلب:' : 'Additional message / custom terms:'}</label>
+            <label className="block text-slate-500 mb-1 text-[11px] font-bold">{lang === 'ar' ? 'رسالتك أو ملاحظاتك الإضافية للطلب:' : 'Additional message / custom terms:'}</label>
             <textarea 
               value={contactMessage}
               onChange={e => setContactMessage(e.target.value)}
@@ -111,13 +110,13 @@ export function PurchaseContactModal({
 
         <div className="bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl text-center space-y-2 mt-4">
           <span className="text-[11px] font-black text-emerald-800 block">
-            {lang === 'ar' ? '💬 اختر وسيلة الإرسال المباشرة أدناه للتفعيل السنوي الفوري عبر المطور:' : '💬 Choose shipping channel for annual key activation:'}
+            {lang === 'ar' ? 'اختر وسيلة الإرسال المباشرة أدناه للتفعيل السنوي الفوري عبر المطور:' : 'Choose shipping channel for annual key activation:'}
           </span>
 
           <div className="grid grid-cols-2 gap-2 text-xs font-bold">
             {(() => {
               const waMsg = `السلام عليكم أستاذ كامل بيضاء، أرغب في شراء وتفعيل النسخة المعتمدة لبرنامج مبيعات السوبرماركت - الاشتراك السنوي.\n\n` +
-                `📋 تفاصيل طلب التنشيط:\n` +
+                `تفاصيل طلب التنشيط:\n` +
                 `- اسم العميل: ${contactName || 'غير محدد'}\n` +
                 `- رقم الهاتف/واتساب: ${contactPhone || 'غير محدد'}\n` +
                 `- البريد الإلكتروني: ${contactEmail || 'غير محدد'}\n` +
@@ -132,7 +131,7 @@ export function PurchaseContactModal({
                   rel="noopener noreferrer"
                   className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1 cursor-pointer text-center"
                 >
-                  💬 {lang === 'ar' ? 'واتساب مباشر' : 'Send WhatsApp'}
+                  {lang === 'ar' ? 'واتساب مباشر' : 'Send WhatsApp'}
                 </a>
               );
             })()}
@@ -152,7 +151,7 @@ export function PurchaseContactModal({
                   href={mailUrl}
                   className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1 cursor-pointer text-center"
                 >
-                  📧 {lang === 'ar' ? 'بريد إلكتروني' : 'Send Email'}
+                  {lang === 'ar' ? 'بريد إلكتروني' : 'Send Email'}
                 </a>
               );
             })()}
