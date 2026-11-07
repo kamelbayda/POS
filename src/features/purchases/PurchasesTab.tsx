@@ -173,7 +173,7 @@ export function PurchasesTab({
   const [showQuickAddForm, setShowQuickAddForm] = useState<boolean>(false);
   const [newProdName, setNewProdName] = useState<string>('');
   const [newProdBarcode, setNewProdBarcode] = useState<string>('');
-  const [newProdCategory, setNewProdCategory] = useState<string>(categories[0]?.name || 'معلبات');
+  const [newProdCategory, setNewProdCategory] = useState<string>(categories[0]?.id || ''); // category id, as the till expects
   const [newProdCost, setNewProdCost] = useState<string>('');
   const [newProdSellRetail, setNewProdSellRetail] = useState<string>('');
   const [newProdSellWholesale, setNewProdSellWholesale] = useState<string>('');
@@ -239,7 +239,7 @@ export function PurchasesTab({
     const updated = [...categories, newCat];
     setCategories(updated);
     storage.setJSON('pos_categories', updated);
-    setNewProdCategory(name); // select it automatically
+    setNewProdCategory(cleanId); // select it automatically
     setInlineCategoryName('');
     setShowInlineCategoryInput(false);
     showToast('success', isAr ? `تمت إضافة فئة [${name}] وتفعيلها بنجاح!` : `Category [${name}] created!`);
@@ -1192,7 +1192,7 @@ export function PurchasesTab({
                             className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-right font-sans hover:border-slate-350 transition"
                           >
                             {categories.map(c => (
-                              <option key={c.id} value={c.name}>{c.name}</option>
+                              <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                           </select>
                         )}

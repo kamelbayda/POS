@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Product, WarehouseTransfer, Category } from '../../types';
 import * as storage from '../../lib/storage';
+import { categoryIdOf } from '../../lib/categories';
 
 interface WarehouseTabProps {
   products: Product[];
@@ -218,7 +219,7 @@ export function WarehouseTab({
       p.barcode.includes(searchQuery.trim()) || 
       (p.barcodes && p.barcodes.some(b => b.includes(searchQuery.trim())));
     
-    const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' || categoryIdOf(p.category, categories) === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -315,7 +316,7 @@ export function WarehouseTab({
               >
                 <option value="all">{isAr ? 'كل الفئات والتصنيفات' : 'All Categories'}</option>
                 {categories.map(c => (
-                  <option key={c.id} value={c.name}>{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
 
