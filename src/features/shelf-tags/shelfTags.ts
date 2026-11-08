@@ -46,7 +46,7 @@ function tagHtml(item: TagItem, o: TagOptions) {
   const lbp = item.offerPriceUSD === undefined && p.priceLBP ? p.priceLBP : lbpPrice(price, o.exchangeRate);
   const unit = p.isWeighed ? (ar ? ' / كغ' : ' / kg') : '';
   const [whole, cents] = price.toFixed(2).split('.');
-  const band = isOffer ? (ar ? '🔥 عرض خاص' : '🔥 SPECIAL OFFER') : o.showShopName ? esc(o.shopName) : '';
+  const band = isOffer ? (ar ? 'عرض خاص' : 'SPECIAL OFFER') : o.showShopName ? esc(o.shopName) : '';
 
   return `
     <div class="tag ${o.size} ${isOffer ? 'offer' : 'classic'}">

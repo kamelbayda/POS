@@ -117,7 +117,7 @@ export function PosModernScreen({
         <div className="bg-[#01002e] border border-[#d4af37]/30 p-3 rounded-2xl mb-4 space-y-2 text-right shadow-md">
           <div className="flex justify-between items-center gap-2">
             <span className="text-[11px] font-black text-[#d4af37] uppercase tracking-wider">
-              ✨ {lang === 'ar' ? 'الفواتير النشطة والمعلقة (البيع لعدة زبائن):' : 'Active & Suspended Bills (Multi-Client Tab):'}
+              {lang === 'ar' ? 'الفواتير النشطة والمعلقة (البيع لعدة زبائن):' : 'Active & Suspended Bills (Multi-Client Tab):'}
             </span>
             <button
               type="button"
@@ -233,7 +233,7 @@ export function PosModernScreen({
         {/* --- NEW ADDITION: WHOLESALE VS RETAIL SELECTION --- */}
         <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-3 space-y-2 text-right">
           <div className="flex justify-between items-center text-xs">
-            <span className="font-bold text-slate-700">🛒 {lang === 'ar' ? 'تسعير المعاملة :' : 'Cart Pricing Mode:'}</span>
+            <span className="font-bold text-slate-700">{lang === 'ar' ? 'تسعير المعاملة :' : 'Cart Pricing Mode:'}</span>
             <div className="grid grid-cols-2 gap-1 w-40">
               <button
                 type="button"
@@ -287,7 +287,7 @@ export function PosModernScreen({
                   <div className="text-right truncate flex-1">
                     <h4 className="font-extrabold text-slate-800 text-sm sm:text-base truncate">{item.product.name}</h4>
                     {(item.serials || []).length > 0 && (
-                      <div className="text-[10px] font-mono text-slate-500" dir="ltr" data-cart-serials>📱 {(item.serials || []).join(' · ')}</div>
+                      <div className="text-[10px] font-mono text-slate-500" dir="ltr" data-cart-serials>{(item.serials || []).join(' · ')}</div>
                     )}
                     <span className="text-xs sm:text-sm font-semibold font-mono text-slate-400">
                       {getProductDisplayPrice(item.product, item.quantity).toFixed(2)} $ / صنف
@@ -463,7 +463,7 @@ export function PosModernScreen({
               onClick={openCashDrawer}
               className="flex-1 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-extrabold py-2.5 rounded-xl transition shadow-md active:translate-y-px text-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              💵 فتح درج الكاش المباشر
+              فتح درج الكاش المباشر
             </button>
             {hardwarePrinterType !== 'system' ? (
               <div className="bg-emerald-50 dark:bg-emerald-950 text-emerald-750 dark:text-emerald-300 text-[10px] font-mono font-extrabold px-2.5 rounded-xl flex items-center justify-center border border-emerald-250">
@@ -471,7 +471,7 @@ export function PosModernScreen({
               </div>
             ) : (
               <div className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium px-2 rounded-xl flex items-center justify-center border border-slate-205">
-                طابعة نظام 🖥️
+                طابعة نظام
               </div>
             )}
           </div>
@@ -487,10 +487,9 @@ export function PosModernScreen({
       {/* Right Column: Catalog, search, scanner */}
       <div className="flex-grow flex-1 h-full flex flex-col overflow-hidden gap-4 w-full max-w-none" id="pos-right-catalog" style={{ flexGrow: 1 }}>
 
-        {/* 🖥️ DYNAMIC LAYOUT SWITCHER BANNER 🖥️ */}
+        {/* DYNAMIC LAYOUT SWITCHER BANNER */}
         <div className="bg-[#1D9E75]/10 border border-[#1D9E75]/35 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-right font-sans shrink-0 animate-in fade-in duration-200 select-none">
           <div className="flex items-center gap-2 flex-row-reverse">
-            <span className="text-lg">🖥️</span>
             <div className="text-right">
               <h4 className="text-xs font-black text-slate-800">
                 {lang === 'ar' ? 'هل تفضل واجهة المبيعات باللمس؟' : 'Prefer the fast Touch POS interface?'}
@@ -504,7 +503,7 @@ export function PosModernScreen({
             onClick={() => {
               setPosLayoutMode('terminal');
               setTheme('dark');
-              showToast('success', lang === 'ar' ? '🖥️ تم تفعيل واجهة الكاشير باللمس' : 'Switched to Touch Terminal interface');
+              showToast('success', lang === 'ar' ? 'تم تفعيل واجهة الكاشير باللمس' : 'Switched to Touch Terminal interface');
             }}
             className="bg-[#1D9E75] hover:bg-emerald-600 text-white text-xs font-black px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
           >
@@ -513,7 +512,7 @@ export function PosModernScreen({
           </button>
         </div>
 
-        {/* 🎁 PROMINENT BUNDLE COMBOS AT HEADER/TOP OF THE PAGE 🎁 */}
+        {/* PROMINENT BUNDLE COMBOS AT HEADER/TOP OF THE PAGE */}
         {(() => {
           const activeBundles = promotions.filter(p => p.active && p.type === 'bundle');
           if (activeBundles.length === 0) return null;
@@ -581,7 +580,7 @@ export function PosModernScreen({
                       <div className="flex items-center justify-between border-t border-[#01002e]/10 mt-2.5 pt-2 flex-row-reverse">
                         {promo.barcode ? (
                           <div className="flex items-center gap-1 text-[9px] text-[#01002e]/70 font-mono">
-                            <strong>📟 باركود:</strong>
+                            <strong>باركود:</strong>
                             <span className="bg-[#01002e]/10 text-[#01002e] px-1 rounded font-bold">{promo.barcode}</span>
                           </div>
                         ) : (
@@ -589,7 +588,7 @@ export function PosModernScreen({
                         )}
 
                         <span className="text-[9.5px] text-[#01002e] font-black flex items-center gap-0.5">
-                          🛒 إضافة سريعة ◀
+                          إضافة سريعة ◀
                         </span>
                       </div>
                     </div>
@@ -610,13 +609,13 @@ export function PosModernScreen({
               <div className="flex items-center justify-between flex-row-reverse">
                 <div className="flex items-center gap-2 flex-row-reverse text-[#d4af37] font-extrabold text-sm">
                   <AlertTriangle className="w-5 h-5 text-[#d4af37] shrink-0 animate-bounce" />
-                  <span>🚨 تنبيه النواقص وإعادة الطلب ({depletedProducts.length} أصناف تحت حد الطلب)</span>
+                  <span>تنبيه النواقص وإعادة الطلب ({depletedProducts.length} أصناف تحت حد الطلب)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
-                      let txt = `📋 قائمة نواقص مخزون المتجر - حد الطلب (${settings.lowStockThreshold} قطع):\n`;
+                      let txt = `قائمة نواقص مخزون المتجر - حد الطلب (${settings.lowStockThreshold} قطع):\n`;
                       txt += `====================================\n`;
                       depletedProducts.forEach((p, idx) => {
                         txt += `${idx + 1}. ${p.name} [الباركود: ${p.barcode}] -> المتوفر حالياً: ${p.quantity} قطع\n`;
@@ -631,14 +630,14 @@ export function PosModernScreen({
                     className="bg-[#d4af37] hover:bg-[#c29d2c] text-[#01002e] border border-[#b89524] px-2.5 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer flex items-center gap-1"
                     title="نسخ للمورد"
                   >
-                    <span>نسخ قائمة النواقص 📋</span>
+                    <span>نسخ قائمة النواقص</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowLowStockPOSPanel(!showLowStockPOSPanel)}
                     className="bg-[#01002e] hover:bg-[#d4af37]/10 text-[#fff200] border border-[#d4af37]/40 px-2.5 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer"
                   >
-                    {showLowStockPOSPanel ? '✖ إخفاء التفاصيل' : '👁 عرض التفاصيل'}
+                    {showLowStockPOSPanel ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
                   </button>
                 </div>
               </div>
@@ -662,7 +661,7 @@ export function PosModernScreen({
                         }}
                         className="bg-[#d4af37] hover:bg-[#c29d2c] text-[#01002e] border border-[#b89524] px-2 py-1 rounded-lg text-[10px] font-black cursor-pointer transition flex items-center gap-1 shrink-0 ml-2 animate-pulse"
                       >
-                        <span>صرف/بيع 🛒</span>
+                        <span>صرف/بيع</span>
                       </button>
 
                       <div className="min-w-0 flex-1 truncate">
@@ -694,7 +693,7 @@ export function PosModernScreen({
                   value={barcodeInput}
                   onChange={e => setBarcodeInput(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 pr-10 text-right font-sans text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75] focus:bg-white"
-                  placeholder="📟 محاكاة مسح باركود بالماسح (مثلاً اكتب 1111 أو 2222 واضغط Enter)"
+                  placeholder="محاكاة مسح باركود بالماسح (مثلاً اكتب 1111 أو 2222 واضغط Enter)"
                 />
                 <Scan className="absolute left-3.5 top-3.5 text-slate-400 w-5 h-5" />
               </div>
@@ -718,7 +717,7 @@ export function PosModernScreen({
               type="submit"
               className="w-full sm:w-auto bg-[#1D9E75] hover:bg-[#15805e] text-white font-bold px-6 py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>قراءة الباركود ⚡</span>
+              <span>قراءة الباركود</span>
             </button>
           </form>
 
@@ -796,7 +795,7 @@ export function PosModernScreen({
         <div className="flex-1 overflow-y-auto pr-1 pl-1 min-h-0 text-right" id="pos-scrollable-grid">
           {/* Dynamic Catalog Area: Categories Grid vs Products Grid */}
         {selectedCategory === 'all' && searchQuery.trim() === '' ? (
-          // 📂 CATEGORIES GRID (الشاشة الرئيسية للفئات بالتصفح الموزع على صفحات)
+          // CATEGORIES GRID (الشاشة الرئيسية للفئات بالتصفح الموزع على صفحات)
           (() => {
             const totalPages = Math.ceil((categories.length + 1) / categoriesPerPage);
             const currentPageIndex = Math.min(categoryPage, totalPages - 1 >= 0 ? totalPages - 1 : 0);
@@ -821,7 +820,7 @@ export function PosModernScreen({
                   </span>
                 </div>
 
-                {/* 🏷️ Horizontal Quick Promos & Offers Row (سطر العروض إلى جانب لائحة الأقسام) */}
+                {/* Horizontal Quick Promos & Offers Row (سطر العروض إلى جانب لائحة الأقسام) */}
                 {promotions.length > 0 && (
                   <div className="bg-[#01002e] border border-[#d4af37]/30 rounded-2xl p-3 font-sans shadow-md" id="pos-promos-row-departments">
                     <div className="flex items-center gap-1.5 flex-row-reverse mb-2 text-[#d4af37] font-black text-xs">
@@ -863,7 +862,7 @@ export function PosModernScreen({
                                 const prod = products.find(p => p.id === promo.productId);
                                 if (prod) {
                                   handleProductClick(prod);
-                                  showToast('success', lang === 'ar' ? `🛒 تمت إضافة المنتج المشمول بالعرض: ${prod.name}` : `🛒 Added promotional item: ${prod.name}`);
+                                  showToast('success', lang === 'ar' ? `تمت إضافة المنتج المشمول بالعرض: ${prod.name}` : `Added promotional item: ${prod.name}`);
                                 } else {
                                   showToast('warning', lang === 'ar' ? 'المنتج غير متوفر حالياً بالسيستم' : 'Product info not found');
                                 }
@@ -941,7 +940,7 @@ export function PosModernScreen({
                         setCategoriesPerPage(newval);
                         storage.setItem('pos_categories_per_page', newval.toString());
                         setCategoryPage(0); // reset page to 0 on change
-                        showToast('success', lang === 'ar' ? `📋 عدد الأقسام الحالي بالصفحة: ${newval}` : `📋 Page limit updated to ${newval}`);
+                        showToast('success', lang === 'ar' ? `عدد الأقسام الحالي بالصفحة: ${newval}` : `Page limit updated to ${newval}`);
                       }}
                       className="bg-white border border-slate-205 rounded-lg text-xs font-black font-sans px-2.5 py-1 text-center cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1D9E75] min-w-[75px]"
                     >
@@ -962,7 +961,7 @@ export function PosModernScreen({
                         disabled={currentPageIndex >= totalPages - 1}
                         onClick={() => {
                           setCategoryPage(prev => prev + 1);
-                          showToast('success', lang === 'ar' ? 'تم عرض الصفحة التالية 🗄️' : 'Next page shown 🗄️');
+                          showToast('success', lang === 'ar' ? 'تم عرض الصفحة التالية' : 'Next page shown');
                         }}
                         className={`px-3 py-1 rounded-lg border text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
                           currentPageIndex >= totalPages - 1
@@ -982,7 +981,7 @@ export function PosModernScreen({
                         disabled={currentPageIndex === 0}
                         onClick={() => {
                           setCategoryPage(prev => Math.max(0, prev - 1));
-                          showToast('success', lang === 'ar' ? 'تم الرجوع لصفحة سابقة 🗄️' : 'Previous page shown 🗄️');
+                          showToast('success', lang === 'ar' ? 'تم الرجوع لصفحة سابقة' : 'Previous page shown');
                         }}
                         className={`px-3 py-1 rounded-lg border text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
                           currentPageIndex === 0
@@ -995,7 +994,7 @@ export function PosModernScreen({
                     </div>
                   ) : (
                     <span className="text-[10px] text-slate-400 font-bold font-sans">
-                      {lang === 'ar' ? 'جميع الأقسام معروضة بصفحة واحدة بالتفصيل 📦' : 'All departments shown on a single page 📦'}
+                      {lang === 'ar' ? 'جميع الأقسام معروضة بصفحة واحدة بالتفصيل' : 'All departments shown on a single page'}
                     </span>
                   )}
                 </div>
@@ -1003,7 +1002,7 @@ export function PosModernScreen({
             );
           })()
         ) : (
-          // 🧴 PRODUCTS GRID WITHIN SELECTED CATEGORY / SEARCH ACTIVE
+          // PRODUCTS GRID WITHIN SELECTED CATEGORY / SEARCH ACTIVE
           <div className="space-y-4 min-h-full flex flex-col">
             {/* Category Header and Navigation Back Button */}
             {selectedCategory !== 'all' && (
@@ -1037,7 +1036,6 @@ export function PosModernScreen({
             {searchQuery.trim() !== '' && (
               <div className="bg-blue-50 border border-blue-150 p-2.5 rounded-xl flex items-center justify-between flex-row-reverse text-right">
                 <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5 font-sans">
-                  <span>🔍</span>
                   <span>{lang === 'ar' ? `نتائج البحث عن: "${searchQuery}"` : `Search results for: "${searchQuery}"`}</span>
                 </span>
                 <button
@@ -1045,7 +1043,7 @@ export function PosModernScreen({
                   onClick={() => setSearchQuery('')}
                   className="text-blue-600 hover:text-blue-800 text-xs font-bold underline cursor-pointer"
                 >
-                  {lang === 'ar' ? 'إلغاء البحث ❌' : 'Clear search ❌'}
+                  {lang === 'ar' ? 'إلغاء البحث' : 'Clear search'}
                 </button>
               </div>
             )}
@@ -1082,7 +1080,7 @@ export function PosModernScreen({
                               عرض حزمة الكومبو
                             </span>
                             <span className="text-[9px] font-bold text-slate-400 font-mono bg-slate-50 px-1 py-0.5 rounded truncate" title={promo.id}>
-                              {promo.startDate} ↩ {promo.endDate}
+                              {promo.startDate} {promo.endDate}
                             </span>
                           </div>
 
@@ -1091,7 +1089,7 @@ export function PosModernScreen({
                           </h4>
 
                           <div className="mt-1.5 text-[10px] text-slate-500 bg-amber-50/20 p-2 rounded-lg border border-amber-100/30">
-                            <div className="font-bold text-amber-800 mb-1">📦 مكونات الحزمة:</div>
+                            <div className="font-bold text-amber-800 mb-1">مكونات الحزمة:</div>
                             <div className="space-y-0.5">
                               {promo.bundleProducts?.map((comp, cIdx) => {
                                 const originalProd = products.find(p => p.id === comp.productId);
@@ -1140,15 +1138,15 @@ export function PosModernScreen({
                             {/* EXPIRED BLOCK TAG */}
                             {item.isExpired ? (
                               <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase shrink-0">
-                                منتهي ❌
+                                منتهي
                               </span>
                             ) : item.isNearExpiry ? (
                               <span className="bg-amber-100 border border-amber-200 text-amber-800 text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
-                                صلاحية ⏳
+                                صلاحية
                               </span>
                             ) : item.quantity <= settings.lowStockThreshold ? (
                               <span className="bg-orange-50 border border-orange-100 text-orange-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
-                                منخفض ⚠️
+                                منخفض
                               </span>
                             ) : (
                               <span className="text-[9px] font-bold text-slate-400 font-mono bg-slate-50 px-1 py-0.5 rounded truncate max-w-[100px]" title={item.barcode}>
@@ -1197,7 +1195,7 @@ export function PosModernScreen({
               {selectedCategory === 'bundles' ? (
                 promotions.filter(promo => promo.active && promo.type === 'bundle').length === 0 && (
                   <div className="col-span-full py-12 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200 justify-center">
-                    😞 {lang === 'ar' ? 'لا توجد عروض مجمعة نشطة حالياً.' : 'No active bundle offers available right now.'}
+                    {lang === 'ar' ? 'لا توجد عروض مجمعة نشطة حالياً.' : 'No active bundle offers available right now.'}
                   </div>
                 )
               ) : (
@@ -1205,7 +1203,7 @@ export function PosModernScreen({
                   .filter(p => searchQuery.trim() !== '' || selectedCategory === 'all' || categoryIdOf(p.category, categories) === selectedCategory)
                   .filter(p => matchesProductSearch(p, searchQuery)).length === 0 && (
                     <div className="col-span-full py-12 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                      😞 {lang === 'ar' ? 'عفواً! لم يتم العثور على أي منتج مطابق في هذا القسم.' : 'No items found matching the filter.'}
+                      {lang === 'ar' ? 'عفواً! لم يتم العثور على أي منتج مطابق في هذا القسم.' : 'No items found matching the filter.'}
                     </div>
                 )
               )}

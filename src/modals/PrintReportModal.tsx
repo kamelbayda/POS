@@ -198,7 +198,7 @@ export function PrintReportModal({
               className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-2 px-5 rounded-xl transition flex items-center gap-2 cursor-pointer text-xs shadow-md shadow-emerald-950/20"
             >
               <Printer className="w-4 h-4" />
-              <span>{settings.directSilentPrint !== false ? 'طباعة صامتة فورية (تلقائي) ⚡' : 'بدء الطباعة أو تصدير PDF 🖨️ / 📄'}</span>
+              <span>{settings.directSilentPrint !== false ? 'طباعة صامتة فورية (تلقائي)' : 'بدء الطباعة أو تصدير PDF / 📄'}</span>
             </button>
 
             {settings.directSilentPrint !== false && (
@@ -249,7 +249,7 @@ export function PrintReportModal({
                 className="bg-slate-700 hover:bg-slate-650 text-slate-200 font-bold py-2 px-3 rounded-xl transition flex items-center gap-1 cursor-pointer text-xs border border-slate-600"
                 title="فتح حوار طباعة المتصفح اليدوية للتقرير"
               >
-                <span>طباعة يدوية / حفظ PDF 📄</span>
+                <span>طباعة يدوية / حفظ PDF</span>
               </button>
             )}
 
@@ -258,7 +258,7 @@ export function PrintReportModal({
               onClick={() => setPrintReportType(null)}
               className="bg-slate-750 hover:bg-slate-700 text-slate-300 font-bold py-2 px-4 rounded-xl transition text-xs cursor-pointer border border-slate-700"
             >
-              إغلاق المعاينة ❌
+              إغلاق المعاينة
             </button>
           </div>
         </div>
@@ -272,56 +272,56 @@ export function PrintReportModal({
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'dashboard' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>📈 المبيعات والبيع</span>
+              <span>المبيعات والبيع</span>
             </button>
             <button 
               onClick={() => setPrintReportType('pl')} 
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'pl' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <DollarSign className="w-3.5 h-3.5" />
-              <span>⚖️ الأرباح والخسائر</span>
+              <span>الأرباح والخسائر</span>
             </button>
             <button 
               onClick={() => setPrintReportType('expenses')} 
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'expenses' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <Minus className="w-3.5 h-3.5" />
-              <span>💸 المصاريف ({expenses.length})</span>
+              <span>المصاريف ({expenses.length})</span>
             </button>
             <button 
               onClick={() => setPrintReportType('stock_audit')} 
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'stock_audit' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <ClipboardList className="w-3.5 h-3.5" />
-              <span>📋 جرد وقيمة المخازن</span>
+              <span>جرد وقيمة المخازن</span>
             </button>
             <button 
               onClick={() => setPrintReportType('expiry_report')} 
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'expiry_report' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <Hourglass className="w-3.5 h-3.5" />
-              <span>⏳ صلاحية المنتجات</span>
+              <span>صلاحية المنتجات</span>
             </button>
             <button 
               onClick={() => setPrintReportType('returns_report')} 
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'returns_report' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>🔄 المرتجعات ({returns.length})</span>
+              <span>المرتجعات ({returns.length})</span>
             </button>
             <button 
               onClick={() => setPrintReportType('waste_report')} 
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'waste_report' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>🗑️ التوالف ({waste.length})</span>
+              <span>التوالف ({waste.length})</span>
             </button>
             <button 
               onClick={() => setPrintReportType('reorder_report')} 
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${printReportType === 'reorder_report' ? `bg-amber-500 ${theme === 'dark' ? 'text-white font-black' : 'text-slate-950'}` : 'bg-slate-900 text-slate-300 hover:bg-slate-700'}`}
             >
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span>⚠️ النواقص والمطلوب</span>
+              <span>النواقص والمطلوب</span>
             </button>
           </div>
         </div>
@@ -346,7 +346,7 @@ export function PrintReportModal({
 
           {/* REPORT TITLE DESCRIPTION */}
           <div className="text-center py-2 bg-slate-100 rounded-xl border border-slate-200">
-            <h2 className="text-base font-extrabold text-slate-950 tracking-tight">📜 {reportTitle}</h2>
+            <h2 className="text-base font-extrabold text-slate-950 tracking-tight">{reportTitle}</h2>
             <p className="text-slate-500 text-[10px] mt-1 font-medium">سجل تفصيلي لأداء المعاملات وحالة حسابات المحل التجاري وعلاقته بالجرود والمخازن.</p>
           </div>
 
@@ -454,7 +454,7 @@ export function PrintReportModal({
                 {/* DAILY SALES PRINT */}
                 <div className="border border-slate-200 rounded-xl p-4 space-y-3">
                   <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5 flex items-center justify-start gap-1">
-                    <span>📅 كشف المبيعات والعمليات اليومية بالتفصيل</span>
+                    <span>كشف المبيعات والعمليات اليومية بالتفصيل</span>
                   </h4>
                   <table className="w-full text-right" style={{ borderCollapse: 'collapse' }}>
                     <thead>
@@ -491,7 +491,7 @@ export function PrintReportModal({
                   {/* Monthly */}
                   <div className="border border-slate-200 rounded-xl p-4 space-y-3">
                     <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">
-                      <span>📆 البيان المقارن للمبيعات الشهرية</span>
+                      <span>البيان المقارن للمبيعات الشهرية</span>
                     </h4>
                     <table className="w-full text-right text-[10px]" style={{ borderCollapse: 'collapse' }}>
                       <thead>
@@ -541,7 +541,7 @@ export function PrintReportModal({
 
                 <div className="border border-slate-200 rounded-xl p-4 space-y-3 page-break-before">
                   <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5 flex items-center justify-start gap-1">
-                    <span>🏆 الأصناف والمنتجات الأكثر طلباً ومبيعاً بالتعداد</span>
+                    <span>الأصناف والمنتجات الأكثر طلباً ومبيعاً بالتعداد</span>
                   </h4>
                   <table className="w-full text-right text-[11px]" style={{ borderCollapse: 'collapse' }}>
                     <thead>
@@ -572,7 +572,7 @@ export function PrintReportModal({
                 </div>
 
                 <div className="border border-slate-200 rounded-xl p-4 space-y-3 page-break-before">
-                  <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">📋 سجل وقيود المبيعات الأخيرة المنجزة بالتسلسل</h4>
+                  <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">سجل وقيود المبيعات الأخيرة المنجزة بالتسلسل</h4>
                   <table className="w-full text-right text-[10px]" style={{ borderCollapse: 'collapse' }}>
                     <thead>
                       <tr className="bg-slate-100 text-slate-700">
@@ -641,7 +641,7 @@ export function PrintReportModal({
               </div>
 
               <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1">📊 رأس المال وعلاقة السيولة بجرودات المخازن</h4>
+                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1">رأس المال وعلاقة السيولة بجرودات المخازن</h4>
                 <p className="text-[10px] text-slate-400">تحليلات الأصول الاستثمارية للسلع المتاحة حالياً على رفوف صالة العرض وفي المستودعات:</p>
 
                 <div className="grid grid-cols-2 gap-4 text-center mt-2">
@@ -679,7 +679,7 @@ export function PrintReportModal({
               </div>
 
               <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">📓 قائمة قيود المصاريف المسجلة بالدورية الحالية</h4>
+                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">قائمة قيود المصاريف المسجلة بالدورية الحالية</h4>
                 {expenses.length === 0 ? (
                   <div className="text-center py-6 text-slate-400 text-xs">لا يوجد مصاريف مسجلة أو مقيدة بصندوق الدورية الحالية.</div>
                 ) : (
@@ -728,7 +728,7 @@ export function PrintReportModal({
               </div>
 
               <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">📦 كشف الجرد الشامل وتقدير قيمة مخزون الأصناف</h4>
+                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">كشف الجرد الشامل وتقدير قيمة مخزون الأصناف</h4>
                 <table className="w-full text-right text-[10px]" style={{ borderCollapse: 'collapse' }}>
                   <thead>
                     <tr className="bg-slate-100 text-slate-700">
@@ -797,7 +797,7 @@ export function PrintReportModal({
                     </div>
 
                     <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-                      <h4 className="font-extrabold text-xs text-red-700 border-b pb-1.5">🚫 سلع وتواريخ الأصناف المنتهية (يجب تلفها وسحبها فوراً)</h4>
+                      <h4 className="font-extrabold text-xs text-red-700 border-b pb-1.5">سلع وتواريخ الأصناف المنتهية (يجب تلفها وسحبها فوراً)</h4>
                       {expiredList.length === 0 ? (
                         <div className="text-center py-6 text-emerald-800 font-bold text-xs">ممتاز! لا يوجد أي أصناف منتهية الصلاحية بالمخازن والرفوف حالياً.</div>
                       ) : (
@@ -830,7 +830,7 @@ export function PrintReportModal({
                     </div>
 
                     <div className="border border-slate-200 rounded-xl p-4 space-y-3 page-break-before">
-                      <h4 className="font-extrabold text-xs text-amber-800 border-b pb-1.5">⏳ مواد توشك على الانتهاء قريباً (خلال الثلاثين يوماً المقبلة)</h4>
+                      <h4 className="font-extrabold text-xs text-amber-800 border-b pb-1.5">مواد توشك على الانتهاء قريباً (خلال الثلاثين يوماً المقبلة)</h4>
                       {nearExpiredList.length === 0 ? (
                         <div className="text-center py-6 text-slate-400 text-xs">لا توجد مواد توشك على الانتهاء خلال الثلاثين يوماً القادمة.</div>
                       ) : (
@@ -889,7 +889,7 @@ export function PrintReportModal({
                     </div>
 
                     <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-                      <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">🔄 قائمة تفصيلية بالمرتجبات المستلمة من العملاء</h4>
+                      <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">قائمة تفصيلية بالمرتجبات المستلمة من العملاء</h4>
                       {returns.length === 0 ? (
                         <div className="text-center py-6 text-slate-400 text-xs">لا يوجد حركات مرتجع موثقة لهذا التقرير حالياً.</div>
                       ) : (
@@ -940,7 +940,7 @@ export function PrintReportModal({
               </div>
 
               <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">🗑️ سجل حركات التلاف والتسريب للسلع المدمرة بالتأريخ</h4>
+                <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">سجل حركات التلاف والتسريب للسلع المدمرة بالتأريخ</h4>
                 {waste.length === 0 ? (
                   <div className="text-center py-6 text-slate-400 text-xs">لا يوجد بضائع تالفة مقيدة لحساب الدورية الحالية.</div>
                 ) : (
@@ -983,7 +983,7 @@ export function PrintReportModal({
                     </div>
 
                     <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-                      <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">⚠️ قائمة النواقص وحال السلع ذات المستويات الضعيفة</h4>
+                      <h4 className="font-extrabold text-xs text-slate-900 border-b pb-1.5">قائمة النواقص وحال السلع ذات المستويات الضعيفة</h4>
                       {depletedList.length === 0 ? (
                         <div className="text-center py-6 text-emerald-800 font-bold text-xs">مبارك بنجاح! جميع منتجات الدكان بمستويات مخزونات كافية ولا سلع ناقصة حاليا.</div>
                       ) : (
@@ -1008,9 +1008,9 @@ export function PrintReportModal({
                                 <td className="p-2 border text-center text-slate-500 font-mono">{settings.lowStockThreshold} قطع</td>
                                 <td className="p-2 border text-center font-bold">
                                   {p.quantity <= 0 ? (
-                                    <span className="text-red-700 bg-red-100 font-extrabold text-[9px] px-2 py-0.5 rounded border border-red-200">نفاد تام 🚫</span>
+                                    <span className="text-red-700 bg-red-100 font-extrabold text-[9px] px-2 py-0.5 rounded border border-red-200">نفاد تام</span>
                                   ) : (
-                                    <span className="text-amber-700 bg-amber-100 font-bold text-[9px] px-2 py-0.5 rounded border border-amber-200">مستوى ضعيف ⚠️</span>
+                                    <span className="text-amber-700 bg-amber-100 font-bold text-[9px] px-2 py-0.5 rounded border border-amber-200">مستوى ضعيف</span>
                                   )}
                                 </td>
                               </tr>

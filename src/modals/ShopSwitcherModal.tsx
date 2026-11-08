@@ -57,7 +57,7 @@ export function ShopSwitcherModal({ lang, onClose }: { lang: 'ar' | 'en'; onClos
           </button>
           <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
             {ar
-              ? 'كل محل إلو بضاعتو وفواتيرو وزبائنو وحساباتو واشتراكو لحالو. بتنقل بيناتن من هون بلا ما يختلطوا. 🗑️ بتمحي محل وإنت فاتح محل غيرو (المحل الأول ما بينمحى).'
+              ? 'كل محل إلو بضاعتو وفواتيرو وزبائنو وحساباتو واشتراكو لحالو. بتنقل بيناتن من هون بلا ما يختلطوا. بتمحي محل وإنت فاتح محل غيرو (المحل الأول ما بينمحى).'
               : 'Each shop has its own stock, invoices, customers, accounts and subscription. Switch between them here.'}
           </p>
         </div>

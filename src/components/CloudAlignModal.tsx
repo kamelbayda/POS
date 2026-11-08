@@ -14,7 +14,7 @@ export function CloudAlignModal({ lang, onChoose }: CloudAlignModalProps) {
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" id="cloud-align-modal" dir={ar ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 space-y-4">
-        <h2 className="font-black text-slate-800 text-lg">{ar ? '☁️ حساب السحاب عليه بيانات محل' : '☁️ This cloud account already has shop data'}</h2>
+        <h2 className="font-black text-slate-800 text-lg">{ar ? 'حساب السحاب عليه بيانات محل' : 'This cloud account already has shop data'}</h2>
         <p className="text-sm text-slate-600">{ar ? 'اختار كيف هالجهاز بدو ينضم للمحل:' : 'Choose how this device joins the shop:'}</p>
 
         <button id="align-download" onClick={() => onChoose('download')} className={`${option} border-emerald-500 bg-emerald-50 hover:bg-emerald-100`}>

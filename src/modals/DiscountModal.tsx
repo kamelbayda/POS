@@ -143,7 +143,7 @@ export function DiscountModal({
         {/* Quick Presets based on chosen discount mode */}
         <div className="space-y-1 mb-4 select-none">
           <span className={`text-[10px] block font-extrabold pr-1.5 ${theme === 'dark' ? 'text-stone-500' : 'text-slate-400'}`}>
-            {lang === 'ar' ? '⚡️ قوالب الخصم بنقرة واحدة:' : '⚡️ One-click discount templates:'}
+            {lang === 'ar' ? 'قوالب الخصم بنقرة واحدة:' : 'One-click discount templates:'}
           </span>
 
           {discountModalMode === 'percentage' && (
@@ -252,7 +252,7 @@ export function DiscountModal({
 
               setDiscountInput(finalValStr);
               setIsDiscountModalOpen(false);
-              showToast('success', lang === 'ar' ? `✔️ تم إدراج قيمة الخصم المالي بنجاح لـ ${finalValStr}` : `Discount successfully bounds with ${finalValStr}`);
+              showToast('success', lang === 'ar' ? `تم إدراج قيمة الخصم المالي بنجاح لـ ${finalValStr}` : `Discount successfully bounds with ${finalValStr}`);
             }}
             className="flex-1 bg-[#1D9E75] hover:bg-emerald-600 text-white font-extrabold py-3 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1 active:scale-95 shadow-md shadow-emerald-500/10"
           >

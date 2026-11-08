@@ -56,7 +56,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
     setType('retail');
     setDebtLimit('1000');
 
-    showToast('success', lang === 'ar' ? `تم تسجيل العميل الجديد [${newCustomer.name}] بنجاح! 🎉` : `Customer [${newCustomer.name}] registered successfully!`);
+    showToast('success', lang === 'ar' ? `تم تسجيل العميل الجديد [${newCustomer.name}] بنجاح!` : `Customer [${newCustomer.name}] registered successfully!`);
   };
 
   // Payoff part of debt
@@ -127,7 +127,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
     storage.setJSON('pos_customers', updated);
 
     showToast('success', lang === 'ar' 
-      ? `تم استبدال ${convertedPoints} نقطة بخصم آجل بقيمة ${valueToRedeemInDollars.toFixed(2)}$ لحساب العميل! ⭐`
+      ? `تم استبدال ${convertedPoints} نقطة بخصم آجل بقيمة ${valueToRedeemInDollars.toFixed(2)}$ لحساب العميل!`
       : `Redeemed ${convertedPoints} pts for a $${valueToRedeemInDollars.toFixed(2)} credit!`
     );
   };
@@ -314,7 +314,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                               {cust.type === 'wholesale' ? (lang === 'ar' ? 'جملة' : 'Whls') : (lang === 'ar' ? 'مفرّق' : 'Rtl')}
                             </span>
                           </div>
-                          <p className="text-xs font-mono text-slate-400 mt-1">📞 {cust.phone}</p>
+                          <p className="text-xs font-mono text-slate-400 mt-1">{cust.phone}</p>
                         </div>
 
                         {/* Right Delete trigger */}
@@ -341,7 +341,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                         </div>
                         <div className="text-right">
                           <span className="text-[10px] block text-slate-400">{lang === 'ar' ? 'نقاط الولاء المعلقة:' : 'Loyalty Points:'}</span>
-                          <strong className="text-amber-500 font-extrabold block text-sm mt-0.5">⭐ {cust.loyaltyPoints}</strong>
+                          <strong className="text-amber-500 font-extrabold block text-sm mt-0.5">{cust.loyaltyPoints}</strong>
                         </div>
                         <div className="text-right">
                           <span className="text-[10px] block text-slate-400">{lang === 'ar' ? 'سند استبدال نقاط:' : 'Redeem Value:'}</span>
@@ -359,7 +359,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                             disabled={cust.loyaltyPoints < 100}
                             className="px-3 py-1.5 bg-amber-50 border border-amber-200 text-[#D4AF37] hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-extrabold rounded-lg transition"
                           >
-                            🎁 {lang === 'ar' ? 'استبدال كل 100 نقطة بـ خصم 1$' : 'Redeem 100 pts for $1 Credit'}
+                            {lang === 'ar' ? 'استبدال كل 100 نقطة بـ خصم 1$' : 'Redeem 100 pts for $1 Credit'}
                           </button>
 
                           <button
@@ -367,7 +367,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                             onClick={() => setSelectedCustomerFile(cust)}
                             className="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 text-[11px] font-extrabold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0"
                           >
-                            <span>📁 {lang === 'ar' ? 'فتح ملف الزبون' : 'Open Customer File'}</span>
+                            <span>{lang === 'ar' ? 'فتح ملف الزبون' : 'Open Customer File'}</span>
                           </button>
                         </div>
 
@@ -405,7 +405,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                               }}
                               className="px-3.5 py-1.5 bg-[#EAF6ED] border border-emerald-200 text-[#1D9E75] hover:bg-emerald-50 text-[11px] font-extrabold rounded-lg transition cursor-pointer"
                             >
-                              💵 {lang === 'ar' ? 'سداد جزء من حساب المديونية والذمم والآجل' : 'Pay Down Account Debt'}
+                              {lang === 'ar' ? 'سداد جزء من حساب المديونية والذمم والآجل' : 'Pay Down Account Debt'}
                             </button>
                           )}
                         </div>
@@ -440,7 +440,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                 </button>
                 <h3 className="font-extrabold text-slate-950 text-base flex items-center gap-2 flex-row-reverse">
                   <Users className="w-5 h-5 text-[#1D9E75]" />
-                  <span>📁 {lang === 'ar' ? `الملف المحاسبي للزبون: [ ${cust.name} ]` : `Ledger & Account File: ${cust.name}`}</span>
+                  <span>{lang === 'ar' ? `الملف المحاسبي للزبون: [ ${cust.name} ]` : `Ledger & Account File: ${cust.name}`}</span>
                 </h3>
               </div>
 
@@ -453,7 +453,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                     <div className="flex items-center justify-between flex-row-reverse">
                       <div className="flex items-center gap-2 flex-row-reverse text-rose-800 font-extrabold text-xs sm:text-sm">
                         <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
-                        <span>⚠️ تنبيه محاسبي: مديونية هذا الزبون تجاوزت السقف المسموح به!</span>
+                        <span>تنبيه محاسبي: مديونية هذا الزبون تجاوزت السقف المسموح به!</span>
                       </div>
                       <span className="bg-rose-100 text-rose-800 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
                         {lang === 'ar' ? 'تجاوز السقف' : 'LIMIT EXCEEDED'}
@@ -469,12 +469,12 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                         <strong className="underline text-slate-800 font-mono text-sm font-black">{limit.toFixed(2)}$</strong>
                       </p>
                       <p className="bg-rose-100/50 p-2 rounded-lg text-rose-950 text-xs font-black mt-2 inline-block">
-                        {lang === 'ar' ? `📢 قيمة فائض التجاوز المحررة بالدين: ${((cust.creditBalance || 0) - limit).toFixed(2)}$` : `Excess Violation Balance: $${((cust.creditBalance || 0) - limit).toFixed(2)}`}
+                        {lang === 'ar' ? `قيمة فائض التجاوز المحررة بالدين: ${((cust.creditBalance || 0) - limit).toFixed(2)}$` : `Excess Violation Balance: $${((cust.creditBalance || 0) - limit).toFixed(2)}`}
                       </p>
                     </div>
                     <p className="text-slate-600 text-[10.5px] font-medium leading-normal pt-1 border-t border-rose-200/40">
                       {lang === 'ar' 
-                        ? '💡 توصية الصندوق: يرجى الامتناع التام عن تسجيل أي مبيعات إضافية بالآجل أو تمرير معاملات ذمم لهذا الحساب لحين استرداد جزء من المبالغ العالقة وتخفيض الدين إلى ما دون السقف المعتمد.' 
+                        ? 'توصية الصندوق: يرجى الامتناع التام عن تسجيل أي مبيعات إضافية بالآجل أو تمرير معاملات ذمم لهذا الحساب لحين استرداد جزء من المبالغ العالقة وتخفيض الدين إلى ما دون السقف المعتمد.' 
                         : 'System recommendation: Please fully block any additional post-dated check or deferred sales for this customer until outstanding amounts are settled below the allowed threshold.'}
                     </p>
                   </div>
@@ -485,13 +485,13 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                   <div className="bg-slate-50 border p-3 rounded-xl text-center">
                     <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'فئة الحساب المعينة' : 'Account Tier'}</span>
                     <strong className="text-slate-800 font-extrabold text-sm block mt-1">
-                      {cust.type === 'wholesale' ? (lang === 'ar' ? 'شريحة جملة 🏢' : 'Wholesale') : (lang === 'ar' ? 'مفرّق عادي 🛒' : 'Retail')}
+                      {cust.type === 'wholesale' ? (lang === 'ar' ? 'شريحة جملة' : 'Wholesale') : (lang === 'ar' ? 'مفرّق عادي' : 'Retail')}
                     </strong>
                   </div>
                   <div className="bg-slate-50 border p-3 rounded-xl text-center">
                     <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'نقاط الولاء النشطة' : 'Loyalty Points'}</span>
                     <strong className="text-amber-500 font-mono font-black text-sm block mt-1">
-                      ⭐ {cust.loyaltyPoints} {lang === 'ar' ? 'نقطة' : 'pts'}
+                      {cust.loyaltyPoints} {lang === 'ar' ? 'نقطة' : 'pts'}
                     </strong>
                   </div>
                   <div className="bg-slate-50 border p-3 rounded-xl text-center">
@@ -510,7 +510,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
 
                 {/* Quick actions panel inside file details counter */}
                 <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                  <h4 className="text-xs font-black text-slate-800 mb-2">{lang === 'ar' ? '🔌 إجراءات سريعة لملف الحساب:' : 'Account Quick Settings:'}</h4>
+                  <h4 className="text-xs font-black text-slate-800 mb-2">{lang === 'ar' ? 'إجراءات سريعة لملف الحساب:' : 'Account Quick Settings:'}</h4>
                   <div className="flex flex-col sm:flex-row gap-2 justify-end">
                     
                     {/* Convert points inside file */}
@@ -520,7 +520,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                       disabled={cust.loyaltyPoints < 100}
                       className="px-3 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-[#D4AF37] disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-extrabold rounded-xl transition cursor-pointer"
                     >
-                      🌟 {lang === 'ar' ? `استرداد نقاط الولاء (${Math.floor(cust.loyaltyPoints / 100) * 100} نقطة بـ خصم $${Math.floor(cust.loyaltyPoints / 100)})` : 'Redeem Points'}
+                      {lang === 'ar' ? `استرداد نقاط الولاء (${Math.floor(cust.loyaltyPoints / 100) * 100} نقطة بـ خصم $${Math.floor(cust.loyaltyPoints / 100)})` : 'Redeem Points'}
                     </button>
 
                     {/* Pay Balance inside file */}
@@ -558,7 +558,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                         }}
                         className="px-3.5 py-2 bg-[#EAF6ED] border border-emerald-200 text-[#1D9E75] hover:bg-emerald-50 text-[11px] font-extrabold rounded-xl transition cursor-pointer"
                       >
-                        💵 {lang === 'ar' ? 'تسجيل إيصال سداد نقدي (سند قبض ذمم)' : 'Issue Settle Payment Reciept'}
+                        {lang === 'ar' ? 'تسجيل إيصال سداد نقدي (سند قبض ذمم)' : 'Issue Settle Payment Reciept'}
                       </button>
                     )}
                   </div>
@@ -568,7 +568,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                 <div className="space-y-2 text-right">
                   <h4 className="text-xs font-black text-slate-800 text-right flex items-center gap-1 flex-row-reverse border-b pb-1.5">
                     <FileText className="w-4 h-4 text-[#1D9E75]" />
-                    <span>{lang === 'ar' ? '📜 تاريخ وصور الفواتير والمستندات المسجلة للزبون' : 'Invoices & Sales Transactions Log'}</span>
+                    <span>{lang === 'ar' ? 'تاريخ وصور الفواتير والمستندات المسجلة للزبون' : 'Invoices & Sales Transactions Log'}</span>
                   </h4>
 
                   {custInvoices.length === 0 ? (
@@ -619,7 +619,7 @@ export function CustomersTab({ customers, setCustomers, lang, showToast, invoice
                   onClick={() => setSelectedCustomerFile(null)}
                   className="px-5 py-2 bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold rounded-xl transition text-xs cursor-pointer"
                 >
-                  {lang === 'ar' ? 'إغلاق نافذة الملف ❌' : 'Close File'}
+                  {lang === 'ar' ? 'إغلاق نافذة الملف' : 'Close File'}
                 </button>
               </div>
 

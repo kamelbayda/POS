@@ -199,8 +199,8 @@ export function TradeInsTab(props: TradeInsTabProps) {
     setTradeIns([record, ...tradeIns]);
     setForm(empty);
     showToast('success', exProduct
-      ? (ar ? `✅ مقايضة ${record.number}: استلم ${exProduct.name}${difference > 0 ? ` ودفع فرق ${difference.toFixed(2)}$` : difference < 0 ? ` ودفعتلو فرق ${(-difference).toFixed(2)}$` : ''}` : `Exchange ${record.number} done`)
-      : ar ? `انشرى الجهاز (${record.number}) وصار معروض للبيع بـ ${sell.toFixed(2)}$ 📱` : `Bought (${record.number}); on sale at ${sell.toFixed(2)}$`);
+      ? (ar ? `مقايضة ${record.number}: استلم ${exProduct.name}${difference > 0 ? ` ودفع فرق ${difference.toFixed(2)}$` : difference < 0 ? ` ودفعتلو فرق ${(-difference).toFixed(2)}$` : ''}` : `Exchange ${record.number} done`)
+      : ar ? `انشرى الجهاز (${record.number}) وصار معروض للبيع بـ ${sell.toFixed(2)}$` : `Bought (${record.number}); on sale at ${sell.toFixed(2)}$`);
     printTradeInReceipt(record, settings);
   };
 
@@ -219,12 +219,12 @@ export function TradeInsTab(props: TradeInsTabProps) {
       </div>
 
       <form onSubmit={submit} className="bg-white border border-slate-200 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm" id="tradein-form">
-        <div className="md:col-span-3 font-black text-slate-700">👤 {ar ? 'البائع' : 'Seller'}</div>
+        <div className="md:col-span-3 font-black text-slate-700">{ar ? 'البائع' : 'Seller'}</div>
         <input className={input} id="ti-seller" placeholder={ar ? 'الاسم الكامل *' : 'Full name *'} value={form.sellerName} onChange={e => setForm({ ...form, sellerName: e.target.value })} />
         <input className={`${input} font-mono`} id="ti-phone" dir="ltr" placeholder={ar ? 'التلفون *' : 'Phone *'} value={form.sellerPhone} onChange={e => setForm({ ...form, sellerPhone: e.target.value })} />
         <input className={`${input} font-mono`} id="ti-idnum" dir="ltr" placeholder={ar ? 'رقم الهوية / الباسبور *' : 'ID / passport no. *'} value={form.sellerIdNumber} onChange={e => setForm({ ...form, sellerIdNumber: e.target.value })} />
 
-        <div className="md:col-span-3 font-black text-slate-700 pt-1">📱 {ar ? 'الجهاز' : 'Device'}</div>
+        <div className="md:col-span-3 font-black text-slate-700 pt-1">{ar ? 'الجهاز' : 'Device'}</div>
         <input className={input} id="ti-device" placeholder={ar ? 'الجهاز (متلاً iPhone 12 64GB أسود) *' : 'Device *'} value={form.device} onChange={e => setForm({ ...form, device: e.target.value })} />
         <input className={`${input} font-mono`} id="ti-imei" dir="ltr" placeholder="IMEI *" value={form.imei} onChange={e => setForm({ ...form, imei: e.target.value })} />
         <div className="flex gap-1.5">
@@ -238,7 +238,7 @@ export function TradeInsTab(props: TradeInsTabProps) {
         <input className={`${input} font-mono`} id="ti-battery" type="number" min="0" max="100" placeholder={ar ? 'صحة البطارية %' : 'Battery health %'} value={form.batteryHealth} onChange={e => setForm({ ...form, batteryHealth: e.target.value })} />
         <input className={`${input} md:col-span-2`} id="ti-notes" placeholder={ar ? 'ملاحظات (خدوش، تغيير شاشة، العلبة…)' : 'Notes'} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
 
-        <div className="md:col-span-3 font-black text-slate-700 pt-1">💵 {ar ? 'السعر' : 'Price'}</div>
+        <div className="md:col-span-3 font-black text-slate-700 pt-1">{ar ? 'السعر' : 'Price'}</div>
         <input className={`${input} font-mono`} id="ti-paid" type="number" min="0" step="any" placeholder={ar ? 'سعر الشرا ($) *' : 'Buying price ($) *'} value={form.pricePaid} onChange={e => setForm({ ...form, pricePaid: e.target.value })} />
         <input className={`${input} font-mono`} id="ti-sell" type="number" min="0" step="any" placeholder={ar ? 'سعر المبيع ($) *' : 'Selling price ($) *'} value={form.sellPrice} onChange={e => setForm({ ...form, sellPrice: e.target.value })} />
         <input className={`${input} font-mono`} id="ti-warranty" type="number" min="0" placeholder={ar ? 'كفالة عند البيع (أشهر)' : 'Warranty when sold (months)'} value={form.warrantyMonths} onChange={e => setForm({ ...form, warrantyMonths: e.target.value })} />
@@ -246,9 +246,9 @@ export function TradeInsTab(props: TradeInsTabProps) {
           {(['cash', 'exchange', 'credit'] as const).map(m => (
             <button key={m} type="button" data-payment={m} onClick={() => setForm({ ...form, payment: m })}
               className={`flex-1 rounded-xl border text-xs font-bold py-2 px-1 cursor-pointer ${form.payment === m ? 'bg-slate-800 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-600'}`}>
-              {m === 'cash' ? (ar ? '💵 دفعتلو كاش' : '💵 Paid cash')
-                : m === 'exchange' ? (ar ? '🔁 مقايضة بجهاز من المحل' : '🔁 Exchange for a device')
-                : (ar ? '📒 رصيد على حسابو (لبعدين)' : '📒 Credit to his account')}
+              {m === 'cash' ? (ar ? 'دفعتلو كاش' : 'Paid cash')
+                : m === 'exchange' ? (ar ? 'مقايضة بجهاز من المحل' : 'Exchange for a device')
+                : (ar ? 'رصيد على حسابو (لبعدين)' : 'Credit to his account')}
             </button>
           ))}
         </div>
@@ -265,7 +265,7 @@ export function TradeInsTab(props: TradeInsTabProps) {
           const diff = Math.round((newPrice - tradeValue) * 100) / 100;
           return (
             <div className="md:col-span-3 bg-sky-50 border border-sky-200 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-3" id="exchange-panel">
-              <div className="md:col-span-3 font-black text-sky-900">🔁 {ar ? 'شو بدّو ياخد بدالو؟' : 'What does he take instead?'}</div>
+              <div className="md:col-span-3 font-black text-sky-900">{ar ? 'شو بدّو ياخد بدالو؟' : 'What does he take instead?'}</div>
               <input id="ex-search" className={input} placeholder={ar ? 'دوّر: اسم، باركود أو IMEI' : 'Search name, barcode or IMEI'} value={form.exSearch} onChange={e => setForm({ ...form, exSearch: e.target.value })} />
               <select id="ex-product" className={`${input} md:col-span-2`} value={form.exProductId}
                 onChange={e => { const p = products.find(x => x.id === e.target.value); setForm({ ...form, exProductId: e.target.value, exImei: p?.trackSerial ? (p.serialNumbers || [])[0] || '' : '', exPrice: p ? String(p.priceUSD) : '' }); }}>
@@ -292,7 +292,7 @@ export function TradeInsTab(props: TradeInsTabProps) {
                       {(['cash', 'debt'] as const).map(m => (
                         <button key={m} type="button" data-diff-method={m} onClick={() => setForm({ ...form, diffMethod: m })}
                           className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${form.diffMethod === m ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-600'}`}>
-                          {m === 'cash' ? (ar ? '💵 كاش' : '💵 Cash') : (ar ? '📒 دين على حسابو' : '📒 On account')}
+                          {m === 'cash' ? (ar ? 'كاش' : 'Cash') : (ar ? 'دين على حسابو' : 'On account')}
                         </button>
                       ))}
                     </div>
@@ -312,7 +312,7 @@ export function TradeInsTab(props: TradeInsTabProps) {
           </div>
         )}
         <button type="submit" id="btn-save-tradein" className="md:col-span-3 bg-teal-600 hover:bg-teal-700 text-white font-black py-2.5 rounded-xl cursor-pointer">
-          {ar ? 'شرا الجهاز وطباعة السند 🖨️' : 'Buy and print receipt 🖨️'}
+          {ar ? 'شرا الجهاز وطباعة السند' : 'Buy and print receipt'}
         </button>
       </form>
 
@@ -337,7 +337,7 @@ export function TradeInsTab(props: TradeInsTabProps) {
                       <span dir="ltr" className="font-mono">IMEI {t.imei}</span> · {t.sellerName} · <span dir="ltr">{t.sellerPhone}</span> · <span dir="ltr">{t.date}</span>
                       {t.exchange && (
                         <div className="text-sky-700 font-bold" data-tradein-exchange>
-                          🔁 {ar ? 'مقابل' : 'for'} {t.exchange.productName}
+                          {ar ? 'مقابل' : 'for'} {t.exchange.productName}
                           {t.exchange.differenceUSD > 0 ? ` · ${ar ? 'دفع فرق' : 'paid'} ${t.exchange.differenceUSD.toFixed(2)}$` : t.exchange.differenceUSD < 0 ? ` · ${ar ? 'دفعنا فرق' : 'we paid'} ${(-t.exchange.differenceUSD).toFixed(2)}$` : ''}
                         </div>
                       )}

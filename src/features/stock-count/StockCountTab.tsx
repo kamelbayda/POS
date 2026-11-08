@@ -84,7 +84,7 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
       return;
     }
 
-    const locationLabel = stockCountLocation === 'warehouse' ? 'المستودع/المخزن 📦' : 'المحل/أرفف العرض 🏪';
+    const locationLabel = stockCountLocation === 'warehouse' ? 'المستودع/المخزن' : 'المحل/أرفف العرض';
     if (window.confirm(`جردة التسوية (${locationLabel}): هل أنت متأكد من تعديل مستويات المخزون بالنظام لـ (${diffItems.length}) منتجات متغيرة لمطابقة أعداد الجرد الفعلي؟`)) {
       const updatedProducts = products.map(p => {
         const countItem = stockCounts.find(item => item.productId === p.id);
@@ -116,9 +116,9 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
               </label>
             </div>
             <div className="text-right">
-              <h3 className="font-bold text-slate-800 text-lg">📋 مطابقة جردة المخازن الفعلية والتسوية</h3>
+              <h3 className="font-bold text-slate-800 text-lg">مطابقة جردة المخازن الفعلية والتسوية</h3>
               <span className="text-[11px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-sm mt-1 inline-block">
-                الجرد الحالي مستهدف لـ: {stockCountLocation === 'warehouse' ? '📦 المستودع والمخزن الاحتياطي' : '🏪 رفوف ومبيعات المحل'}
+                الجرد الحالي مستهدف لـ: {stockCountLocation === 'warehouse' ? 'المستودع والمخزن الاحتياطي' : 'رفوف ومبيعات المحل'}
               </span>
             </div>
           </div>
@@ -126,7 +126,7 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
           {/* Location selector for separate inventory auditing */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-right">
             <div className="order-last sm:order-first">
-              <h4 className="font-extrabold text-[#111827] text-sm">📍 حدد مكان ومجال الجرد ومطابقة المخزون المادي حالياً:</h4>
+              <h4 className="font-extrabold text-[#111827] text-sm">حدد مكان ومجال الجرد ومطابقة المخزون المادي حالياً:</h4>
               <p className="text-slate-400 text-[11px] mt-0.5">يمكنك جرد كميات رفوف المحل منفصلة تماماً عن بضائع الكمية المتبقية في المستودع والمخزن.</p>
             </div>
             <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
@@ -135,7 +135,6 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
                 onClick={() => setStockCountLocation('shop')}
                 className={`py-2 px-3 rounded-xl text-xs font-black transition border flex items-center justify-center gap-2 cursor-pointer ${stockCountLocation === 'shop' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'}`}
               >
-                <span>🏪</span>
                 <span>جرد رفوف المحل</span>
               </button>
               <button
@@ -143,14 +142,13 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
                 onClick={() => setStockCountLocation('warehouse')}
                 className={`py-2 px-3 rounded-xl text-xs font-black transition border flex items-center justify-center gap-2 cursor-pointer ${stockCountLocation === 'warehouse' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'}`}
               >
-                <span>📦</span>
                 <span>جرد المستودع والاحتياط</span>
               </button>
             </div>
           </div>
 
           <p className="text-xs text-slate-500 leading-relaxed mb-6 text-right">
-            💡 قم بعد وإحصاء المنتجات في المكان المحدد وتعبئتها في خانة <span className="font-bold text-teal-600">"الكمية الواقعية بالجرد"</span> لملاحظة الفروقات تلقائياً. عند إنهاء المطابقة، اضغط على زر التسوية بالأسفل للتطبيق بشكل فوري.
+            قم بعد وإحصاء المنتجات في المكان المحدد وتعبئتها في خانة <span className="font-bold text-teal-600">"الكمية الواقعية بالجرد"</span> لملاحظة الفروقات تلقائياً. عند إنهاء المطابقة، اضغط على زر التسوية بالأسفل للتطبيق بشكل فوري.
           </p>
 
           <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch mb-4 text-right">
@@ -309,7 +307,7 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
                         )}
                         {visibleStockCols.qty_diff !== false && (
                           <td className={`p-3 font-mono font-black ${item.difference < 0 ? 'text-red-600' : item.difference > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                            {item.difference !== 0 ? `${item.difference > 0 ? '+' : ''}${item.difference}` : 'مطابق ✓'}
+                            {item.difference !== 0 ? `${item.difference > 0 ? '+' : ''}${item.difference}` : 'مطابق'}
                           </td>
                         )}
                         {visibleStockCols.actual_qty !== false && (
@@ -372,7 +370,7 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
                 onClick={applyStockCountReconciliation}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-3 rounded-xl transition shadow-md shrink-0 cursor-pointer text-xs"
               >
-                ✅ ترحيل جرد {stockCountLocation === 'warehouse' ? 'المستودع 📦' : 'المحل 🏪'} والتسوية الفعلية
+                ترحيل جرد {stockCountLocation === 'warehouse' ? 'المستودع' : 'المحل'} والتسوية الفعلية
               </button>
             </div>
           </div>

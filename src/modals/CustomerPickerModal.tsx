@@ -60,7 +60,6 @@ export function CustomerPickerModal({
       >
         {/* Modal Header */}
         <div className="flex justify-between items-center flex-row-reverse border-b pb-3 mb-4 border-stone-805/30 shrink-0">
-          <span className="text-xl">👥</span>
           <h3 className="text-base font-black tracking-wide">
             {isAddingNewCustomerInModal 
               ? (lang === 'ar' ? 'تسجيل زبون جديد سريع بالسيستم' : 'Quick Register New Customer')
@@ -84,7 +83,6 @@ export function CustomerPickerModal({
             onClick={() => setIsAddingNewCustomerInModal(!isAddingNewCustomerInModal)}
             className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 flex-row-reverse ${isAddingNewCustomerInModal ? 'bg-slate-100 dark:bg-stone-800 text-slate-600' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'}`}
           >
-            <span>➕</span>
             <span>{isAddingNewCustomerInModal ? (lang === 'ar' ? 'رجوع للبحث والاختيار' : 'Back to selection') : (lang === 'ar' ? 'إنشاء زبون جديد سريع' : 'Quick register')}</span>
           </button>
         </div>
@@ -117,7 +115,7 @@ export function CustomerPickerModal({
                 }
                 setSelectedCustomerId(newCust.id);
                 setIsCustomerModalOpen(false);
-                showToast('success', lang === 'ar' ? `🎉 تم تسجيل وتحديد الزبون الجديد: ${newCust.name}` : `🎉 Created and linked new customer: ${newCust.name}`);
+                showToast('success', lang === 'ar' ? `تم تسجيل وتحديد الزبون الجديد: ${newCust.name}` : `Created and linked new customer: ${newCust.name}`);
               }}
               className="space-y-4 font-sans text-right"
             >
@@ -181,7 +179,6 @@ export function CustomerPickerModal({
                 type="submit"
                 className="w-full bg-[#1D9E75] hover:bg-emerald-600 text-white font-extrabold py-3 rounded-xl text-xs transition cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-emerald-500/10 active:scale-95 mt-4"
               >
-                <span>💾</span>
                 <span>{lang === 'ar' ? 'تسجيل وحفظ والربط مع الفاتورة الحالية' : 'Register Customer & Select'}</span>
               </button>
             </form>
@@ -195,7 +192,7 @@ export function CustomerPickerModal({
                   value={modalCustomerSearch}
                   onChange={e => setModalCustomerSearch(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-stone-900 border border-slate-200 dark:border-stone-800 rounded-xl py-2.5 px-4 pr-10 text-right text-xs focus:outline-none focus:ring-1 focus:ring-[#1D9E75]"
-                  placeholder={lang === 'ar' ? '🔍 ابحث باسم الزبون أو الهاتف...' : '🔍 Search by name or phone...'}
+                  placeholder={lang === 'ar' ? 'ابحث باسم الزبون أو الهاتف...' : 'Search by name or phone...'}
                 />
               </div>
 
@@ -211,7 +208,7 @@ export function CustomerPickerModal({
                   if (qFiltered.length === 0) {
                     return (
                       <div className="text-center py-8 text-xs text-slate-400">
-                        😞 {lang === 'ar' ? 'لم يتم العثور على زبائن مطابقة للبحث.' : 'No matching customer found.'}
+                        {lang === 'ar' ? 'لم يتم العثور على زبائن مطابقة للبحث.' : 'No matching customer found.'}
                       </div>
                     );
                   }
@@ -236,7 +233,7 @@ export function CustomerPickerModal({
                           type="button"
                           className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition cursor-pointer flex items-center gap-1 justify-center shrink-0 ml-2 ${isSelected ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-slate-50 dark:bg-stone-800 text-slate-700 dark:text-stone-300 hover:bg-slate-100'}`}
                         >
-                          <span>{isSelected ? '✖ إلغاء الربط' : '🔗 ربط بالفاتورة'}</span>
+                          <span>{isSelected ? 'إلغاء الربط' : 'ربط بالفاتورة'}</span>
                         </button>
 
                         {/* Customer Bio details */}
@@ -282,7 +279,7 @@ export function CustomerPickerModal({
               }}
               className={`flex-1 font-bold text-xs py-2.5 rounded-xl transition cursor-pointer shadow-xs active:scale-95 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200`}
             >
-              {lang === 'ar' ? '🔄 تصفير والتحويل لزبون نقدي ومجهول' : 'Convert to Cash customer'}
+              {lang === 'ar' ? 'تصفير والتحويل لزبون نقدي ومجهول' : 'Convert to Cash customer'}
             </button>
           )}
           <button

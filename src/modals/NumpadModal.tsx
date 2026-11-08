@@ -93,7 +93,7 @@ export function NumpadModal({
         {/* Quick adjustment presets keys */}
         <div className="space-y-1.5 mb-5 select-none">
           <span className={`text-[10px] block font-extrabold pr-1.5 ${theme === 'dark' ? 'text-stone-500' : 'text-slate-450'}`}>
-            {lang === 'ar' ? '⚡️ اختصارات التعديل بالجمع والفارق:' : '⚡️ Fast addition templates:'}
+            {lang === 'ar' ? 'اختصارات التعديل بالجمع والفارق:' : 'Fast addition templates:'}
           </span>
           <div className="grid grid-cols-5 gap-1 select-none">
             {['+1', '+5', '+10', '+20', '+50'].map(mod => (

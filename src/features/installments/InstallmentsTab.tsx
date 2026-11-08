@@ -114,7 +114,7 @@ export function InstallmentsTab({ lang, sysDate, settings, plans, setPlans, invo
     setCustomers(nextCustomers);
     storage.setJSON('pos_customers', nextCustomers);
     showToast('success', updated.status === 'done'
-      ? (ar ? `🎉 خلصت أقساط ${paying.customerName} (${paying.number}).` : 'Plan fully paid.')
+      ? (ar ? `خلصت أقساط ${paying.customerName} (${paying.number}).` : 'Plan fully paid.')
       : (ar ? `انقبض ${amt.toFixed(2)}$ من ${paying.customerName}. الباقي ${remainingOf(updated).toFixed(2)}$` : `Collected ${amt.toFixed(2)}$`));
     setPaying(null);
   };
@@ -127,7 +127,7 @@ export function InstallmentsTab({ lang, sysDate, settings, plans, setPlans, invo
     const next = nextDueOf(p);
     const lateSum = late.reduce((s, d) => s + d.amountUSD - d.paidUSD, 0);
     const text = late.length
-      ? `مرحبا ${p.customerName} 👋\nتذكير: عليك ${late.length > 1 ? `${late.length} أقساط متأخرة` : 'قسط متأخر'} بقيمة ${lateSum.toFixed(2)}$ (من تاريخ ${late[0].dueDate}).\nرقم الخطة: ${p.number}\nالباقي الكامل: ${remainingOf(p).toFixed(2)}$\nشكراً 🙏\n${settings.shopName}`
+      ? `مرحبا ${p.customerName} 👋\nتذكير: عليك ${late.length > 1 ? `${late.length} أقساط متأخرة` : 'قسط متأخر'} بقيمة ${lateSum.toFixed(2)}$ (من تاريخ ${late[0].dueDate}).\nرقم الخطة: ${p.number}\nالباقي الكامل: ${remainingOf(p).toFixed(2)}$\nشكراً\n${settings.shopName}`
       : `مرحبا ${p.customerName} 👋\nتذكير بقسطك القادم ${next ? `${(next.amountUSD - next.paidUSD).toFixed(2)}$ بتاريخ ${next.dueDate}` : ''}.\nرقم الخطة: ${p.number}\n${settings.shopName}`;
     window.open(`https://wa.me/${intl}?text=${encodeURIComponent(text)}`, '_blank');
   };
@@ -211,7 +211,7 @@ export function InstallmentsTab({ lang, sysDate, settings, plans, setPlans, invo
             </div>
           )}
           <button type="submit" id="btn-save-installment" className="md:col-span-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 rounded-xl cursor-pointer">
-            {ar ? 'حفظ الخطة وطباعة العقد 🖨️' : 'Save and print agreement 🖨️'}
+            {ar ? 'حفظ الخطة وطباعة العقد' : 'Save and print agreement'}
           </button>
         </form>
       )}
@@ -255,7 +255,7 @@ export function InstallmentsTab({ lang, sysDate, settings, plans, setPlans, invo
                 </div>
                 <div className="flex gap-2">
                   {p.status === 'active' && (
-                    <button type="button" data-plan-pay onClick={() => openPay(p)} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black py-2 rounded-xl cursor-pointer">{ar ? '💵 قبض قسط' : 'Collect'}</button>
+                    <button type="button" data-plan-pay onClick={() => openPay(p)} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black py-2 rounded-xl cursor-pointer">{ar ? 'قبض قسط' : 'Collect'}</button>
                   )}
                   {p.status === 'active' && (
                     <button type="button" data-plan-remind onClick={() => remind(p)} className="flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer"><MessageCircle className="w-3.5 h-3.5" /> {ar ? 'تذكير' : 'Remind'}</button>

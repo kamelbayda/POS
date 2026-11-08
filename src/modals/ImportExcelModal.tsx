@@ -46,7 +46,7 @@ export function ImportExcelModal({
               <FileSpreadsheet className="w-5 h-5 animate-pulse" />
             </div>
             <h3 className="text-base sm:text-lg font-black text-white">
-              {lang === 'ar' ? 'استيراد أصناف من ملف Excel 📥' : 'Import Products from Excel Spreadsheet'}
+              {lang === 'ar' ? 'استيراد أصناف من ملف Excel' : 'Import Products from Excel Spreadsheet'}
             </h3>
           </div>
           <button 
@@ -67,7 +67,7 @@ export function ImportExcelModal({
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 text-right flex-row-reverse">
               <div className="md:col-span-7 bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl text-xs space-y-3 text-slate-300">
                 <p className="font-extrabold text-slate-100 text-sm flex items-center gap-1.5 flex-row-reverse">
-                  <span>💡 دليل وإرشادات استيراد الأصناف السليم:</span>
+                  <span>دليل وإرشادات استيراد الأصناف السليم:</span>
                 </p>
                 <ul className="list-disc list-inside space-y-2 leading-relaxed pr-2 flex flex-col items-end">
                   <li className="list-none flex items-center gap-1 flex-row-reverse">
@@ -111,7 +111,7 @@ export function ImportExcelModal({
 
               <div className="md:col-span-5 flex flex-col justify-between bg-slate-950/20 border border-slate-800/80 p-5 rounded-2xl space-y-4">
                 <div className="space-y-2">
-                  <span className="block font-extrabold text-slate-100 text-xs">🛠️ خيارات المطابقة والتحديث التلقائي:</span>
+                  <span className="block font-extrabold text-slate-100 text-xs">خيارات المطابقة والتحديث التلقائي:</span>
                   <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
                     ماذا تريد أن يحدث عندما يتطابق باركود في ملف الإكسل مع باركود منتج تم تسجيله وحفظه مسبقاً بالنظام؟
                   </p>
@@ -255,7 +255,7 @@ export function ImportExcelModal({
                             <span className="text-slate-300">{item.product.barcode}</span>
                           ) : (
                             <span className="text-amber-400 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap">
-                              توليد عشوائي ⚡
+                              توليد عشوائي
                             </span>
                           )}
                         </td>
@@ -315,7 +315,7 @@ export function ImportExcelModal({
                   className="bg-sky-600 hover:bg-sky-500 hover:shadow-sky-700/10 hover:shadow-lg text-white font-black text-xs py-2.5 px-6 rounded-xl transition cursor-pointer flex items-center gap-1.5 border-none"
                 >
                   <CheckCircle2 className="w-4 h-4 animate-bounce" />
-                  <span>تأكيد جلب السلع وتسجيل الفهرس ⚡</span>
+                  <span>تأكيد جلب السلع وتسجيل الفهرس</span>
                 </button>
               </div>
             </div>

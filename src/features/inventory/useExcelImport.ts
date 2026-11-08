@@ -64,7 +64,7 @@ export function useExcelImport({
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, 'الأصناف - Products');
     XLSX.writeFile(wb, 'POS_Products_Template.xlsx');
-    showToast('success', lang === 'ar' ? 'تم تحميل قالب الإكسل النموذجي بنجاح! 📥' : 'Excel sample template downloaded successfully!');
+    showToast('success', lang === 'ar' ? 'تم تحميل قالب الإكسل النموذجي بنجاح!' : 'Excel sample template downloaded successfully!');
   };
 
   const handleExcelImport = (file: File) => {
@@ -304,8 +304,8 @@ export function useExcelImport({
     }
 
     showToast('success', lang === 'ar' 
-      ? `🎉 تم إنهاء الاستيراد بنجاح! إجمالي المنتجات المحدثة/المضافة: (${syncOperations.length}) صنف.` 
-      : `🎉 Import finished successfully! (${syncOperations.length}) items updated/added.`
+      ? `تم إنهاء الاستيراد بنجاح! إجمالي المنتجات المحدثة/المضافة: (${syncOperations.length}) صنف.` 
+      : `Import finished successfully! (${syncOperations.length}) items updated/added.`
     );
 
     // Reset state & close

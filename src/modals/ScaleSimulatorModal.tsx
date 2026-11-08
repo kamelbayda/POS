@@ -35,7 +35,6 @@ export function ScaleSimulatorModal({
       >
         {/* Header */}
         <div className="flex justify-between items-center flex-row-reverse border-b pb-3 mb-4 border-stone-805/30">
-          <span className="text-xl">⚖️</span>
           <h3 className="text-sm font-black tracking-wide flex items-center gap-2">
             <span>{lang === 'ar' ? 'محاكي الميزان الإلكتروني الذكي' : 'Smart Weighing Scale Simulator'}</span>
           </h3>
@@ -159,7 +158,7 @@ export function ScaleSimulatorModal({
               }}
               className="flex-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 py-1.5 px-3 rounded-xl text-[10px] font-black cursor-pointer transition flex items-center justify-center gap-1"
             >
-              <span>📡 {lang === 'ar' ? 'قراءة وزن تلقائي من حساس الميزان (محاكاة)' : 'Simulate Weight Sensor'}</span>
+              <span>{lang === 'ar' ? 'قراءة وزن تلقائي من حساس الميزان (محاكاة)' : 'Simulate Weight Sensor'}</span>
             </button>
           </div>
         </div>
@@ -235,14 +234,14 @@ export function ScaleSimulatorModal({
                   showToast(
                     'success',
                     lang === 'ar'
-                      ? `📡 [محاكاة الباركود] تم مسح ملصق الميزان تلقائياً بوزن: ${simulatedWeight.toFixed(3)} كغم`
-                      : `📡 [Barcode Sweep] Scanned scale printed label: ${simulatedWeight.toFixed(3)} Kg`
+                      ? `[محاكاة الباركود] تم مسح ملصق الميزان تلقائياً بوزن: ${simulatedWeight.toFixed(3)} كغم`
+                      : `[Barcode Sweep] Scanned scale printed label: ${simulatedWeight.toFixed(3)} Kg`
                   );
                 }, 100);
               }}
               className="text-xs font-bold text-sky-700 hover:text-sky-800 bg-sky-50 dark:bg-sky-955 hover:bg-sky-100 py-1 px-3.5 rounded-lg border border-sky-200/50 cursor-pointer inline-flex items-center gap-1.5"
             >
-              <span>📷 {lang === 'ar' ? 'محاكاة طباعة ومسح هذا الملصق على الكاشير' : 'Simulate print & scan of this label'}</span>
+              <span>{lang === 'ar' ? 'محاكاة طباعة ومسح هذا الملصق على الكاشير' : 'Simulate print & scan of this label'}</span>
             </button>
           </div>
         </div>
@@ -259,8 +258,8 @@ export function ScaleSimulatorModal({
               showToast(
                 'success',
                 lang === 'ar'
-                  ? `✔️ تم إضافة [${selectedScaleProduct.name}] بوزن ${simulatedWeight.toFixed(3)} كغم للسلة!`
-                  : `✔️ Added [${selectedScaleProduct.name}] with weight ${simulatedWeight.toFixed(3)} Kg!`
+                  ? `تم إضافة [${selectedScaleProduct.name}] بوزن ${simulatedWeight.toFixed(3)} كغم للسلة!`
+                  : `Added [${selectedScaleProduct.name}] with weight ${simulatedWeight.toFixed(3)} Kg!`
               );
             }}
             className={`flex-1 font-black py-3 px-5 rounded-2xl transition cursor-pointer text-xs text-center flex items-center justify-center gap-2 ${
@@ -269,7 +268,7 @@ export function ScaleSimulatorModal({
                 : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
             }`}
           >
-            <span>✔️ {lang === 'ar' ? 'إرسال الوزن وإضافته للسلة مباشرة' : 'Weigh and Add to Cart'}</span>
+            <span>{lang === 'ar' ? 'إرسال الوزن وإضافته للسلة مباشرة' : 'Weigh and Add to Cart'}</span>
           </button>
           <button 
             type="button"

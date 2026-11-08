@@ -128,7 +128,7 @@ export function useAccounts({
       }
     }
 
-    showToast('success', lang === 'ar' ? '🎉 تم حفظ وتعيين بيانات المدير والكاشير بنجاح!' : '🎉 Admin & cashier details saved successfully!');
+    showToast('success', lang === 'ar' ? 'تم حفظ وتعيين بيانات المدير والكاشير بنجاح!' : 'Admin & cashier details saved successfully!');
   };
 
   const lastActivityRef = useRef<number>(Date.now());
@@ -153,7 +153,7 @@ export function useAccounts({
         storage.setItem('pos_screen_locked', 'true');
         setLockPasscode('');
         setLockError('');
-        showToast('warning', lang === 'ar' ? '🔒 تم قفل الشاشة تلقائياً بسبب الخمول' : '🔒 Screen locked automatically due to inactivity');
+        showToast('warning', lang === 'ar' ? 'تم قفل الشاشة تلقائياً بسبب الخمول' : 'Screen locked automatically due to inactivity');
       }
     }, 5000); // Check every 5 seconds
 
@@ -233,7 +233,7 @@ export function useAccounts({
       setIsScreenLocked(false);
       storage.setItem('pos_screen_locked', 'false');
       setLockPasscode('');
-      showToast('success', lang === 'ar' ? '🔓 أهلاً بك من جديد، تم إلغاء قفل الشاشة' : '🔓 Welcome back, screen unlocked');
+      showToast('success', lang === 'ar' ? 'أهلاً بك من جديد، تم إلغاء قفل الشاشة' : 'Welcome back, screen unlocked');
     } else {
       setIsLockShaking(true);
       setLockError(lang === 'ar' ? 'رمز المرور غير صحيح!' : 'Incorrect passcode!');

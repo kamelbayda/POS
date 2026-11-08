@@ -65,7 +65,7 @@ export function SubscribeModal({ lang, businessType, shopName, ownerName, ownerE
     <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" id="subscribe-modal" dir={ar ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto p-6 space-y-5 text-start">
         <div className="flex items-center justify-between">
-          <h2 className="font-black text-slate-800 text-lg">⭐ {ar ? 'اشترك بـ BeeCash' : 'Subscribe to BeeCash'}</h2>
+          <h2 className="font-black text-slate-800 text-lg">{ar ? 'اشترك بـ BeeCash' : 'Subscribe to BeeCash'}</h2>
           <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" aria-label={ar ? 'إغلاق' : 'Close'}>
             <X className="w-5 h-5 text-slate-500" />
           </button>
@@ -74,7 +74,7 @@ export function SubscribeModal({ lang, businessType, shopName, ownerName, ownerE
         {pending ? (
           <div className="space-y-4" id="subscribe-pending">
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1">
-              <div className="font-black text-amber-900">⏳ {ar ? 'طلبك وصل وعم ينراجع' : 'Your request was received'}</div>
+              <div className="font-black text-amber-900">{ar ? 'طلبك وصل وعم ينراجع' : 'Your request was received'}</div>
               <div className="text-sm text-amber-800">
                 {typeInfo(pending.businessType).icon} {ar ? typeInfo(pending.businessType).ar : typeInfo(pending.businessType).en} · {periodName(pending.period)}
               </div>
@@ -86,7 +86,7 @@ export function SubscribeModal({ lang, businessType, shopName, ownerName, ownerE
             </div>
             {pending.paymentInfo && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                <div className="font-black text-emerald-900 mb-1">💳 {ar ? 'طريقة الدفع' : 'How to pay'}</div>
+                <div className="font-black text-emerald-900 mb-1">{ar ? 'طريقة الدفع' : 'How to pay'}</div>
                 <div className="text-sm text-emerald-900 whitespace-pre-wrap">{pending.paymentInfo}</div>
               </div>
             )}

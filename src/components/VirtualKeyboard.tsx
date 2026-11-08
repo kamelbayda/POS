@@ -94,7 +94,7 @@ export function VirtualKeyboard({
             إغلاق ×
           </button>
           <span className="text-[10px] bg-[#1D9E75]/10 text-[#1D9E75] px-2 py-0.5 rounded-full font-bold font-sans">
-            {keyboardTarget === 'barcode' ? 'مستهدف: حقل الباركود 📟' : 'مستهدف: مربع البحث الفوري 🔍'}
+            {keyboardTarget === 'barcode' ? 'مستهدف: حقل الباركود' : 'مستهدف: مربع البحث الفوري'}
           </span>
         </div>
 

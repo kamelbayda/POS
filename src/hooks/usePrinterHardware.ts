@@ -120,7 +120,7 @@ export function usePrinterHardware({ settings, customers, lang, showToast }: Pri
         }
         await device.transferOut(endpointOut.endpointNumber, drawerCommands);
         await device.transferOut(endpointOut.endpointNumber, alternateDrawerCommands);
-        showToast('success', lang === 'ar' ? 'تم إرسال إشارة فتح درج الكاش عبر USB 💸' : 'Sent USB cash drawer open signal 💸');
+        showToast('success', lang === 'ar' ? 'تم إرسال إشارة فتح درج الكاش عبر USB' : 'Sent USB cash drawer open signal');
       } catch (err: any) {
         console.error(err);
         showToast('error', lang === 'ar' ? `فشل فتح الدرج عبر USB: ${err.message}` : `USB cash drawer trigger failed: ${err.message}`);
@@ -147,14 +147,14 @@ export function usePrinterHardware({ settings, customers, lang, showToast }: Pri
         await writer.write(new Uint8Array([10, 13]));
         writer.releaseLock();
         await port.close();
-        showToast('success', lang === 'ar' ? 'تم إرسال إشارة فتح درج الكاش عبر المنفذ التسلسلي 💸' : 'Sent Serial cash drawer open signal 💸');
+        showToast('success', lang === 'ar' ? 'تم إرسال إشارة فتح درج الكاش عبر المنفذ التسلسلي' : 'Sent Serial cash drawer open signal');
       } catch (err: any) {
         console.error(err);
         showToast('error', lang === 'ar' ? `فشل فتح الدرج عبر المنفذ التسلسلي: ${err.message}` : `Serial drawer open failed: ${err.message}`);
       }
     } else {
       // Direct Windows Virtual Printer Spooling notification
-      showToast('success', lang === 'ar' ? `📋 تم إرسال أمر فتح الدرج الافتراضي للاستجابة: [${bytesCode.join(',')}]` : `Sent test draw kick command: [${bytesCode.join(',')}]`);
+      showToast('success', lang === 'ar' ? `تم إرسال أمر فتح الدرج الافتراضي للاستجابة: [${bytesCode.join(',')}]` : `Sent test draw kick command: [${bytesCode.join(',')}]`);
     }
   };
 
@@ -187,7 +187,7 @@ export function usePrinterHardware({ settings, customers, lang, showToast }: Pri
         await device.transferOut(endpointOut.endpointNumber, escPosInit);
         await device.transferOut(endpointOut.endpointNumber, testText);
         await device.transferOut(endpointOut.endpointNumber, cutPaper);
-        showToast('success', lang === 'ar' ? 'تم إرسال تذكرة الفحص المباشر عبر USB 🖨️' : 'Direct USB test ticket sent 🖨️');
+        showToast('success', lang === 'ar' ? 'تم إرسال تذكرة الفحص المباشر عبر USB' : 'Direct USB test ticket sent');
       } else if (hardwarePrinterType === 'serial') {
         let port = serialPrinterPort;
         const serial = (navigator as any).serial;
@@ -203,7 +203,7 @@ export function usePrinterHardware({ settings, customers, lang, showToast }: Pri
         await writer.write(cutPaper);
         writer.releaseLock();
         await port.close();
-        showToast('success', lang === 'ar' ? 'تم إرسال تذكرة الفحص المباشر عبر Serial 🖨️' : 'Direct Serial test ticket sent 🖨️');
+        showToast('success', lang === 'ar' ? 'تم إرسال تذكرة الفحص المباشر عبر Serial' : 'Direct Serial test ticket sent');
       }
     } catch (err: any) {
       console.error(err);
@@ -282,7 +282,7 @@ export function usePrinterHardware({ settings, customers, lang, showToast }: Pri
           const endpointOut = alternate?.endpoints.find((e: any) => e.direction === 'out' && e.type === 'bulk');
           if (endpointOut) {
             await device.transferOut(endpointOut.endpointNumber, combined);
-            showToast('success', lang === 'ar' ? '✔️ تم طباعة الفاتورة وفتح درج الكاشير عبر USB صامتاً بلحظات!' : 'Printed and kicked drawer via USB silent!');
+            showToast('success', lang === 'ar' ? 'تم طباعة الفاتورة وفتح درج الكاشير عبر USB صامتاً بلحظات!' : 'Printed and kicked drawer via USB silent!');
           }
         }
       } else if (hardwarePrinterType === 'serial') {
@@ -298,7 +298,7 @@ export function usePrinterHardware({ settings, customers, lang, showToast }: Pri
           await writer.write(combined);
           writer.releaseLock();
           await port.close();
-          showToast('success', lang === 'ar' ? '✔️ تم طباعة الفاتورة وفتح درج الكاشير عبر المنفذ التسلسلي صامتاً!' : 'Printed and kicked drawer via Serial silent!');
+          showToast('success', lang === 'ar' ? 'تم طباعة الفاتورة وفتح درج الكاشير عبر المنفذ التسلسلي صامتاً!' : 'Printed and kicked drawer via Serial silent!');
         }
       }
     } catch (err: any) {

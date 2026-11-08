@@ -16,6 +16,7 @@ import {
   Layers, 
   ShieldAlert, 
   CheckCircle2, 
+  XCircle,
   DollarSign, 
   Globe, 
   Download, 
@@ -176,7 +177,7 @@ export default function App() {
     const nextLang = lang === 'ar' ? 'en' : 'ar';
     setLang(nextLang);
     storage.setItem('pos_language', nextLang);
-    showToast('success', nextLang === 'ar' ? 'تم تحويل لغة الواجهة إلى العربية 🇱🇧' : 'Interface language switched to English 🇺🇸');
+    showToast('success', nextLang === 'ar' ? 'تم تحويل لغة الواجهة إلى العربية' : 'Interface language switched to English');
   };
 
   const toggleFullScreen = () => {
@@ -471,7 +472,7 @@ export default function App() {
   /** A service sold outside the cart (repair, top-up, instalment markup): one invoice line, counted in sales and profit. */
   const recordServiceSale = (sale: { productId: string; name: string; priceUSD: number; costUSD: number; paymentMethod: 'cash' | 'debt'; paidNowUSD: number; customerId?: string; note?: string; keepBalance?: boolean }): Invoice | null => {
     if (!isActivated && trialInvoicesUsed(invoices) >= TRIAL_LIMIT) {
-      showToast('error', lang === 'ar' ? '🚨 انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : '🚨 Trial ended (15 invoices). Subscribe to continue.');
+      showToast('error', lang === 'ar' ? 'انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : 'Trial ended (15 invoices). Subscribe to continue.');
       return null;
     }
     const now = new Date();
@@ -507,7 +508,7 @@ export default function App() {
   /** Saves a sales invoice built outside the till (e.g. a trade-in exchange); false when the trial is used up. */
   const recordInvoice = (inv: Invoice): boolean => {
     if (!isActivated && trialInvoicesUsed(invoices) >= TRIAL_LIMIT) {
-      showToast('error', lang === 'ar' ? '🚨 انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : '🚨 Trial ended (15 invoices). Subscribe to continue.');
+      showToast('error', lang === 'ar' ? 'انتهت الفترة التجريبية (15 فاتورة). اشترك لتكمّل.' : 'Trial ended (15 invoices). Subscribe to continue.');
       return false;
     }
     const updatedInvoices = [inv, ...invoices];
@@ -1074,8 +1075,8 @@ export default function App() {
               }`}
             >
               <div className="flex items-center gap-3 flex-row-reverse w-full text-right">
-                <div className="shrink-0 text-xl">
-                  {generalAlert.type === 'success' ? '✅' : generalAlert.type === 'error' ? '❌' : '⚠️'}
+                <div className="shrink-0">
+                  {generalAlert.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : generalAlert.type === 'error' ? <XCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
                 </div>
                 <p className="text-xs sm:text-sm font-extrabold flex-1 leading-normal text-right">
                   {generalAlert.message}
@@ -1252,7 +1253,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB EXTENSION A: CUSTOMERS AND LOYALTY (👤)
+              TAB EXTENSION A: CUSTOMERS AND LOYALTY ()
               ========================================== */}
           {activeTab === 'customers' && (
             <CustomersTab 
@@ -1265,7 +1266,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              SUPPLIERS AND ACCOUNTS PAYABLE (🏢)
+              SUPPLIERS AND ACCOUNTS PAYABLE ()
               ========================================== */}
           {activeTab === 'repairs' && (
             <RepairsTab
@@ -1340,7 +1341,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB EXTENSION B: RETURNS & WASTE OF STOCK (🔄)
+              TAB EXTENSION B: RETURNS & WASTE OF STOCK ()
               ========================================== */}
           {activeTab === 'returns_waste' && (
             <ReturnsWasteTab 
@@ -1361,7 +1362,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB EXTENSION C: PROCUREMENT & PURCHASES (🛒)
+              TAB EXTENSION C: PROCUREMENT & PURCHASES ()
               ========================================== */}
           {activeTab === 'purchases' && (
             (currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? <AdminOnlyNotice userName={currentUser?.name} /> : (
@@ -1381,7 +1382,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB EXTENSION W: WAREHOUSE & STOCK TRANSFERS (📦)
+              TAB EXTENSION W: WAREHOUSE & STOCK TRANSFERS ()
               ========================================== */}
           {activeTab === 'warehouse' && (
             (currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? <AdminOnlyNotice userName={currentUser?.name} /> : (
@@ -1397,7 +1398,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 2: INVENTORY - ARABIC TABLE VIEW (📦)
+              TAB 2: INVENTORY - ARABIC TABLE VIEW ()
               ========================================== */}
           {activeTab === 'inventory' && (
             <InventoryTab
@@ -1420,7 +1421,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 3: STOCK COUNT - PHYSICAL RESOLUTION (📋)
+              TAB 3: STOCK COUNT - PHYSICAL RESOLUTION ()
               ========================================== */}
           {activeTab === 'stock_count' && (
             <div className="space-y-6" id="tab-stock-reconciliation">
@@ -1438,7 +1439,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 4: REPORTS & FINANCIAL GRAPHICS (📊)
+              TAB 4: REPORTS & FINANCIAL GRAPHICS ()
               ========================================== */}
           {activeTab === 'reports' && (
             <div className="space-y-6" id="tab-reports-view">
@@ -1472,7 +1473,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 5: INVOICES LOG / COPIES (🧾)
+              TAB 5: INVOICES LOG / COPIES ()
               ========================================== */}
           {activeTab === 'invoices' && (
             <InvoicesLogTab
@@ -1485,7 +1486,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 6: USERS/EMPLOYEE CONTROLLER (👥)
+              TAB 6: USERS/EMPLOYEE CONTROLLER ()
               ========================================== */}
           {activeTab === 'users' && (
             <div className="space-y-6" id="tab-users-settings">
@@ -1506,7 +1507,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 6.5: BATCH PRICE LABELS DESIGNER (🏷️)
+              TAB 6.5: BATCH PRICE LABELS DESIGNER ()
               ========================================== */}
           {activeTab === 'shelf_tags' && (
             <ShelfTagsTab
@@ -1530,7 +1531,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 7: GENERAL SETTINGS EDITOR (⚙️)
+              TAB 7: GENERAL SETTINGS EDITOR ()
               ========================================== */}
           {activeTab === 'settings' && (
             <div className="space-y-6" id="tab-settings-view">
@@ -1569,7 +1570,7 @@ export default function App() {
         )}
 
           {/* ==========================================
-              TAB 7.5: OFFERS & PROMOTIONS TAB (🏷️)
+              TAB 7.5: OFFERS & PROMOTIONS TAB ()
               ========================================== */}
           {activeTab === 'promotions' && (
             <PromotionsTab
@@ -1583,7 +1584,7 @@ export default function App() {
           )}
 
           {/* ==========================================
-              TAB 8: FIREBASE CLOUD SYNC TAB (☁️)
+              TAB 8: FIREBASE CLOUD SYNC TAB ()
               ========================================== */}
           {activeTab === 'firebase_sync' && (
             <div className="space-y-6" id="tab-firebase-sync-section">
@@ -1625,7 +1626,7 @@ export default function App() {
       </div>
 
           {/* ==========================================
-              MODAL: EXCEL PRODUCTS IMPORT (📥)
+              MODAL: EXCEL PRODUCTS IMPORT ()
               ========================================== */}
           {showImportExcelModal && (
             <ImportExcelModal
@@ -1859,7 +1860,7 @@ export default function App() {
         <p style={{ fontSize: '11px', margin: '2px 0' }}>التاريخ: {new Date().toLocaleDateString()}</p>
         <p style={{ fontSize: '11px', margin: '2px 0' }}>الوقت: {new Date().toLocaleTimeString()}</p>
         <div style={{ borderTop: '1px dashed #000', margin: '10px 0' }}></div>
-        <p style={{ fontSize: '14px', fontWeight: 'bold', color: 'green', marginTop: '10px' }}>✔️ متصل وبحالة جيدة بنسبة 100%!</p>
+        <p style={{ fontSize: '14px', fontWeight: 'bold', color: 'green', marginTop: '10px' }}>متصل وبحالة جيدة بنسبة 100%!</p>
         <div style={{ marginTop: '20px', fontSize: '10px', color: '#666' }}>برنامج دكان أبو كامل POS v2.5</div>
       </div>
 
@@ -1869,10 +1870,10 @@ export default function App() {
           © {new Date(SYS_DATE).getFullYear()} {settings.shopName}. جميع الحقوق محفوظة لمدير النظام.
         </p>
         <p className="mt-1">
-          🐝 {lang === 'ar' ? 'يعمل بنظام' : 'Powered by'} <BeeCashWordmark /> {lang === 'ar' ? '· نظام الكاشير والمخزون' : '· checkout & inventory'}
+          {lang === 'ar' ? 'يعمل بنظام' : 'Powered by'} <BeeCashWordmark /> {lang === 'ar' ? '· نظام الكاشير والمخزون' : '· checkout & inventory'}
           {' · '}
           <button type="button" id="footer-whats-new" onClick={openWhatsNew} className="font-bold text-[#B98600] hover:underline cursor-pointer">
-            🆕 {lang === 'ar' ? 'ما الجديد' : "What's new"}
+            {lang === 'ar' ? 'ما الجديد' : "What's new"}
           </button>
         </p>
       </footer>
