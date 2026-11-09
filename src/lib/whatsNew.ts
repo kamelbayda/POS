@@ -12,6 +12,16 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-09a',
+    date: '2026-11-09',
+    ar: [
+      'شاشة البيع بحلّة جديدة: المجموع يظهر كبيراً بالدولار والليرة مثل شاشة الصندوق، والفاتورة مرتّبة كإيصال، وأزرار الكمية وإلغاء الصنف تظهر عند اختيار سطر.',
+    ],
+    en: [
+      'A new look for the sales screen: a large register display with the total in $ and L.L, a receipt-style bill, and quantity and void buttons that appear when you pick a line.',
+    ],
+  },
+  {
     id: '2026-11-08a',
     date: '2026-11-08',
     ar: [
