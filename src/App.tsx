@@ -1489,7 +1489,7 @@ export default function App() {
               TAB 6: USERS/EMPLOYEE CONTROLLER ()
               ========================================== */}
           {activeTab === 'users' && (
-            <div className="space-y-6" id="tab-users-settings">
+            <div className="space-y-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col" id="tab-users-settings">
               {currentUser.role !== 'admin' ? (
                 <AdminOnlyNotice userName={currentUser?.name} />
               ) : (

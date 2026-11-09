@@ -140,10 +140,10 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
   };
 
   return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start lg:flex-1 lg:min-h-0 lg:grid-rows-[minmax(0,1fr)]" id="users-panes">
           
           {/* Register User card */}
-          <div id="reg-user-form" className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs h-fit text-right scroll-mt-24">
+          <div id="reg-user-form" className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs h-fit text-right scroll-mt-24 lg:max-h-full lg:overflow-y-auto lg:overscroll-contain">
             <h3 className="font-bold text-slate-800 text-base pb-3 border-b border-slate-100 mb-4 flex items-center gap-2 justify-end">
               <span>{editingUser ? (lang === 'ar' ? 'تعديل بيانات الحساب والمدراء' : 'Edit User Account') : (lang === 'ar' ? 'إدراج مستخدم جديد أو كاشير' : 'Create New User / Cashier')}</span>
               <Users className="w-5 h-5 text-[#1D9E75]" />
@@ -250,7 +250,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
           </div>
 
           {/* Users list */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs lg:col-span-2 text-right">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs lg:col-span-2 text-right lg:max-h-full lg:overflow-y-auto lg:overscroll-contain" id="users-list-pane">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-3 border-b border-slate-100 mb-4">
               <div className="relative w-full sm:w-60">
                 <input
@@ -262,7 +262,7 @@ export function UsersTab({ users, setUsers, currentUser, setCurrentUser, lang, s
                 />
               </div>
               <h3 className="font-bold text-slate-800 text-base">
-                {lang === 'ar' ? 'الموظفون المستحدَمون للنظام حالياً' : 'Active System Users'}
+                {lang === 'ar' ? 'الموظفون المستخدمون للنظام حالياً' : 'Active System Users'}
               </h3>
             </div>
 
