@@ -291,7 +291,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
   };
 
   return (
-    <div id="price-labels-root-wrapper" className="space-y-6 animate-fade-in text-right" dir="rtl">
+    <div id="price-labels-root-wrapper" className="space-y-6 animate-fade-in text-right lg:flex-1 lg:min-h-0 lg:flex lg:flex-col" dir="rtl">
       
       {/* Visual Header */}
       <div className={`p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 border ${theme === 'dark' ? 'bg-[#18181b] border-stone-800 text-stone-100' : 'bg-white border-slate-200 text-slate-800'} shadow-sm`}>
@@ -348,10 +348,11 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      {/* Wide screens: the settings column and the preview scroll separately; the page stays put */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start lg:items-stretch lg:flex-1 lg:min-h-0 lg:grid-rows-[minmax(0,1fr)]" id="price-labels-panes">
         
-        {/* SIDEBAR DESIGN PARAMETERS (Spans 4 columns on xl) */}
-        <div className="xl:col-span-4 space-y-6">
+        {/* SIDEBAR DESIGN PARAMETERS (Spans 4 columns on wide screens) */}
+        <div className="lg:col-span-4 xl:col-span-4 space-y-6 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pe-1" id="price-labels-settings-pane">
           
           {/* SECTION 1: LAYOUT & FORMAT */}
           <div className={`p-5 rounded-3xl border ${theme === 'dark' ? 'bg-[#18181b] border-stone-800 text-stone-100' : 'bg-white border-slate-200 text-slate-800'} shadow-xs`}>
@@ -868,7 +869,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
         </div>
 
         {/* PREVIEW CONTAINER & PRINT SHEETS CANVAS (Spans 8 columns on xl) */}
-        <div className="xl:col-span-8 space-y-6">
+        <div className="lg:col-span-8 xl:col-span-8 space-y-6 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pe-1" id="price-labels-preview-pane">
           
           {/* TOP ACTION STRIP */}
           <div className={`p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3 border ${
