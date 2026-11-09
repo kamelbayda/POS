@@ -1302,3 +1302,136 @@ html.dark .till .till-line.is-selected { box-shadow: inset -4px 0 0 var(--till-a
 .till .till-chip b { background: var(--till-accent); color: var(--till-accent-ink); border-radius: 999px; padding: 1px 8px; font-size: 11.5px; }
 .till .till-empty { color: var(--till-muted); font-size: 14px; font-weight: 600; }
 .till :focus-visible { outline: 2px solid var(--till-accent); outline-offset: 2px; }
+
+/* =====================================================================================
+   BEECASH SKIN: the till's identity applied to every screen
+   One ink colour for headings bars and main actions, honey only where money is taken or
+   something must be noticed, quiet greys for everything decorative, hairlines instead of
+   shadows, no gradients and no idle animation. The screens still use their Tailwind classes;
+   these rules re-map those classes in one place. Prefixed with #root so they win over the
+   older night-mode and phone-shop overrides above; .till has its own classes and is left out.
+   ===================================================================================== */
+:root {
+  --bc-ink: #1E1B16;
+  --bc-ink-hover: #34302A;
+  --bc-accent: #FFC21A;
+  --bc-accent-ink: #1E1B16;
+  --bc-counter: #F1F2F4;
+  --bc-surface: #FFFFFF;
+  --bc-sunken: #F6F7F9;
+  --bc-line: #DADDE2;
+  --bc-text: #1E1B16;
+  --bc-muted: #6B7079;
+  --bc-money: #12704F;
+  --bc-bar: var(--bc-ink);          /* page title bars and dark panels */
+  --bc-primary: var(--bc-ink);      /* main buttons */
+  --bc-primary-hover: var(--bc-ink-hover);
+  --bc-primary-text: #FFFFFF;
+}
+html.dark {
+  --bc-ink: #3A3D45;
+  --bc-ink-hover: #474B54;
+  --bc-bar: #26282E;
+  --bc-primary: #E9EAED;
+  --bc-primary-hover: #FFFFFF;
+  --bc-primary-text: #141518;
+  --bc-counter: #141518;
+  --bc-surface: #1C1D21;
+  --bc-sunken: #232429;
+  --bc-line: #30323A;
+  --bc-text: #ECEDEF;
+  --bc-muted: #9A9EA8;
+  --bc-money: #4ADE80;
+}
+html.biz-phones { --bc-ink: #0B2545; --bc-ink-hover: #133463; --bc-accent: #22C55E; --bc-accent-ink: #062A14; }
+html.biz-phones.dark { --bc-ink: #1B3358; --bc-ink-hover: #24416D; --bc-bar: #13243F; }
+
+/* the page itself */
+#root #main-system, html:not(.dark) body { background-color: var(--bc-counter) !important; }
+
+/* gradients: dark ones become the ink bar, light washes become a quiet grey */
+#root [class*="bg-gradient-to-"] { background-image: none !important; background-color: var(--bc-bar) !important; }
+#root [class*="bg-gradient-to-"]:is([class*="from-white"], [class*="from-slate-50"], [class*="-50 "], [class$="-50"], [class*="from-emerald-100"], [class*="from-amber-100"], [class*="from-indigo-100"], [class*="from-sky-100"]) {
+  background-color: var(--bc-sunken) !important;
+}
+
+/* main actions: one ink colour instead of green, indigo, violet, sky, blue and teal */
+#root :is([class~="bg-[#1D9E75]"], [class~="bg-emerald-600"], [class~="bg-emerald-500"], [class~="bg-emerald-700"], [class~="bg-indigo-600"],
+  [class~="bg-indigo-500"], [class~="bg-violet-600"], [class~="bg-purple-600"], [class~="bg-sky-600"], [class~="bg-sky-500"],
+  [class~="bg-blue-600"], [class~="bg-blue-500"], [class~="bg-teal-600"], [class~="bg-cyan-600"]) {
+  background-color: var(--bc-primary) !important; background-image: none !important; border-color: transparent !important; color: var(--bc-primary-text) !important;
+}
+#root :is([class~="bg-[#1D9E75]"], [class~="bg-emerald-600"], [class~="bg-emerald-500"], [class~="bg-emerald-700"], [class~="bg-indigo-600"],
+  [class~="bg-indigo-500"], [class~="bg-violet-600"], [class~="bg-purple-600"], [class~="bg-sky-600"], [class~="bg-sky-500"],
+  [class~="bg-blue-600"], [class~="bg-blue-500"], [class~="bg-teal-600"], [class~="bg-cyan-600"]) :is(span, svg, b, strong, div, p, i) { color: var(--bc-primary-text) !important; }
+#root :is([class~="bg-[#01002e]"], [class~="bg-[#020069]"]) { background-color: var(--bc-bar) !important; background-image: none !important; }
+#root :is([class~="hover:bg-[#1D9E75]"], [class~="hover:bg-[#15805e]"], [class~="hover:bg-emerald-700"], [class~="hover:bg-emerald-600"],
+  [class~="hover:bg-indigo-700"], [class~="hover:bg-sky-700"], [class~="hover:bg-sky-750"], [class~="hover:bg-blue-700"], [class~="hover:bg-violet-700"]):hover {
+  background-color: var(--bc-primary-hover) !important;
+}
+
+/* gold buttons become the accent, with ink text */
+#root :is([class~="bg-[#d4af37]"], [class~="bg-[#D4AF37]"]) { background-color: var(--bc-accent) !important; border-color: transparent !important; }
+#root :is([class~="bg-[#d4af37]"], [class~="bg-[#D4AF37]"]), #root :is([class~="bg-[#d4af37]"], [class~="bg-[#D4AF37]"]) * { color: var(--bc-accent-ink) !important; }
+#root :is([class~="text-[#d4af37]"], [class~="text-[#D4AF37]"]) { color: var(--bc-accent) !important; }
+#root [class*="border-[#d4af37]"], #root [class~="border-[#b89524]"] { border-color: color-mix(in srgb, var(--bc-accent) 45%, transparent) !important; }
+
+/* decorative tints become one quiet grey; amber (warning) and rose/red (danger) keep their meaning */
+#root :is([class~="bg-emerald-50"], [class~="bg-emerald-100"], [class*="bg-emerald-50/"], [class~="bg-indigo-50"], [class~="bg-indigo-100"],
+  [class~="bg-sky-50"], [class~="bg-sky-100"], [class~="bg-blue-50"], [class~="bg-blue-100"], [class~="bg-violet-50"], [class~="bg-purple-50"],
+  [class~="bg-fuchsia-50"], [class~="bg-pink-50"], [class~="bg-cyan-50"], [class~="bg-teal-50"], [class*="bg-[#1D9E75]/"], [class*="bg-emerald-500/"],
+  [class*="bg-indigo-500/"], [class*="bg-sky-500/"], [class~="bg-slate-50"], [class*="bg-slate-50/"]) {
+  background-color: var(--bc-sunken) !important;
+}
+#root :is([class*="border-emerald-1"], [class*="border-emerald-2"], [class*="border-indigo-1"], [class*="border-indigo-2"], [class*="border-sky-1"],
+  [class*="border-sky-2"], [class*="border-blue-1"], [class*="border-blue-2"], [class*="border-violet-"], [class*="border-purple-"], [class*="border-teal-"],
+  [class*="border-cyan-"], [class*="border-slate-1"], [class*="border-slate-2"], [class*="border-[#1D9E75]/"]) {
+  border-color: var(--bc-line) !important;
+}
+#root :is([class*="text-indigo-"], [class*="text-violet-"], [class*="text-purple-"], [class*="text-sky-"], [class*="text-blue-"], [class*="text-cyan-"],
+  [class*="text-teal-"], [class*="text-fuchsia-"]):not([class*="bg-"]) { color: var(--bc-text) !important; }
+/* green text means money */
+#root :is([class*="text-emerald-"], [class~="text-[#1D9E75]"], [class~="text-green-600"], [class~="text-green-700"]):not(:is([class~="bg-[#1D9E75]"], [class~="bg-emerald-600"]) *) {
+  color: var(--bc-money) !important;
+}
+
+/* hairlines, not shadows; no idle animation; weights that leave room for hierarchy */
+#root :is([class~="shadow-xs"], [class~="shadow-sm"], [class~="shadow"], [class~="shadow-md"], [class~="shadow-lg"], [class~="shadow-inner"], [class*="shadow-emerald"],
+  [class*="shadow-indigo"], [class*="shadow-amber"], [class*="shadow-rose"], [class*="shadow-sky"], [class*="shadow-black"]) { box-shadow: none !important; }
+#root :is(.animate-pulse, .animate-bounce, .animate-ping) { animation: none !important; }
+#root .font-black { font-weight: 800; }
+#root :is(.rounded-3xl) { border-radius: 18px; }
+
+/* cards and inputs on the counter */
+#root :is([class~="bg-white"]) { background-color: var(--bc-surface); }
+#root :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):focus { border-color: var(--bc-text) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--bc-accent) 40%, transparent) !important; outline: none; }
+@media (prefers-reduced-motion: reduce) { #root * { transition: none !important; } }
+#root :is([class~="bg-slate-900"], [class~="bg-slate-950"], [class~="bg-[#0f172a]"], [class~="bg-[#0F172A]"]) { background-color: var(--bc-bar) !important; }
+/* orange and amber solid buttons: the accent, with ink text */
+#root :is([class~="bg-orange-500"], [class~="bg-orange-600"], [class~="bg-amber-500"], [class~="bg-amber-600"]):is(button, a, [role="button"]),
+#root :is(button, a):is([class~="bg-orange-500"], [class~="bg-orange-600"], [class~="bg-amber-500"], [class~="bg-amber-600"]) {
+  background-color: var(--bc-accent) !important; background-image: none !important; color: var(--bc-accent-ink) !important; border-color: transparent !important;
+}
+#root button:is([class~="bg-orange-500"], [class~="bg-orange-600"], [class~="bg-amber-500"], [class~="bg-amber-600"]) * { color: var(--bc-accent-ink) !important; }
+/* any tint of the decorative hues, with or without opacity */
+#root :is([class*="bg-sky-50"], [class*="bg-indigo-50"], [class*="bg-blue-50"], [class*="bg-violet-50"], [class*="bg-purple-50"], [class*="bg-cyan-50"], [class*="bg-teal-50"], [class*="bg-emerald-50"]):not([class*="hover:bg-"][class*=" bg-white"]) {
+  background-color: var(--bc-sunken) !important;
+}
+/* the top bar: quiet controls on a white surface */
+#root #system-header { background-color: var(--bc-surface) !important; border-bottom: 1px solid var(--bc-line) !important; box-shadow: none !important; }
+#root #system-header button:not([class~="bg-[#1D9E75]"]):not([class*="rose"]):not([class*="red-"]):not([class*="bg-slate-9"]):not([class*="bg-emerald-6"]):not([class*="bg-stone-9"]):not([class*="bg-[#"]) {
+  background-color: transparent !important; border-color: var(--bc-line) !important; color: var(--bc-text) !important; box-shadow: none !important;
+}
+#root #system-header button:not([class~="bg-[#1D9E75]"]):not([class*="rose"]):not([class*="red-"]):not([class*="bg-slate-9"]):not([class*="bg-emerald-6"]):not([class*="bg-stone-9"]):not([class*="bg-[#"]) :is(span, svg) { color: inherit !important; }
+#root #system-header button:is([class*="bg-slate-9"], [class*="bg-emerald-6"], [class*="bg-stone-9"], [class~="bg-[#1D9E75]"]) { background-color: var(--bc-primary) !important; color: var(--bc-primary-text) !important; }
+#root #system-header button:is([class*="bg-slate-9"], [class*="bg-emerald-6"], [class*="bg-stone-9"]) * { color: var(--bc-primary-text) !important; }
+/* inside the ink bars, nested panels are a lighter shade of the same ink */
+#root :is([class*="bg-gradient-to-"], [class~="bg-slate-900"], [class~="bg-slate-950"], [class~="bg-[#01002e]"], [class~="bg-[#020069]"]) :is([class*="bg-slate-800"], [class*="bg-slate-900/"], [class*="bg-white/1"], [class*="bg-white/5"]) {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+#root #system-header button:not([class~="bg-[#1D9E75]"]):hover { background-color: var(--bc-sunken) !important; }
+#root #system-header button:is([class*="rose"], [class*="red-"]) { background-color: transparent !important; border-color: color-mix(in srgb, #C2361F 35%, transparent) !important; color: #C2361F !important; }
+#root #sidebar-navigation nav button[class~="bg-[#1D9E75]"] { background: var(--bc-primary) !important; box-shadow: none !important; }
+#root #sidebar-navigation nav button[class~="bg-[#1D9E75]"] * { color: var(--bc-primary-text) !important; }
+#root #sidebar-navigation nav button:not([class~="bg-[#1D9E75]"]) { background: transparent !important; border-color: transparent !important; }
+#root #sidebar-navigation nav button:not([class~="bg-[#1D9E75]"]):hover { background: var(--bc-sunken) !important; }

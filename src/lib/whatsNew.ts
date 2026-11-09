@@ -16,9 +16,11 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     date: '2026-11-09',
     ar: [
       'شاشة البيع بحلّة جديدة: المجموع يظهر كبيراً بالدولار والليرة مثل شاشة الصندوق، والفاتورة مرتّبة كإيصال، وأزرار الكمية وإلغاء الصنف تظهر عند اختيار سطر.',
+      'كل البرنامج بالهوية نفسها: ألوان أهدأ، عناوين الصفحات بلون واحد، والأزرار الرئيسية موحّدة، في الوضع النهاري والليلي.',
     ],
     en: [
       'A new look for the sales screen: a large register display with the total in $ and L.L, a receipt-style bill, and quantity and void buttons that appear when you pick a line.',
+      'The whole program shares that look: calmer colours, one colour for page titles and main buttons, in light and dark mode.',
     ],
   },
   {
