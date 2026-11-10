@@ -1,6 +1,6 @@
 import type { LicenseState } from '../../hooks/useLicense';
 import React, { useState } from 'react';
-import { Archive, Briefcase, Copy, Database, ExternalLink, Key, KeyRound, Printer, Receipt, Save, Settings, Trash2, TrendingUp } from 'lucide-react';
+import { Archive, Briefcase, MonitorSmartphone, Copy, Database, ExternalLink, Key, KeyRound, Printer, Receipt, Save, Settings, Trash2, TrendingUp } from 'lucide-react';
 import { Invoice, PrinterConfig, SystemSettings } from '../../types';
 import * as storage from '../../lib/storage';
 import { printElementViaIFrame } from '../../lib/print';
@@ -29,14 +29,8 @@ interface SettingsTabProps {
   showToast: (type: 'success' | 'error' | 'warning', message: string) => void;
   onSaveSettings: (e: React.FormEvent) => void;
   onRecalculatePrices: () => void;
-  displayScale: {
-    globalFontScale: number;
-    setGlobalFontScale: Setter<number>;
-    globalButtonScale: number;
-    setGlobalButtonScale: Setter<number>;
-    globalZoomScale: number;
-    setGlobalZoomScale: Setter<number>;
-  };
+  /** The screen and account controls (moved out of the top header). */
+  displayPanel: React.ReactNode;
   printerHardware: ReturnType<typeof usePrinterHardware>;
   spooler: {
     activePrintJobs: PrintJob[];
@@ -69,7 +63,7 @@ export function SettingsTab({
   showToast,
   onSaveSettings,
   onRecalculatePrices,
-  displayScale,
+  displayPanel,
   printerHardware,
   spooler,
   license,
@@ -77,14 +71,13 @@ export function SettingsTab({
   contactForm,
   dataWipe,
 }: SettingsTabProps) {
-  const { globalFontScale, setGlobalFontScale, globalButtonScale, setGlobalButtonScale, globalZoomScale, setGlobalZoomScale } = displayScale;
   const { hardwarePrinterType, setHardwarePrinterType, usbDeviceName, serialPortInfo, baudRate, setBaudRate, connectUSBPrinter, connectSerialPrinter, openCashDrawer, printInvoiceToRawHardware } = printerHardware;
   const { activePrintJobs, setActivePrintJobs, addPrintJob } = spooler;
   const { isActivated, activationErrorMsg, setActivationErrorMsg, applyActivation, isActivating } = license;
   const { contactName, setContactName, contactPhone, setContactPhone, contactEmail, setContactEmail, contactShop, setContactShop, contactMessage, setContactMessage } = contactForm;
   const { onWipeSales, onWipeProducts, onWipeAll } = dataWipe;
 
-  const [settingsSubTab, setSettingsSubTab] = useState<'general' | 'business' | 'printers'>('general');
+  const [settingsSubTab, setSettingsSubTab] = useState<'general' | 'business' | 'printers' | 'display'>('general');
   // --- LOCAL CREATION STATES FOR NEW PRINTERS ---
   const [newPrinterName, setNewPrinterName] = useState<string>('');
   const [newPrinterConn, setNewPrinterConn] = useState<'USB' | 'Network' | 'Serial' | 'Bluetooth'>('USB');
@@ -281,9 +274,24 @@ export function SettingsTab({
           <Settings className="w-4 h-4" />
           <span>{lang === 'ar' ? 'الإعدادات التشغيلية والمالية' : 'Operational Settings'}</span>
         </button>
+        <button
+          type="button"
+          id="btn-settings-subtab-display"
+          onClick={() => setSettingsSubTab('display')}
+          className={`px-4 py-2 text-xs font-extrabold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
+            settingsSubTab === 'display'
+              ? 'bg-[#1D9E75]/10 text-[#1D9E75] border-b-2 border-[#1D9E75]'
+              : 'text-slate-500 hover:bg-slate-100'
+          }`}
+        >
+          <MonitorSmartphone className="w-4 h-4" />
+          <span>{lang === 'ar' ? 'الشاشة والحساب' : 'Screen & account'}</span>
+        </button>
       </div>
 
-      {settingsSubTab === 'general' ? (
+      {settingsSubTab === 'display' ? (
+        displayPanel
+      ) : settingsSubTab === 'general' ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs w-full text-right">
           <h3 className="font-bold text-slate-800 text-lg pb-3 border-b border-slate-100 mb-5 flex items-center gap-2 justify-end">
           <span>
@@ -667,140 +675,6 @@ export function SettingsTab({
           </div>
         </div>
 
-        {/* ACCESSIBILITY & DISPLAY SCALING SYSTEM CONTROLLER */}
-        <div className="bg-amber-500/5 border border-amber-500/20 p-5 rounded-2xl space-y-4 text-right">
-          <h4 className="font-extrabold text-amber-800 text-xs sm:text-sm flex items-center gap-1.5 flex-row-reverse">
-            <span>{lang === 'ar' ? 'التحكم بالزوم والخط وحجم الأزرار للبرنامج (دقة الشاشات المختلفة)' : 'UI Accessibility Sizing (Font, Buttons & Overall Screen Zoom)'}</span>
-          </h4>
-          <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-            {lang === 'ar'
-              ? 'بإمكانك تخصيص وتكبير كامل نصوص البرنامج وأزراره أو عمل زوم (Zoom Out/In) لكامل الصفحة لتناسب جميع شاشات نقاط البيع ذات الدقة المنخفضة أو التابلت.'
-              : 'Customize and scale the entire program typography, button sizes, or apply general page zoom to fit smaller display resolutions and touch terminals.'}
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-1.5">
-            {/* Font size */}
-            <div className="space-y-2 bg-white p-4 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-mono font-black text-[#1D9E75] bg-emerald-50 px-2 py-0.5 rounded">
-                  {Math.round(globalFontScale * 100)}%
-                </span>
-                <span className="font-bold text-slate-700">
-                  {lang === 'ar' ? 'مؤشر حجم الخط العام:' : 'Global Font Scale Selector:'}
-                </span>
-              </div>
-              <input 
-                type="range"
-                min="0.8"
-                max="1.4"
-                step="0.05"
-                value={globalFontScale}
-                onChange={(e) => setGlobalFontScale(parseFloat(e.target.value))}
-                className="w-full accent-emerald-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="grid grid-cols-4 gap-1 text-[10px] text-center font-extrabold">
-                <button type="button" onClick={() => setGlobalFontScale(0.85)} className={`p-1 rounded cursor-pointer ${globalFontScale === 0.85 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'صغير' : 'Small'}
-                </button>
-                <button type="button" onClick={() => setGlobalFontScale(1.0)} className={`p-1 rounded cursor-pointer ${globalFontScale === 1.0 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'افتراضي' : 'Default'}
-                </button>
-                <button type="button" onClick={() => setGlobalFontScale(1.15)} className={`p-1 rounded cursor-pointer ${globalFontScale === 1.15 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'كبير' : 'Large'}
-                </button>
-                <button type="button" onClick={() => setGlobalFontScale(1.3)} className={`p-1 rounded cursor-pointer ${globalFontScale === 1.3 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'ضخم' : 'Huge'}
-                </button>
-              </div>
-            </div>
-
-            {/* Button size */}
-            <div className="space-y-2 bg-white p-4 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                  {Math.round(globalButtonScale * 100)}%
-                </span>
-                <span className="font-bold text-slate-700">
-                  {lang === 'ar' ? 'مؤشر حجم الأزرار والتفاعل:' : 'Button Touch Sizing Scale:'}
-                </span>
-              </div>
-              <input 
-                type="range"
-                min="0.8"
-                max="1.4"
-                step="0.05"
-                value={globalButtonScale}
-                onChange={(e) => setGlobalButtonScale(parseFloat(e.target.value))}
-                className="w-full accent-blue-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="grid grid-cols-4 gap-1 text-[10px] text-center font-extrabold">
-                <button type="button" onClick={() => setGlobalButtonScale(0.85)} className={`p-1 rounded cursor-pointer ${globalButtonScale === 0.85 ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'مضغوط' : 'Compact'}
-                </button>
-                <button type="button" onClick={() => setGlobalButtonScale(1.0)} className={`p-1 rounded cursor-pointer ${globalButtonScale === 1.0 ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'افتراضي' : 'Default'}
-                </button>
-                <button type="button" onClick={() => setGlobalButtonScale(1.15)} className={`p-1 rounded cursor-pointer ${globalButtonScale === 1.15 ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'مريح' : 'Comfortable'}
-                </button>
-                <button type="button" onClick={() => setGlobalButtonScale(1.3)} className={`p-1 rounded cursor-pointer ${globalButtonScale === 1.3 ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  {lang === 'ar' ? 'لمس ضخم' : 'Touch XL'}
-                </button>
-              </div>
-            </div>
-
-            {/* Screen Zoom Scale */}
-            <div className="space-y-2 bg-white p-4 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-mono font-black text-violet-600 bg-violet-50 px-2 py-0.5 rounded">
-                  {Math.round(globalZoomScale * 100)}%
-                </span>
-                <span className="font-bold text-slate-700">
-                  {lang === 'ar' ? 'الزوم ودقة الشاشة الكاملة:' : 'Screen Zoom & Resolution:'}
-                </span>
-              </div>
-              <input 
-                type="range"
-                min="0.6"
-                max="1.2"
-                step="0.05"
-                value={globalZoomScale}
-                onChange={(e) => setGlobalZoomScale(parseFloat(e.target.value))}
-                className="w-full accent-violet-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="grid grid-cols-4 gap-1 text-[10px] text-center font-extrabold">
-                <button type="button" onClick={() => {
-                  setGlobalZoomScale(0.75);
-                  showToast('success', lang === 'ar' ? 'زوم لـ 75%' : 'Zoom set to 75%');
-                }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 0.75 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  75% ({lang === 'ar' ? 'صغيرة' : 'Small'})
-                </button>
-                <button type="button" onClick={() => {
-                  setGlobalZoomScale(0.85);
-                  showToast('success', lang === 'ar' ? 'زوم لـ 85%' : 'Zoom set to 85%');
-                }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 0.85 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  85%
-                </button>
-                <button type="button" onClick={() => {
-                  setGlobalZoomScale(1.0);
-                  showToast('success', lang === 'ar' ? 'زوم لـ 100%' : 'Zoom set to 100%');
-                }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 1.0 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  100%
-                </button>
-                <button type="button" onClick={() => {
-                  setGlobalZoomScale(1.15);
-                  showToast('success', lang === 'ar' ? 'زوم لـ 115%' : 'Zoom set to 115%');
-                }} className={`p-1 rounded cursor-pointer ${globalZoomScale === 1.15 ? 'bg-violet-600 text-white shadow-xs' : 'bg-slate-50 hover:bg-slate-100 text-slate-700'}`}>
-                  115%
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 text-[10px] text-slate-400 font-semibold pt-1">
-            <span>{lang === 'ar' ? 'يتم حفظ هذه القيم وتفعيلها فورياً ومزامنتها على هذا المتصفح.' : 'Changes apply immediately and persist in this browser.'}</span>
-          </div>
-        </div>
 
         {/* Submit form button */}
         <button

@@ -17,10 +17,14 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     ar: [
       'شاشة البيع بحلّة جديدة: المجموع يظهر كبيراً بالدولار والليرة مثل شاشة الصندوق، والفاتورة مرتّبة كإيصال، وأزرار الكمية وإلغاء الصنف تظهر عند اختيار سطر.',
       'كل البرنامج بالهوية نفسها: ألوان أهدأ، عناوين الصفحات بلون واحد، والأزرار الرئيسية موحّدة، في الوضع النهاري والليلي.',
+      'ترويسة أخف: نُقلت اللغة والمظهر وملء الشاشة وحجم الخط وقفل الشاشة وتبديل المحل وتسجيل الخروج إلى الإعدادات، في تبويب "الشاشة والحساب".',
+      'في ملصقات الأسعار والمستخدمين، يتحرّك عمود الإعدادات وحده وتبقى المعاينة أو لائحة الموظفين ثابتة.',
     ],
     en: [
       'A new look for the sales screen: a large register display with the total in $ and L.L, a receipt-style bill, and quantity and void buttons that appear when you pick a line.',
       'The whole program shares that look: calmer colours, one colour for page titles and main buttons, in light and dark mode.',
+      'A lighter header: language, theme, full screen, sizes, lock, switch shop and log out are now in Settings, under "Screen & account".',
+      'In price labels and users, the settings column scrolls on its own while the preview or the staff list stays put.',
     ],
   },
   {
