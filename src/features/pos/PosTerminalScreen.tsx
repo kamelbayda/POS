@@ -161,9 +161,6 @@ export function PosTerminalScreen({
                   <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); toggleFullScreen(); }}>
                     <Maximize /><span>{ar ? 'ملء الشاشة' : 'Full screen'}</span>
                   </button>
-                  <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); setTheme(theme === 'dark' ? 'light' : 'dark'); }}>
-                    {theme === 'dark' ? <Sun /> : <Moon />}<span>{theme === 'dark' ? (ar ? 'الوضع النهاري' : 'Light mode') : (ar ? 'الوضع الليلي' : 'Dark mode')}</span>
-                  </button>
                   <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); setLang(ar ? 'en' : 'ar'); }}>
                     <Globe /><span>{ar ? 'English' : 'العربية'}</span>
                   </button>
@@ -200,6 +197,14 @@ export function PosTerminalScreen({
               </button>
             ))}
           </div>
+          {/* Night mode: an on/off switch beside the price tier */}
+          <button type="button" role="switch" aria-checked={theme === 'dark'} id="btn-terminal-night"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="till-switch" title={ar ? 'الوضع الليلي' : 'Night mode'}>
+            <Moon />
+            <span>{ar ? 'ليلي' : 'Night'}</span>
+            <span className="till-switch-track" aria-hidden="true"><span className="till-switch-knob" /></span>
+          </button>
         </div>
 
       </div>
