@@ -135,9 +135,47 @@ export function PosTerminalScreen({
   return (
     <div dir={ar ? 'rtl' : 'ltr'} className="till flex-1 h-full min-h-0 flex flex-col w-full font-sans overflow-hidden select-none no-print" id="tab-pos-terminal">
 
-      {/* Top bar: shop, time and price mode on one side, screen controls on the other */}
+      {/* Top bar: the menu first, then the shop, time and price mode */}
       <div className="till-bar px-4 py-2 flex flex-col md:flex-row items-center justify-between gap-3 shrink-0">
         <div className="flex flex-wrap items-center gap-3">
+          {/* One menu holds the screen controls, so the bar stays clear for selling */}
+          <div className="relative">
+            <button type="button" id="btn-terminal-menu" className={`till-btn till-btn-quiet ${menuOpen ? 'is-on' : ''}`}
+              aria-haspopup="menu" aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(o => !o)}>
+              <Menu /><span>{ar ? 'القائمة' : 'Menu'}</span>
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div role="menu" id="terminal-menu"
+                  className={`till-menu absolute ${ar ? 'right-0' : 'left-0'} top-full mt-1.5 z-50 w-60 p-1.5 rounded-xl flex flex-col gap-0.5`}>
+                  <button type="button" role="menuitem" className="till-menu-item"
+                    onClick={() => { const sd = document.getElementById('sidebar-navigation'); if (sd) sd.classList.toggle('hidden'); setMenuOpen(false); }}>
+                    <Menu /><span>{ar ? 'إظهار / إخفاء الأقسام' : 'Show / hide sections'}</span>
+                  </button>
+                  <button type="button" role="menuitem" className="till-menu-item"
+                    onClick={() => { setMenuOpen(false); setPosLayoutMode('modern'); setTheme('light'); showToast('success', ar ? 'رجعت للشاشة العادية' : 'Back to the standard screen'); }}>
+                    <Monitor /><span>{ar ? 'الشاشة العادية' : 'Standard screen'}</span>
+                  </button>
+                  <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); toggleFullScreen(); }}>
+                    <Maximize /><span>{ar ? 'ملء الشاشة' : 'Full screen'}</span>
+                  </button>
+                  <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); setTheme(theme === 'dark' ? 'light' : 'dark'); }}>
+                    {theme === 'dark' ? <Sun /> : <Moon />}<span>{theme === 'dark' ? (ar ? 'الوضع النهاري' : 'Light mode') : (ar ? 'الوضع الليلي' : 'Dark mode')}</span>
+                  </button>
+                  <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); setLang(ar ? 'en' : 'ar'); }}>
+                    <Globe /><span>{ar ? 'English' : 'العربية'}</span>
+                  </button>
+                  <div className="till-menu-sep" />
+                  <button type="button" role="menuitem" id="btn-terminal-logout" className="till-menu-item till-menu-danger" onClick={() => { setMenuOpen(false); handleLogout(); }}>
+                    <LogOut /><span>{ar ? 'تسجيل الخروج' : 'Log out'}</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          <span className="till-sep hidden sm:block" />
           <BeeCashMark className="w-9 h-9 shrink-0" />
           <div>
             <div className="till-shop leading-tight">{settings.shopName}</div>
@@ -164,43 +202,6 @@ export function PosTerminalScreen({
           </div>
         </div>
 
-        {/* One menu holds the screen controls, so the bar stays clear for selling */}
-        <div className="relative">
-          <button type="button" id="btn-terminal-menu" className={`till-btn till-btn-quiet ${menuOpen ? 'is-on' : ''}`}
-            aria-haspopup="menu" aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(o => !o)}>
-            <Menu /><span>{ar ? 'القائمة' : 'Menu'}</span>
-          </button>
-          {menuOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-              <div role="menu" id="terminal-menu"
-                className={`till-menu absolute ${ar ? 'left-0' : 'right-0'} top-full mt-1.5 z-50 w-60 p-1.5 rounded-xl flex flex-col gap-0.5`}>
-                <button type="button" role="menuitem" className="till-menu-item"
-                  onClick={() => { const sd = document.getElementById('sidebar-navigation'); if (sd) sd.classList.toggle('hidden'); setMenuOpen(false); }}>
-                  <Menu /><span>{ar ? 'إظهار / إخفاء الأقسام' : 'Show / hide sections'}</span>
-                </button>
-                <button type="button" role="menuitem" className="till-menu-item"
-                  onClick={() => { setMenuOpen(false); setPosLayoutMode('modern'); setTheme('light'); showToast('success', ar ? 'رجعت للشاشة العادية' : 'Back to the standard screen'); }}>
-                  <Monitor /><span>{ar ? 'الشاشة العادية' : 'Standard screen'}</span>
-                </button>
-                <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); toggleFullScreen(); }}>
-                  <Maximize /><span>{ar ? 'ملء الشاشة' : 'Full screen'}</span>
-                </button>
-                <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); setTheme(theme === 'dark' ? 'light' : 'dark'); }}>
-                  {theme === 'dark' ? <Sun /> : <Moon />}<span>{theme === 'dark' ? (ar ? 'الوضع النهاري' : 'Light mode') : (ar ? 'الوضع الليلي' : 'Dark mode')}</span>
-                </button>
-                <button type="button" role="menuitem" className="till-menu-item" onClick={() => { setMenuOpen(false); setLang(ar ? 'en' : 'ar'); }}>
-                  <Globe /><span>{ar ? 'English' : 'العربية'}</span>
-                </button>
-                <div className="till-menu-sep" />
-                <button type="button" role="menuitem" id="btn-terminal-logout" className="till-menu-item till-menu-danger" onClick={() => { setMenuOpen(false); handleLogout(); }}>
-                  <LogOut /><span>{ar ? 'تسجيل الخروج' : 'Log out'}</span>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
       </div>
 
       {/* Receipt on one side, catalogue on the other */}
