@@ -1224,7 +1224,8 @@ html.dark .till .till-btn.is-on { background: var(--till-text); color: var(--til
 .till .till-switch-knob { position: absolute; top: .15rem; inset-inline-start: .15rem; width: .9rem; height: .9rem; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: inset-inline-start .15s; }
 .till .till-switch[aria-checked="true"] .till-switch-track { background: var(--till-accent); }
 .till .till-switch[aria-checked="true"] .till-switch-knob { inset-inline-start: 1.05rem; }
-.till .till-switch[aria-checked="true"] svg { color: var(--till-accent); }
+.till .till-switch[aria-checked="false"] .till-switch-sun { color: var(--till-text); }
+.till .till-switch[aria-checked="true"] .till-switch-moon { color: var(--till-accent); }
 .till .till-switch:focus-visible { outline: 2px solid var(--till-accent); outline-offset: 2px; }
 .till .till-menu-sep { height: 1px; background: var(--till-line); margin: .25rem .4rem; }
 .till .till-menu-danger, .till .till-menu-danger svg { color: var(--till-danger); }

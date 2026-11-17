@@ -200,10 +200,11 @@ export function PosTerminalScreen({
           {/* Night mode: an on/off switch beside the price tier */}
           <button type="button" role="switch" aria-checked={theme === 'dark'} id="btn-terminal-night"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="till-switch" title={ar ? 'الوضع الليلي' : 'Night mode'}>
-            <Moon />
-            <span>{ar ? 'ليلي' : 'Night'}</span>
+            className="till-switch" title={ar ? 'الوضع الليلي' : 'Night mode'} aria-label={ar ? 'الوضع الليلي' : 'Night mode'}>
+            {/* sun on the start side (right in Arabic), moon on the end side: the knob slides toward the mode in use */}
+            <Sun className="till-switch-sun" aria-hidden="true" />
             <span className="till-switch-track" aria-hidden="true"><span className="till-switch-knob" /></span>
+            <Moon className="till-switch-moon" aria-hidden="true" />
           </button>
         </div>
 
