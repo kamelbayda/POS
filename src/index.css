@@ -1218,7 +1218,7 @@ html.dark .till .till-btn.is-on { background: var(--till-text); color: var(--til
 .till .till-menu-item { display: flex; align-items: center; gap: .6rem; width: 100%; padding: .6rem .75rem; border-radius: .6rem; font-size: .8rem; font-weight: 700; color: var(--till-text); text-align: start; cursor: pointer; }
 .till .till-menu-item svg { width: 1rem; height: 1rem; color: var(--till-muted); flex-shrink: 0; }
 .till .till-menu-item:hover, .till .till-menu-item:focus-visible { background: var(--till-sunken); outline: none; }
-.till .till-switch { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .6rem; border-radius: .6rem; border: 1px solid var(--till-line); background: var(--till-surface); color: var(--till-text); font-size: .8rem; font-weight: 700; cursor: pointer; }
+.till .till-switch { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .6rem; border-radius: .6rem; border: 0; background: transparent; box-shadow: none; color: var(--till-text); font-size: .8rem; font-weight: 700; cursor: pointer; }
 .till .till-switch svg { width: .95rem; height: .95rem; color: var(--till-muted); }
 .till .till-switch-track { position: relative; width: 2.1rem; height: 1.2rem; border-radius: 999px; background: var(--till-line); transition: background .15s; flex-shrink: 0; }
 .till .till-switch-knob { position: absolute; top: .15rem; inset-inline-start: .15rem; width: .9rem; height: .9rem; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: inset-inline-start .15s; }
