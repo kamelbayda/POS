@@ -1214,6 +1214,13 @@ html.dark .till .till-btn.is-on { background: var(--till-text); color: var(--til
 .till .till-btn-danger { color: var(--till-danger); border-color: color-mix(in srgb, var(--till-danger) 35%, transparent); }
 .till .till-btn-danger svg { color: var(--till-danger); }
 .till .till-btn-danger:hover { background: color-mix(in srgb, var(--till-danger) 8%, transparent); }
+.till .till-menu { background: var(--till-surface); border: 1px solid var(--till-line); box-shadow: 0 12px 28px rgba(0,0,0,.18); }
+.till .till-menu-item { display: flex; align-items: center; gap: .6rem; width: 100%; padding: .6rem .75rem; border-radius: .6rem; font-size: .8rem; font-weight: 700; color: var(--till-text); text-align: start; cursor: pointer; }
+.till .till-menu-item svg { width: 1rem; height: 1rem; color: var(--till-muted); flex-shrink: 0; }
+.till .till-menu-item:hover, .till .till-menu-item:focus-visible { background: var(--till-sunken); outline: none; }
+.till .till-menu-sep { height: 1px; background: var(--till-line); margin: .25rem .4rem; }
+.till .till-menu-danger, .till .till-menu-danger svg { color: var(--till-danger); }
+.till .till-menu-danger:hover { background: color-mix(in srgb, var(--till-danger) 8%, transparent); }
 .till .till-btn-lg { height: 44px; font-size: 13.5px; }
 .till .till-pay {
   width: 100%; height: 58px; border-radius: 14px; border: 0; cursor: pointer;
