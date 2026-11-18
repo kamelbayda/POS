@@ -1,0 +1,3120 @@
+import React, { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
+import { 
+  Plus, 
+  Trash2, 
+  Check, 
+  Search, 
+  FileText, 
+  Truck, 
+  Layers, 
+  DollarSign, 
+  Calendar, 
+  ShoppingBag, 
+  User, 
+  ArrowLeftRight, 
+  Clock, 
+  ChevronDown, 
+  ChevronUp,
+  AlertTriangle,
+  X,
+  Printer,
+  Camera,
+  Sparkles,
+  Cpu,
+  Upload
+} from 'lucide-react';
+import { Product, PurchaseInvoice, PurchaseItem, Category } from '../../types';
+import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
+import * as storage from '../../lib/storage';
+
+import { VAT_PRESETS, lineGross, lineDiscount, lineTax, lineTotal, landedCost, bonusFor, sumLines, costFactor, landedCostWithOffer, offerFreeValue } from './purchaseMath';
+import { printPurchaseInvoice } from './purchaseInvoicePrint';
+import { parseSerialList } from '../../lib/serials';
+
+const PURCHASE_DRAFT_KEY = 'pos_purchase_draft';
+
+/**
+ * Unit cost after discount and VAT, next to the supplier price. Typing a price here (for
+ * suppliers that quote VAT included) works the supplier price back out.
+ */
+function CostAfterTaxInput({ id, cost, taxRate, discountPercent, onCost, isAr, className }: {
+  id: string; cost: number; taxRate: number; discountPercent: number; onCost: (cost: number) => void; isAr: boolean; className: string;
+}) {
+  const factor = (1 - Math.min(100, discountPercent) / 100) * (1 + taxRate / 100);
+  const shown = cost > 0 ? String(Number((cost * factor).toFixed(3))) : '';
+  const [text, setText] = useState<string | null>(null); // what is being typed, null when not editing
+  const commit = (raw: string) => {
+    const v = parseFloat(raw);
+    if (v >= 0 && factor > 0) onCost(Number((v / factor).toFixed(4)));
+    setText(null);
+  };
+  return (
+    <div>
+      <label className="block text-amber-700 font-black mb-1 text-[10px]" htmlFor={id}>
+        {isAr ? (discountPercent > 0 ? 'الكلفة بعد الحسم والضريبة ($):' : 'الكلفة بعد الضريبة ($):') : (discountPercent > 0 ? 'Cost after discount & VAT ($):' : 'Cost incl. VAT ($):')}
+      </label>
+      <input
+        id={id}
+        type="text"
+        inputMode="decimal"
+        value={text ?? shown}
+        placeholder="0.00"
+        onFocus={() => setText(shown)}
+        onChange={e => setText(e.target.value)}
+        onBlur={e => commit(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+        className={className}
+        title={isAr ? 'إذا المورّد بيعطيك السعر مع الضريبة، اكتبه هون والبرنامج بيحسب السعر قبل الضريبة' : 'If the supplier quotes VAT included, type it here'}
+      />
+    </div>
+  );
+}
+
+/** Purchase invoice being entered, kept on this device until it is saved or discarded. */
+interface StoredPurchaseDraft {
+  supplierName: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  note: string;
+  paymentStatus: 'paid' | 'pending';
+  destination: 'shop' | 'warehouse';
+  transportationCost: string;
+  items: Array<{
+    productId: string; qty: number; costPriceUSD: number; newPriceUSD: number; newPriceWholesale: number; expiryDate: string;
+    taxRate: number; discountPercent: number; freeQty: number; bonusEvery: number; bonusFree: number; unitsPerCarton: number;
+    serialText?: string;
+  }>;
+  offer: Array<{ productId: string; qty: number; unitValueUSD: number }>;
+  editingId?: string; // a saved invoice being edited
+}
+
+interface PurchasesTabProps {
+  products: Product[];
+  setProducts: (prods: Product[]) => void;
+  categories: Category[];
+  setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
+  purchaseInvoices: PurchaseInvoice[];
+  setPurchaseInvoices: (invoices: PurchaseInvoice[]) => void;
+  lang: 'ar' | 'en';
+  showToast: (type: 'success' | 'error' | 'warning', message: string) => void;
+  sysDate: string;
+  noExpiry?: boolean; // phone shops: goods have no expiry date
+}
+
+export function PurchasesTabClassic({
+  products,
+  setProducts,
+  categories,
+  setCategories,
+  purchaseInvoices,
+  setPurchaseInvoices,
+  lang,
+  showToast,
+  sysDate,
+  noExpiry = false
+}: PurchasesTabProps) {
+  const isAr = lang === 'ar';
+
+  // Refs for tracking live video streams
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const streamRef = React.useRef<MediaStream | null>(null);
+
+  // Section Toggle: 'new' or 'ledger'
+  const [subTab, setSubTab] = useState<'new' | 'ledger'>('new');
+
+  // The invoice being entered is kept as a draft on this device, so locking the screen,
+  // refreshing or switching tabs never loses it. Lines keep product ids and are matched
+  // back to the current products when the draft is restored.
+  const [savedDraft] = useState(() => storage.getJSON<StoredPurchaseDraft | null>(PURCHASE_DRAFT_KEY, null));
+  const productById = (id: string) => products.find(p => p.id === id);
+
+  // --- NEW PURCHASE INVOICE STATE ---
+  const [supplierName, setSupplierName] = useState<string>(savedDraft?.supplierName ?? '');
+  const [invoiceNumber, setInvoiceNumber] = useState<string>(() => savedDraft?.invoiceNumber || `PUR-${Math.floor(100000 + Math.random() * 900000)}`);
+  const [invoiceDate, setInvoiceDate] = useState<string>(savedDraft?.invoiceDate || sysDate);
+  const [note, setNote] = useState<string>(savedDraft?.note ?? '');
+  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'pending'>(savedDraft?.paymentStatus || 'paid');
+  const [purchaseDestination, setPurchaseDestination] = useState<'shop' | 'warehouse'>(savedDraft?.destination || 'shop');
+
+  // Selected items draft
+  const [draftItems, setDraftItems] = useState<Array<{
+    product: Product;
+    qty: number;
+    costPriceUSD: number;
+    newPriceUSD: number;
+    newPriceWholesale: number;
+    expiryDate: string;
+    taxRate: number;
+    discountPercent: number;
+    freeQty: number;
+    bonusEvery: number; // "for every bonusEvery bought, bonusFree free"; 0 = no bonus
+    bonusFree: number;
+    unitsPerCarton: number; // 0 = not sold by the carton
+    serialText?: string; // phones: received IMEIs, one per line
+  }>>(() => (savedDraft?.items || []).flatMap(({ productId, ...line }) => {
+    const product = productById(productId);
+    return product ? [{ ...line, product }] : [];
+  }));
+
+  // Free goods given for the whole invoice (e.g. "5 of each of these 4 products -> 4 cartons free")
+  const [offerItems, setOfferItems] = useState<Array<{ product: Product; qty: number; unitValueUSD: number }>>(() =>
+    (savedDraft?.offer || []).flatMap(({ productId, qty, unitValueUSD }) => {
+      const product = productById(productId);
+      return product ? [{ product, qty, unitValueUSD }] : [];
+    }));
+  const [offerSearch, setOfferSearch] = useState<string>('');
+  const [offerQty, setOfferQty] = useState<string>('');
+  const [offerInCartons, setOfferInCartons] = useState<boolean>(true);
+  const [offerUnitValue, setOfferUnitValue] = useState<string>('');
+
+  // Product Selector search states
+  const [prodSearchQuery, setProdSearchQuery] = useState<string>('');
+  const [showProdDropdown, setShowProdDropdown] = useState<boolean>(false);
+
+  // Quick New Product state inside Purchase Invoice
+  const [showQuickAddForm, setShowQuickAddForm] = useState<boolean>(false);
+  const [newProdName, setNewProdName] = useState<string>('');
+  const [newProdBarcode, setNewProdBarcode] = useState<string>('');
+  const [newProdCategory, setNewProdCategory] = useState<string>(categories[0]?.id || ''); // category id, as the till expects
+  const [newProdCost, setNewProdCost] = useState<string>('');
+  const [newProdSellRetail, setNewProdSellRetail] = useState<string>('');
+  const [newProdSellWholesale, setNewProdSellWholesale] = useState<string>('');
+  const [newProdExpiry, setNewProdExpiry] = useState<string>('');
+  const [newProdTaxRate, setNewProdTaxRate] = useState<string>('0');
+  const [newProdQty, setNewProdQty] = useState<string>('');
+  const [newProdDiscount, setNewProdDiscount] = useState<string>('');
+  const [newProdBonusEvery, setNewProdBonusEvery] = useState<string>('');
+  const [newProdBonusFree, setNewProdBonusFree] = useState<string>('');
+  // Cartons helper for the quick add form: fills the received units and the unit cost
+  const [newProdUpc, setNewProdUpc] = useState<string>('');
+  const [newProdCartons, setNewProdCartons] = useState<string>('');
+  const [newProdCartonPrice, setNewProdCartonPrice] = useState<string>('');
+  const [newProdFreeQty, setNewProdFreeQty] = useState<string>(''); // free units typed directly (overrides the bonus rule)
+
+  const [quickMarginVal, setQuickMarginVal] = useState<string>('');
+  const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
+  const [draftMarginInputs, setDraftMarginInputs] = useState<{[productId: string]: string}>({});
+  const [draftMarkupInputs, setDraftMarkupInputs] = useState<{[productId: string]: string}>({});
+  const [transportationCost, setTransportationCost] = useState<string>(savedDraft?.transportationCost || '0');
+  // A saved invoice opened for editing: saving replaces it and corrects the stock
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(savedDraft?.editingId ?? null);
+  const editingInvoice = editingInvoiceId ? purchaseInvoices.find(inv => inv.id === editingInvoiceId) ?? null : null;
+
+  // Keep the draft saved while it has anything in it; an empty or saved invoice clears it
+  useEffect(() => {
+    const hasContent = draftItems.length > 0 || offerItems.length > 0 || supplierName.trim() !== '' || note.trim() !== '' || !!editingInvoiceId;
+    if (!hasContent) {
+      storage.removeItem(PURCHASE_DRAFT_KEY);
+      return;
+    }
+    const draft: StoredPurchaseDraft = {
+      supplierName, invoiceNumber, invoiceDate, note, paymentStatus, destination: purchaseDestination, transportationCost,
+      items: draftItems.map(({ product, ...line }) => ({ ...line, productId: product.id })),
+      offer: offerItems.map(o => ({ productId: o.product.id, qty: o.qty, unitValueUSD: o.unitValueUSD })),
+      ...(editingInvoiceId ? { editingId: editingInvoiceId } : {}),
+    };
+    storage.setJSON(PURCHASE_DRAFT_KEY, draft);
+  }, [draftItems, offerItems, supplierName, invoiceNumber, invoiceDate, note, paymentStatus, purchaseDestination, transportationCost, editingInvoiceId]);
+
+  const discardDraft = () => {
+    setDraftItems([]);
+    setOfferItems([]);
+    setSupplierName('');
+    setNote('');
+    setTransportationCost('0');
+    setInvoiceNumber(`PUR-${Math.floor(100000 + Math.random() * 900000)}`);
+    setInvoiceDate(sysDate);
+    setPaymentStatus('paid');
+    setPurchaseDestination('shop');
+    const wasEditing = !!editingInvoiceId;
+    setEditingInvoiceId(null);
+    showToast('success', wasEditing
+      ? (isAr ? 'انلغى التعديل. الفاتورة الأصلية ما تغيّرت.' : 'Edit cancelled. The saved invoice is unchanged.')
+      : (isAr ? 'انمسحت مسودة فاتورة المشتريات.' : 'Purchase draft discarded.'));
+  };
+
+  /** Opens a saved invoice in the form; saving it replaces the invoice and corrects the stock. */
+  const handleEditInvoice = (inv: PurchaseInvoice) => {
+    const busy = draftItems.length > 0 || offerItems.length > 0;
+    if (busy && editingInvoiceId !== inv.id && !window.confirm(isAr
+      ? 'في فاتورة عم تنكتب هلّق. فتح هالفاتورة للتعديل بيمسح المسودة الحالية. متابعة؟'
+      : 'An invoice is being entered. Opening this one for editing discards the current draft. Continue?')) return;
+    const missing: string[] = [];
+    const lines = [...inv.items].reverse().flatMap(it => { // the form lists the newest line first
+      const product = productById(it.productId);
+      if (!product) { missing.push(it.productName); return []; }
+      return [{
+        product,
+        qty: it.qty,
+        costPriceUSD: it.costPriceUSD,
+        newPriceUSD: it.newPriceUSD,
+        newPriceWholesale: it.newPriceWholesale ?? product.priceWholesale ?? 0,
+        expiryDate: it.expiryDate || '',
+        taxRate: it.taxRate || 0,
+        discountPercent: it.discountPercent || 0,
+        freeQty: it.freeQty || 0,
+        bonusEvery: product.bonusEvery || 0,
+        bonusFree: product.bonusFree || 0,
+        unitsPerCarton: product.unitsPerCarton || 0,
+        ...(it.serials?.length ? { serialText: it.serials.join('\n') } : {}),
+      }];
+    });
+    setDraftItems(lines);
+    setOfferItems((inv.offerFreeItems || []).flatMap(o => {
+      const product = productById(o.productId);
+      if (!product) { missing.push(o.productName); return []; }
+      return [{ product, qty: o.qty, unitValueUSD: o.unitValueUSD }];
+    }));
+    setSupplierName(inv.supplierName);
+    setInvoiceNumber(inv.invoiceNumber);
+    setInvoiceDate(inv.date);
+    setNote(inv.note || '');
+    setPaymentStatus(inv.paymentStatus);
+    setPurchaseDestination(inv.destination || 'shop');
+    setTransportationCost(String(inv.transportationCostUSD || 0));
+    setEditingInvoiceId(inv.id);
+    setSubTab('new');
+    showToast(missing.length ? 'warning' : 'success', missing.length
+      ? (isAr ? `انفتحت الفاتورة للتعديل. أصناف ممحية من المخزون ما رجعت: ${missing.join('، ')}` : `Invoice opened for editing. Deleted products left out: ${missing.join(', ')}`)
+      : (isAr ? `الفاتورة ${inv.invoiceNumber} مفتوحة للتعديل. عدّل واضغط "حفظ التعديلات".` : `Invoice ${inv.invoiceNumber} is open for editing.`));
+  };
+
+  /**
+   * Products as they were before `inv` was saved: its received units (paid, bonus and invoice
+   * offer) come off the shop or warehouse stock it went to, and its IMEIs are taken back.
+   * Prices and costs stay; the edited invoice sets them again.
+   */
+  const withoutInvoice = (base: Product[], inv: PurchaseInvoice): Product[] => {
+    const received = new Map<string, number>();
+    const add = (id: string, n: number) => received.set(id, (received.get(id) || 0) + n);
+    inv.items.forEach(it => add(it.productId, it.qty + (it.freeQty || 0)));
+    (inv.offerFreeItems || []).forEach(o => add(o.productId, o.qty));
+    const serials = new Set(inv.items.flatMap(it => it.serials || []));
+    const toWarehouse = inv.destination === 'warehouse';
+    return base.map(prod => {
+      const n = received.get(prod.id) || 0;
+      if (!n && !(prod.serialNumbers || []).some(sn => serials.has(sn))) return prod;
+      return {
+        ...prod,
+        quantity: toWarehouse ? prod.quantity : prod.quantity - n,
+        warehouseQuantity: toWarehouse ? (prod.warehouseQuantity || 0) - n : prod.warehouseQuantity,
+        ...(prod.serialNumbers ? { serialNumbers: prod.serialNumbers.filter(sn => !serials.has(sn)) } : {}),
+      };
+    });
+  };
+
+  // Category Creation Inline State
+  const [showInlineCategoryInput, setShowInlineCategoryInput] = useState<boolean>(false);
+  const [inlineCategoryName, setInlineCategoryName] = useState<string>('');
+
+  const handleCreateCategoryInline = () => {
+    const name = inlineCategoryName.trim();
+    if (!name) {
+      showToast('error', isAr ? 'الرجاء كتابة اسم الفئة الجديدة!' : 'Please enter category name!');
+      return;
+    }
+    const cleanId = name.toLowerCase().replace(/\s+/g, '-');
+    if (categories.some(c => c.id === cleanId || c.name.toLowerCase() === name.toLowerCase())) {
+      showToast('warning', isAr ? 'التصنيف موجود أو مضاف مسبقاً!' : 'Category already exists!');
+      return;
+    }
+    const newCat = { id: cleanId, name, emoji: '🏷️' };
+    const updated = [...categories, newCat];
+    setCategories(updated);
+    storage.setJSON('pos_categories', updated);
+    setNewProdCategory(cleanId); // select it automatically
+    setInlineCategoryName('');
+    setShowInlineCategoryInput(false);
+    showToast('success', isAr ? `تمت إضافة فئة [${name}] وتفعيلها بنجاح!` : `Category [${name}] created!`);
+  };
+
+  // Ledger Filter States
+  const [ledgerSearch, setLedgerSearch] = useState<string>('');
+  const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
+  const [activePrintPurchase, setActivePrintPurchase] = useState<PurchaseInvoice | null>(null);
+
+  // --- AUTOMATED INVOICE CAMERA SCANNER STATES ---
+  const [showInvoiceScannerModal, setShowInvoiceScannerModal] = useState<boolean>(false);
+  const [isScanningActive, setIsScanningActive] = useState<boolean>(false);
+  const [scanningProgress, setScanningProgress] = useState<number>(0);
+  const [scanningStepName, setScanningStepName] = useState<string>('');
+
+  // Monitor voice scanner modal state to start/stop the webcam feed safely
+  React.useEffect(() => {
+    if (showInvoiceScannerModal) {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+          .then(stream => {
+            streamRef.current = stream;
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+          })
+          .catch(err => {
+            console.warn("Camera access denied or unavailable", err);
+          });
+      }
+    } else {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    }
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, [showInvoiceScannerModal]);
+
+  // --- ACTIONS ---
+
+  // The received quantity must be typed for every line, so focus it as soon as a line is added
+  const focusDraftQty = (productId: string) =>
+    setTimeout(() => {
+      const el = document.getElementById(`draft-qty-${productId}`) as HTMLInputElement | null;
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el?.focus();
+    }, 50);
+
+  // Add selected product to draft list
+  const handleAddProductToDraft = (prod: Product) => {
+    // Check if ready in list
+    const exists = draftItems.find(item => item.product.id === prod.id);
+    if (exists) {
+      showToast('warning', isAr ? 'هذا الصنف مضاف بالفعل لقائمة الإدخال!' : 'Product already in current list!');
+      return;
+    }
+
+    // The line starts from the supplier's last unit price (before discount and VAT). Older
+    // products only have the stored cost, which includes the VAT of the last purchase.
+    const lastTaxRate = prod.purchaseTaxRate || 0;
+    const defaultCost = prod.lastPurchaseCostUSD !== undefined
+      ? prod.lastPurchaseCostUSD
+      : prod.costPriceUSD !== undefined && prod.costPriceUSD !== null
+      ? Number((prod.costPriceUSD / (1 + lastTaxRate / 100)).toFixed(2))
+      : (prod.priceWholesale !== undefined && prod.priceWholesale !== null
+        ? prod.priceWholesale 
+        : Number((prod.priceUSD * 0.75).toFixed(2)));
+
+    const defaultWholesale = prod.priceWholesale !== undefined && prod.priceWholesale !== null
+      ? prod.priceWholesale
+      : Number((prod.priceUSD * 0.85).toFixed(2));
+
+    setDraftItems(prev => [ // newest line on top
+      {
+        product: prod,
+        qty: 0, // typed by the user: the received quantity from the supplier invoice
+        costPriceUSD: defaultCost,
+        newPriceUSD: prod.priceUSD,
+        newPriceWholesale: defaultWholesale,
+        expiryDate: prod.expiryDate || '',
+        taxRate: lastTaxRate,
+        discountPercent: prod.purchaseDiscountPercent || 0,
+        freeQty: 0,
+        bonusEvery: prod.bonusEvery || 0,
+        bonusFree: prod.bonusFree || 0,
+        unitsPerCarton: prod.unitsPerCarton || 0
+      },
+      ...prev
+    ]);
+
+    setProdSearchQuery('');
+    setShowProdDropdown(false);
+    focusDraftQty(prod.id);
+    showToast('success', isAr ? `تمت إضافة [${prod.name}]. اكتب الكمية المستلمة.` : `Added [${prod.name}]. Enter the received quantity.`);
+  };
+
+  /** Free units on the quick add line: typed directly, else from the "every N get M" rule. */
+  const quickFreeUnits = (qty: number) => {
+    const typed = parseFloat(newProdFreeQty) || 0;
+    return typed > 0 ? typed : bonusFor(qty, parseInt(newProdBonusEvery) || 0, parseInt(newProdBonusFree) || 0);
+  };
+
+  // Handle Quick Add New Product to catalog directly
+  const handleQuickAddProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    const quickQty = parseFloat(newProdQty) || 0;
+    if (quickQty <= 0) {
+      showToast('error', isAr ? 'الرجاء كتابة الكمية المستلمة من هذا الصنف!' : 'Please enter the received quantity!');
+      document.getElementById('quick-add-qty')?.focus();
+      return;
+    }
+    if (!newProdName || !newProdBarcode) {
+      showToast('error', isAr ? 'الرجاء ملء اسم الصنف الجديد والباركود!' : 'Name and Barcode are required!');
+      return;
+    }
+
+    // Check barcode duplication
+    const duplicate = products.find(p => p.barcode.trim() === newProdBarcode.trim() || (p.barcodes && p.barcodes.includes(newProdBarcode.trim())));
+    if (duplicate) {
+      showToast('error', isAr ? `البومة أو الباركود [${newProdBarcode}] مستعمل مسبقاً لصنف آخر!` : `Barcode already exists for ${duplicate.name}!`);
+      return;
+    }
+
+    const costNum = parseFloat(newProdCost) || 0;
+    const quickTaxRate = Math.max(0, parseFloat(newProdTaxRate) || 0);
+    const quickDiscount = Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0));
+    const quickBonusEvery = Math.max(0, parseInt(newProdBonusEvery) || 0);
+    const quickBonusFree = Math.max(0, parseInt(newProdBonusFree) || 0);
+    const quickLine = { qty: quickQty, costPriceUSD: costNum, taxRate: quickTaxRate, discountPercent: quickDiscount, freeQty: quickFreeUnits(quickQty) };
+    const sellRetailNum = parseFloat(newProdSellRetail) || 0;
+    const sellWholesaleNum = parseFloat(newProdSellWholesale) || sellRetailNum * 0.9;
+
+    const newProd: Product = {
+      id: `prod-${Date.now()}`,
+      name: newProdName,
+      barcode: newProdBarcode,
+      category: newProdCategory,
+      priceUSD: sellRetailNum,
+      quantity: 0, // starts at zero, will be updated via the invoice submission
+      expiryDate: noExpiry ? '' : (newProdExpiry || sysDate),
+      costPriceUSD: Number(landedCost(quickLine).toFixed(2)), // real unit cost, like saved invoices
+      priceWholesale: sellWholesaleNum,
+      purchaseTaxRate: quickTaxRate,
+      lastPurchaseCostUSD: costNum,
+      purchaseDiscountPercent: quickDiscount,
+      bonusEvery: quickBonusEvery,
+      bonusFree: quickBonusFree,
+      ...(parseInt(newProdUpc) > 0 ? { unitsPerCarton: parseInt(newProdUpc) } : {})
+    };
+
+    // Append to master products list
+    const updatedProductsList = [...products, newProd];
+    setProducts(updatedProductsList);
+    storage.setJSON('pos_products', updatedProductsList);
+
+    // Automatically put into the draft invoice items
+    setDraftItems(prev => [ // newest line on top
+      {
+        product: newProd,
+        qty: quickQty,
+        costPriceUSD: costNum,
+        newPriceUSD: sellRetailNum,
+        newPriceWholesale: sellWholesaleNum,
+        expiryDate: noExpiry ? '' : (newProdExpiry || sysDate),
+        taxRate: quickTaxRate,
+        discountPercent: quickDiscount,
+        freeQty: quickLine.freeQty,
+        bonusEvery: quickBonusEvery,
+        bonusFree: quickBonusFree,
+        unitsPerCarton: parseInt(newProdUpc) || 0
+      },
+      ...prev
+    ]);
+
+    // Reset Form
+    setNewProdName('');
+    setNewProdBarcode('');
+    setNewProdCost('');
+    setNewProdSellRetail('');
+    setNewProdSellWholesale('');
+    setNewProdExpiry('');
+    setNewProdTaxRate('0');
+    setNewProdQty('');
+    setNewProdDiscount('');
+    setNewProdBonusEvery('');
+    setNewProdBonusFree('');
+    setNewProdUpc('');
+    setNewProdCartons('');
+    setNewProdCartonPrice('');
+    setNewProdFreeQty('');
+    setShowQuickAddForm(false);
+
+    showToast('success', isAr ? `رائع! تم تسجيل [${newProd.name}] في النظام وإدراجه بالفاتورة.` : `Product [${newProd.name}] registered and added to draft invoice.`);
+  };
+
+  // Update item field in draft items list
+  const handleUpdateDraftField = (index: number, field: string, val: any) => {
+    setDraftItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      // Cartons and carton price are typed for convenience; the line keeps units and unit cost
+      if (field === 'cartons') field = 'qty', val = val * (item.unitsPerCarton || 1);
+      else if (field === 'cartonPrice') field = 'costPriceUSD', val = Number((val / (item.unitsPerCarton || 1)).toFixed(4));
+      const next = { ...item, [field]: val };
+      // A bonus rule fills in the free units from the bought quantity
+      if ((field === 'qty' || field === 'bonusEvery' || field === 'bonusFree') && next.bonusEvery > 0 && next.bonusFree > 0) {
+        next.freeQty = bonusFor(next.qty, next.bonusEvery, next.bonusFree);
+      }
+      return next;
+    }));
+  };
+
+  // Remove item from draft
+  const handleRemoveFromDraft = (index: number) => {
+    setDraftItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Distribute transportation/delivery cost proportionally onto the items in the invoice draft
+  const handleDistributeTransportationCost = () => {
+    const costAmount = parseFloat(transportationCost) || 0;
+    if (costAmount <= 0) {
+      showToast('error', isAr ? 'يرجى إدخال تكلفة شحن/مواصلات صالحة (أكبر من 0) أولاً لتوزيعها!' : 'Please enter a valid transportation cost (> 0) to distribute!');
+      return;
+    }
+    if (draftItems.length === 0) {
+      showToast('error', isAr ? 'لا توجد سلع في المسودة لتوزيع تكلفة الشحن عليها!' : 'No items in the draft to distribute the cost on!');
+      return;
+    }
+
+    const totalQty = draftItems.reduce((acc, item) => acc + item.qty, 0);
+    if (totalQty === 0) return;
+
+    const totalItemsCost = draftItems.reduce((acc, d) => acc + (d.qty * d.costPriceUSD), 0);
+
+    if (totalItemsCost === 0) {
+      const addedCostPerUnit = costAmount / totalQty;
+      const updatedDraft = draftItems.map(item => ({
+        ...item,
+        costPriceUSD: Number((item.costPriceUSD + addedCostPerUnit).toFixed(2))
+      }));
+      setDraftItems(updatedDraft);
+    } else {
+      const updatedDraft = draftItems.map(item => {
+        const itemLineTotalCost = item.qty * item.costPriceUSD;
+        const itemLineShare = (itemLineTotalCost / totalItemsCost) * costAmount;
+        const addedCostPerUnit = itemLineShare / item.qty;
+        return {
+          ...item,
+          costPriceUSD: Number((item.costPriceUSD + addedCostPerUnit).toFixed(2))
+        };
+      });
+      setDraftItems(updatedDraft);
+    }
+
+    setTransportationCost('0');
+    showToast('success', isAr 
+      ? `تم توزيع تكلفة المواصلات (${costAmount.toFixed(2)}$) بنجاح كأعباء إضافية على أسعار رأس مال السلع بالتناسب!` 
+      : `Successfully distributed transportation cost ($${costAmount.toFixed(2)}) proportionally onto item cost prices!`
+    );
+  };
+
+  // --- Invoice offer (free goods for the whole invoice) ---
+  const offerForMath = offerItems.map(o => ({ productId: o.product.id, qty: o.qty, unitValueUSD: o.unitValueUSD }));
+  const offerFactor = costFactor(draftItems, offerForMath);
+  const offerShare = (productId: string) => offerItems
+    .filter(o => o.product.id === productId)
+    .reduce((acc, o) => ({ units: acc.units + o.qty, value: acc.value + o.qty * o.unitValueUSD }), { units: 0, value: 0 });
+  /** Real unit cost of a draft line: discount, VAT, line bonus and the invoice offer included. */
+  const effectiveCost = (item: (typeof draftItems)[number]) => {
+    const share = offerShare(item.product.id);
+    return landedCostWithOffer(item, offerFactor, share.units, share.value);
+  };
+  /**
+   * How the real unit cost is reached, step by step: supplier price, discount, VAT, then spread over
+   * the paid and free units. Free units can bring the cost below the price even with VAT added.
+   */
+  const costSteps = (l: { qty: number; costPriceUSD: number; taxRate?: number; discountPercent?: number; freeQty?: number }, final: number, offerUnits = 0) => {
+    const f = (n: number) => `${Number(n.toFixed(3))}$`;
+    const disc = l.discountPercent || 0;
+    const tax = l.taxRate || 0;
+    const afterDisc = l.costPriceUSD * (1 - disc / 100);
+    const withTax = afterDisc * (1 + tax / 100);
+    const steps = [f(l.costPriceUSD)];
+    if (disc > 0) steps.push(`${isAr ? 'حسم' : 'off'} ${disc}% = ${f(afterDisc)}`);
+    steps.push(tax > 0 ? `TVA ${tax}% = ${f(withTax)}` : (isAr ? 'بلا TVA' : 'no VAT'));
+    const free = (l.freeQty || 0) + offerUnits;
+    if (free > 0 && l.qty > 0) {
+      steps.push(isAr
+        ? `${l.qty} مدفوعة + ${free} مجاناً = ${l.qty + free} حبة ← ${f(final)}`
+        : `${l.qty} paid + ${free} free = ${l.qty + free} units → ${f(final)}`);
+    } else if (Math.abs(final - withTax) > 0.0005) {
+      steps.push(`${isAr ? 'بعد عرض الفاتورة' : 'after the invoice offer'} = ${f(final)}`);
+    }
+    return steps;
+  };
+  const CostSteps = ({ steps, id }: { steps: string[]; id: string }) => (
+    <div className="flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-500" id={id}>
+      <span>{isAr ? 'حساب الكلفة:' : 'Cost:'}</span>
+      {steps.map((step, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <span className="text-slate-400">{isAr ? '←' : '→'}</span>}
+          <bdi className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-700">{step}</bdi>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+  /** Default value of one free unit: what the same product costs on this invoice, else its last cost. */
+  const offerDefaultUnitValue = (prod: Product) => {
+    const line = draftItems.find(d => d.product.id === prod.id);
+    if (line) return Number(landedCost(line).toFixed(4));
+    return Number((prod.costPriceUSD ?? prod.priceUSD * 0.75).toFixed(4));
+  };
+  const findOfferProduct = (text: string) => {
+    const t = text.trim().toLowerCase();
+    if (!t) return undefined;
+    return products.find(p => p.name.toLowerCase() === t || p.barcode === text.trim() || (p.barcodes || []).includes(text.trim()));
+  };
+  const handleAddOfferItem = () => {
+    const prod = findOfferProduct(offerSearch);
+    if (!prod) {
+      showToast('error', isAr ? 'اختار الصنف المجاني من القائمة (بالاسم أو الباركود).' : 'Pick the free product from the list (name or barcode).');
+      return;
+    }
+    const upc = draftItems.find(d => d.product.id === prod.id)?.unitsPerCarton || prod.unitsPerCarton || 0;
+    const typed = parseFloat(offerQty) || 0;
+    const units = offerInCartons && upc > 0 ? typed * upc : typed;
+    if (units <= 0) {
+      showToast('error', isAr ? 'اكتب كمية البضاعة المجانية.' : 'Enter the free quantity.');
+      return;
+    }
+    const unitValue = parseFloat(offerUnitValue);
+    setOfferItems(prev => [...prev, { product: prod, qty: units, unitValueUSD: unitValue > 0 ? unitValue : offerDefaultUnitValue(prod) }]);
+    setOfferSearch('');
+    setOfferQty('');
+    setOfferUnitValue('');
+  };
+
+  // Submit and Save the whole purchase invoice
+  const handleSavePurchaseInvoice = () => {
+    if (draftItems.length === 0) {
+      showToast('error', isAr ? 'لا توجد أصناف في فاتورة الشراء لحفظها!' : 'Invoice cannot be empty!');
+      return;
+    }
+    if (!supplierName.trim()) {
+      showToast('error', isAr ? 'يرجى كتابة اسم المورّد أو الشركة الموزعة لتوثيق الفاتورة.' : 'Supplier name is required!');
+      return;
+    }
+    // Editing a saved invoice: start from the stock as it was before it, then apply the new version
+    const baseProducts = editingInvoice ? withoutInvoice(products, editingInvoice) : products;
+
+    // Phones: every unit received needs its IMEI, and an IMEI can only exist once
+    for (const d of draftItems) {
+      if (!d.product.trackSerial) continue;
+      const list = parseSerialList(d.serialText || '');
+      const needed = d.qty + (d.freeQty || 0) + offerShare(d.product.id).units;
+      if (list.length !== needed) {
+        showToast('error', isAr ? `[${d.product.name}]: لازم ${needed} رقم IMEI (مكتوب ${list.length}).` : `[${d.product.name}]: ${needed} IMEIs needed (${list.length} entered).`);
+        return;
+      }
+      const owner = baseProducts.find(p => (p.serialNumbers || []).some(sn => list.includes(sn)));
+      if (owner) {
+        showToast('error', isAr ? `في IMEI من [${d.product.name}] موجود من قبل عند [${owner.name}].` : `An IMEI of [${d.product.name}] already exists on [${owner.name}].`);
+        return;
+      }
+    }
+
+    const missingQty = draftItems.find(d => !(d.qty > 0));
+    if (missingQty) {
+      showToast('error', isAr ? `حدد الكمية المستلمة للصنف [${missingQty.product.name}] حتى تنضاف للمخزن.` : `Enter the received quantity for [${missingQty.product.name}].`);
+      focusDraftQty(missingQty.product.id);
+      return;
+    }
+
+    // 1. Generate items for ledger storage
+    // Lines are shown newest first; store them in the order they were entered
+    const invoiceItemsToSave: PurchaseItem[] = [...draftItems].reverse().map(d => ({
+      id: `pur-item-${Date.now()}-${Math.random()}`,
+      productId: d.product.id,
+      productName: d.product.name,
+      qty: d.qty,
+      costPriceUSD: d.costPriceUSD,
+      newPriceUSD: d.newPriceUSD,
+      newPriceWholesale: d.newPriceWholesale,
+      expiryDate: noExpiry ? undefined : d.expiryDate,
+      taxRate: d.taxRate,
+      discountPercent: d.discountPercent,
+      freeQty: d.freeQty,
+      ...(d.product.trackSerial ? { serials: parseSerialList(d.serialText || '') } : {})
+    }));
+
+    const totalTax = sumLines(draftItems, lineTax);
+    const totalDiscount = sumLines(draftItems, lineDiscount);
+    const transCostNum = parseFloat(transportationCost) || 0;
+    const totalInvoiceAmount = sumLines(draftItems, lineTotal) + transCostNum;
+
+    const newPurchaseInvoice: PurchaseInvoice = {
+      id: editingInvoice ? editingInvoice.id : `pur-inv-${Date.now()}`,
+      invoiceNumber: invoiceNumber,
+      supplierName: supplierName.trim(),
+      date: invoiceDate,
+      items: invoiceItemsToSave,
+      totalAmountUSD: Number(totalInvoiceAmount.toFixed(2)),
+      paymentStatus: paymentStatus,
+      note: note.trim(),
+      destination: purchaseDestination,
+      transportationCostUSD: transCostNum,
+      taxUSD: Number(totalTax.toFixed(2)),
+      discountUSD: Number(totalDiscount.toFixed(2)),
+      ...(offerItems.length > 0 ? {
+        offerFreeItems: offerItems.map(o => ({ productId: o.product.id, productName: o.product.name, qty: o.qty, unitValueUSD: Number(o.unitValueUSD.toFixed(4)) })),
+        offerFreeValueUSD: Number(offerFreeValue(offerForMath).toFixed(2)),
+      } : {})
+    };
+
+    // 2. Update Master Products: increments stock quantities (to shop or warehouse), set new cost prices, retail prices, wholesale prices, and expiry dates!
+    const isToWarehouse = purchaseDestination === 'warehouse';
+    const updatedProducts = baseProducts.map(prod => {
+      const draftVal = draftItems.find(d => d.product.id === prod.id);
+      const share = offerShare(prod.id);
+      if (draftVal) {
+        // bonus units and the invoice offer's free units go on the shelf too
+        const received = draftVal.qty + (draftVal.freeQty || 0) + share.units;
+        return {
+          ...prod,
+          unitsPerCarton: draftVal.unitsPerCarton || prod.unitsPerCarton,
+          ...(prod.trackSerial ? { serialNumbers: [...(prod.serialNumbers || []), ...parseSerialList(draftVal.serialText || '')] } : {}),
+          quantity: isToWarehouse ? prod.quantity : (prod.quantity + received), // add to retail shop if not to warehouse
+          warehouseQuantity: isToWarehouse ? ((prod.warehouseQuantity || 0) + received) : (prod.warehouseQuantity || 0), // add to warehouse if selected
+          costPriceUSD: Number(effectiveCost(draftVal).toFixed(2)), // real unit cost: after discount, VAT included, spread over free units and the invoice offer
+          purchaseTaxRate: draftVal.taxRate,
+          lastPurchaseCostUSD: draftVal.costPriceUSD,
+          purchaseDiscountPercent: draftVal.discountPercent,
+          bonusEvery: draftVal.bonusEvery,
+          bonusFree: draftVal.bonusFree,
+          priceUSD: draftVal.newPriceUSD, // update retail price as requested
+          priceWholesale: draftVal.newPriceWholesale, // update wholesale selling price
+          expiryDate: noExpiry ? prod.expiryDate : (draftVal.expiryDate || prod.expiryDate) // update expiry date
+        };
+      }
+      if (share.units > 0) {
+        // A free product that is not otherwise on the invoice: stock in, cost = its share of what was paid
+        return {
+          ...prod,
+          quantity: isToWarehouse ? prod.quantity : prod.quantity + share.units,
+          warehouseQuantity: isToWarehouse ? (prod.warehouseQuantity || 0) + share.units : (prod.warehouseQuantity || 0),
+          costPriceUSD: Number(((share.value / share.units) * offerFactor).toFixed(2)),
+        };
+      }
+      return prod;
+    });
+
+    // Save master products
+    setProducts(updatedProducts);
+    storage.setJSON('pos_products', updatedProducts);
+
+    // 3. Save purchase invoice to purchase ledger
+    const updatedLedger = editingInvoice
+      ? purchaseInvoices.map(inv => inv.id === editingInvoice.id ? newPurchaseInvoice : inv) // keeps its place in the list
+      : [newPurchaseInvoice, ...purchaseInvoices];
+    setPurchaseInvoices(updatedLedger);
+    storage.setJSON('pos_purchases', updatedLedger);
+
+    // Clear draft state
+    setSupplierName('');
+    setInvoiceNumber(`PUR-${Math.floor(100000 + Math.random() * 900000)}`);
+    setNote('');
+    setDraftItems([]);
+    setOfferItems([]);
+    setTransportationCost('0');
+    setEditingInvoiceId(null);
+    setSubTab('ledger'); // switch to ledger to view past submissions
+
+    if (editingInvoice) {
+      showToast('success', isAr
+        ? `انحفظت التعديلات على الفاتورة ${newPurchaseInvoice.invoiceNumber}، والمخزون والأسعار تصحّحوا.`
+        : `Invoice ${newPurchaseInvoice.invoiceNumber} updated; stock and prices corrected.`);
+      return;
+    }
+    showToast('success', isAr 
+      ? `تم ترحيل الفاتورة بنجاح! تم استلام البضائع وتخزينها في [${purchaseDestination === 'warehouse' ? 'المستودع/المخزن' : 'المحل مباشرة'}] وتحديث أسعار لـ ${invoiceItemsToSave.length} أصناف.`
+      : `Purchase invoice verified! Stock quantities increased in [${purchaseDestination === 'warehouse' ? 'Warehouse' : 'Shop shelves'}] and selling prices adjusted for ${invoiceItemsToSave.length} products.`
+    );
+  };
+
+  // --- AUTOMATED INVOICE CAMERA/OCR CORE EMULATED PROCESS ---
+  const handleExecuteInvoiceScan = (scannedItemsList: Array<{ barcode: string; qty: number; costPriceUSD: number }>, parsedSupplier: string, customInvRef?: string) => {
+    setIsScanningActive(true);
+    setScanningProgress(5);
+    setScanningStepName(isAr ? "تشغيل مستشعرات الرؤية الحاسوبية وتثبيت الكاميرا..." : "Initializing computer vision & activating camera focus...");
+
+    const steps = [
+      { prg: 25, label: isAr ? "تحديد حواف الفاتورة الورقية وقص وتصحيح الزوايا..." : "Detecting invoice boundaries, cropping and leveling perspectives..." },
+      { prg: 55, label: isAr ? "مسح الأسطر واستخراج الباركود وكميات السلع (AI OCR)..." : "Scanning lines, resolving product barcodes and package quantities (AI OCR)..." },
+      { prg: 80, label: isAr ? "مطابقة السلع المستخرجة مع قاعدة بيانات المخزن وتطبيق هامش الربح..." : "Matching extracted items against system master catalog & applying profit margin..." },
+      { prg: 100, label: isAr ? "نجاح المسح! يتم ترحيل قائمة المشتريات للنموذج..." : "Scan completed successfully!" }
+    ];
+
+    let currentStepIdx = 0;
+    
+    const interval = setInterval(() => {
+      if (currentStepIdx < steps.length) {
+        const step = steps[currentStepIdx];
+        setScanningProgress(step.prg);
+        setScanningStepName(step.label);
+        currentStepIdx++;
+      } else {
+        clearInterval(interval);
+        
+        // Finalize: Populate Purchase fields
+        setSupplierName(parsedSupplier);
+        if (customInvRef) {
+          setInvoiceNumber(customInvRef);
+        } else {
+          setInvoiceNumber(`PUR-SCAN-${Math.floor(100000 + Math.random() * 900000)}`);
+        }
+
+        // Read dynamic profit margin from system settings
+        const storedSettings = storage.getItem('pos_settings');
+        const defaultMargin = storedSettings ? JSON.parse(storedSettings).defaultMarginPercent || 15 : 15;
+
+        // Map scanned items list to draftItems
+        const matchedDrafts: Array<{
+          product: Product;
+          qty: number;
+          costPriceUSD: number;
+          newPriceUSD: number;
+          newPriceWholesale: number;
+          expiryDate: string;
+          taxRate: number;
+          discountPercent: number;
+          freeQty: number;
+          bonusEvery: number;
+          bonusFree: number;
+          unitsPerCarton: number;
+        }> = [];
+
+        scannedItemsList.forEach(item => {
+          const matchedProd = products.find(p => p.barcode === item.barcode || (p.barcodes && p.barcodes.includes(item.barcode)));
+          if (matchedProd) {
+            // Apply default margin to new price as per setting!
+            const calculatedPriceRetail = parseFloat((item.costPriceUSD * (1 + defaultMargin / 100)).toFixed(2));
+            const calculatedPriceWholesale = parseFloat((calculatedPriceRetail * 0.9).toFixed(2));
+
+            matchedDrafts.push({
+              product: matchedProd,
+              qty: item.qty,
+              costPriceUSD: item.costPriceUSD,
+              newPriceUSD: calculatedPriceRetail,
+              newPriceWholesale: calculatedPriceWholesale,
+              expiryDate: matchedProd.expiryDate || sysDate,
+              taxRate: matchedProd.purchaseTaxRate || 0,
+              discountPercent: matchedProd.purchaseDiscountPercent || 0,
+              freeQty: bonusFor(item.qty, matchedProd.bonusEvery, matchedProd.bonusFree),
+              bonusEvery: matchedProd.bonusEvery || 0,
+              bonusFree: matchedProd.bonusFree || 0,
+              unitsPerCarton: matchedProd.unitsPerCarton || 0
+            });
+          }
+        });
+
+        if (matchedDrafts.length > 0) {
+          // Merge or overwrite draft items
+          setDraftItems(prev => {
+            const preserved = prev.filter(p => !matchedDrafts.some(md => md.product.id === p.product.id));
+            return [...matchedDrafts.reverse(), ...preserved]; // newest on top, like manual adds
+          });
+          
+          showToast('success', isAr 
+            ? `تم المسح والتعرف تلقائياً على (${matchedDrafts.length}) أصناف وإدراجها بالفاتورة بهامش ربح ${defaultMargin}%.`
+            : `Scan complete! Successfully identified (${matchedDrafts.length}) variants in system index with ${defaultMargin}% default margin.`);
+        } else {
+          showToast('warning', isAr 
+            ? "تم مسح الفاتورة ولكن لم تتطابق الباركودات المقروءة مع أي أصناف مسجلة بالرفوف حالياً! يرجى إضافة أصناف تسكّن هذه الرموز." 
+            : "Scanned successfully but barcodes do not match our system. Please check barcodes!");
+        }
+
+        // Close state
+        setIsScanningActive(false);
+        setShowInvoiceScannerModal(false);
+        setScanningProgress(0);
+        setScanningStepName('');
+      }
+    }, 600);
+  };
+
+  // Aggregated Stats
+  const totalProcurementExpensesUSD = purchaseInvoices.reduce((sum, inv) => sum + inv.totalAmountUSD, 0);
+  const totalProcurementItemsCount = purchaseInvoices.reduce((sum, inv) => sum + inv.items.reduce((acc, i) => acc + i.qty, 0), 0);
+  const uniqueSuppliersCount = Array.from(new Set(purchaseInvoices.map(inv => inv.supplierName.trim().toLowerCase()))).length;
+
+  // Filtered Ledger list
+  const filteredLedger = purchaseInvoices.filter(inv => {
+    if (!ledgerSearch) return true;
+    const s = ledgerSearch.toLowerCase().trim();
+    return (
+      inv.supplierName.toLowerCase().includes(s) ||
+      inv.invoiceNumber.toLowerCase().includes(s) ||
+      (inv.note && inv.note.toLowerCase().includes(s))
+    );
+  });
+
+  return (
+    <div className={`space-y-6 ${subTab === 'new' ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : ''}`} id="tab-purchases-manager">
+      {/* 1. Header with custom icon and title representing corporate quality */}
+      <div className="bg-gradient-to-l from-emerald-600 to-[#1D9E75] text-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-right">
+        <div>
+          <h2 className="text-xl font-black flex items-center gap-2.5 justify-end">
+            <span className="bg-white/20 p-2 rounded-xl">
+              <Truck className="w-6 h-6 text-yellow-300" />
+            </span>
+            {isAr ? 'فاتورة شراء بضائع وتحديث الأسعار' : 'Inventory Procurement & Purchase Invoices'}
+          </h2>
+          <p className="text-xs text-emerald-100 font-sans mt-2 max-w-xl">
+            {isAr 
+              ? 'صندوق إدخال البضائع والطلبيات الجديدة للمخزن. عند حفظ الفاتورة، سيتم إضافة كميتها تلقائياً للمخازن وتحديث أسعار التكلفة وسعر البيع للرف في النظام مباشرة.'
+              : 'Supply room system. Adding items increases current quantities on floor, archives purchasing costs, and instantly edits checkout prices.'}
+          </p>
+        </div>
+        
+        {/* Toggle subtabs */}
+        <div className="bg-white/10 p-1.5 rounded-xl border border-white/10 flex items-center gap-1">
+          <button 
+            onClick={() => setSubTab('ledger')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition ${subTab === 'ledger' ? 'bg-white text-emerald-800' : 'text-white hover:bg-white/10'}`}
+          >
+            {isAr ? 'سجل الفواتير والموردين' : 'Ledger Records'}
+          </button>
+          <button 
+            onClick={() => setSubTab('new')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition ${subTab === 'new' ? 'bg-white text-emerald-800' : 'text-white hover:bg-white/10'}`}
+          >
+            {isAr ? 'إدخال فاتورة شراء جديدة' : 'New Supply Receipt'}
+          </button>
+        </div>
+      </div>
+
+      {/* SUBTAB: NEW INVOICE ENTRY SECTION */}
+      {subTab === 'new' && (
+        // Wide screens: the page stays put; the invoice details stay fixed and the item lines scroll in their own pane
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-right lg:flex-1 lg:min-h-0 lg:grid-rows-[minmax(0,1fr)]" id="purchase-new-panes">
+          
+          {/* LEFT SIDE/FIRST COLUMN: INVOICE META/HEADER: fixed; scrolls on its own only if taller than the screen */}
+          <div className="space-y-6 lg:col-span-1 lg:h-full lg:overflow-y-auto lg:overscroll-contain" id="purchase-invoice-meta">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
+              <h3 className="font-extrabold text-slate-800 text-sm border-b pb-2 flex items-center justify-end gap-2 text-right">
+                <FileText className="w-4 h-4 text-[#1D9E75]" />
+                {isAr ? 'بيانات فاتورة الشراء وتفاصيل الاستلام' : 'Invoice Metadata'}
+              </h3>
+
+              {editingInvoice && (
+                <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 text-right space-y-2" id="purchase-editing-banner">
+                  <div className="text-xs font-black text-amber-900">
+                    {isAr ? `عم تعدّل الفاتورة ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})` : `Editing invoice ${editingInvoice.invoiceNumber} (${editingInvoice.supplierName})`}
+                  </div>
+                  <div className="text-[10px] text-amber-800 font-bold">
+                    {isAr ? 'لما تحفظ، البرنامج بيشيل كميات الفاتورة القديمة من المخزون وبيحط الجديدة، وبيحدّث الأسعار.' : 'On save, the old quantities come off the stock, the new ones go in, and prices are updated.'}
+                  </div>
+                  <button type="button" id="btn-cancel-purchase-edit"
+                    onClick={() => { if (window.confirm(isAr ? 'إلغاء التعديل؟ الفاتورة المحفوظة بتضل متل ما هي.' : 'Cancel editing? The saved invoice stays as it is.')) discardDraft(); }}
+                    className="text-[10px] font-black text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 px-3 py-1.5 rounded-lg cursor-pointer">
+                    {isAr ? 'إلغاء التعديل' : 'Cancel editing'}
+                  </button>
+                </div>
+              )}
+
+              {/* AUTOMATED AI PAPER INVOICE CAMERA SCANNER TRIGGER */}
+              <button
+                type="button"
+                onClick={() => setShowInvoiceScannerModal(true)}
+                className="w-full bg-gradient-to-r from-indigo-700 to-indigo-600 hover:from-indigo-800 hover:to-indigo-750 text-white py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-md shadow-indigo-500/15 border border-indigo-500/30 relative overflow-hidden"
+              >
+                <Camera className="w-4.5 h-4.5 text-yellow-300 animate-bounce shrink-0" />
+                <span>{isAr ? 'مسح فاتورة المورد الورقية بالكاميرا (AI)' : 'Camera OCR / AI Invoice Scanner'}</span>
+                <span className="bg-white/15 text-[9px] px-1.5 py-0.5 rounded-full font-extrabold">NEW</span>
+              </button>
+
+              <div className="space-y-3 font-sans text-xs">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'رقم الفاتورة (الـ POS أو الموزع):' : 'Invoice Reference ID:'}</label>
+                  <input 
+                    type="text" 
+                    value={invoiceNumber}
+                    onChange={e => setInvoiceNumber(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-center text-slate-800 font-extrabold"
+                    placeholder="رقم الفاتورة"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'اسم المورّد / الموزّع (مطلوب):' : 'Supplier Name (Required):'}</label>
+                  <input 
+                    type="text" 
+                    value={supplierName}
+                    onChange={e => setSupplierName(e.target.value)}
+                    list="suppliers-list-datalist"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-center text-slate-800 font-bold text-xs"
+                    placeholder={isAr ? 'مثال: شركة نستله أو الموزع طارق...' : 'e.g. Nestle Dist, Tariq, etc.'}
+                  />
+                  <datalist id="suppliers-list-datalist">
+                    <option value="شركة الموزع العام للغذائيات" />
+                    <option value="نستله لبنان للتوزيع" />
+                    <option value="مؤسسة الهدى للألبان والأجبان" />
+                    <option value="شركة الأندلس لمواد التنظيف" />
+                    <option value="سوبر فارم للتجارة" />
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'تاريخ الفاتورة:' : 'Invoice Date:'}</label>
+                  <input 
+                    type="date" 
+                    value={invoiceDate}
+                    onChange={e => setInvoiceDate(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-center font-mono text-slate-800 font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'حالة الدفع للموزّع:' : 'Payment Terms:'}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => setPaymentStatus('paid')}
+                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border ${paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-400 font-black' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-transparent'}`}
+                    >
+                      {isAr ? 'تم الدفع (كاش/نقداً)' : 'Paid Cash'}
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentStatus('pending')}
+                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border ${paymentStatus === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-400 font-black animate-pulse' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-transparent'}`}
+                    >
+                      {isAr ? 'ذمم/آجل (على الحساب)' : 'Pending/Credit'}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-black mb-1 flex items-center justify-end gap-1">
+                    <span>{isAr ? 'وجهة تخزين السلع المستلمة:' : 'Storage/Refill Destination:'}</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      type="button"
+                      onClick={() => setPurchaseDestination('shop')}
+                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border flex items-center justify-center gap-1.5 cursor-pointer ${purchaseDestination === 'shop' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
+                    >
+                      <span>{isAr ? 'المحل مباشرة' : 'Direct to Shop'}</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setPurchaseDestination('warehouse')}
+                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border flex items-center justify-center gap-1.5 cursor-pointer ${purchaseDestination === 'warehouse' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
+                    >
+                      <span>{isAr ? 'المستودع / المخزن' : 'Warehouse'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'ملاحظات إضافية على التموين:' : 'Internal Stock Note:'}</label>
+                  <textarea 
+                    value={note}
+                    onChange={e => setNote(e.target.value)}
+                    rows={2}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 placeholder-slate-400"
+                    placeholder={isAr ? 'ملاحظات حول طريقة الاستلام أو خصومات إضافية...' : 'e.g. Received by storekeeper'}
+                  />
+                </div>
+
+                {/* Transportation / Delivery Expenses */}
+                <div className="bg-emerald-50/20 p-3 bg-[#EAF7FA]/20 border border-emerald-100/50 rounded-xl space-y-2 text-right">
+                  <label className="block text-slate-700 font-black text-xs flex items-center justify-end gap-1.5">
+                    <span>{isAr ? 'تكاليف المواصلات / الشحن ($):' : 'Transportation / Shipment Cost ($):'}</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={transportationCost}
+                      onChange={e => setTransportationCost(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2 font-mono text-center text-slate-800 font-bold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                      placeholder="0.00"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleDistributeTransportationCost}
+                      disabled={draftItems.length === 0 || (parseFloat(transportationCost) || 0) <= 0}
+                      className={`px-3 text-[10px] font-black rounded-lg transition shrink-0 cursor-pointer ${
+                        draftItems.length > 0 && (parseFloat(transportationCost) || 0) > 0
+                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 transform active:scale-95 shadow-xs'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                      }`}
+                      title={isAr ? 'توزيع وزيادة تكلفة المواصلات على رأس مال المنتجات بالتناسب تلقائياً' : 'Distribute delivery cost proportionally inside items cost prices'}
+                    >
+                      {isAr ? 'توزيع تناسبي' : 'Amortize'}
+                    </button>
+                  </div>
+                  <span className="text-[9px] text-slate-550 block leading-relaxed">
+                    {isAr 
+                      ? 'اضغط "توزيع تناسبي" لزيادة كلفة السلع تلقائياً بناءً على وزنها من تكلفة النقل الإجمالية، أو اتركها لإضافتها لدفتر الفواتير.' 
+                      : 'Toggle "Amortize" to add transport expenses on top of unit costs, or leave it to record strictly on the ledger.'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Total Invoice Draft Calculation Card */}
+              {(() => {
+                const totalItemsCost = sumLines(draftItems, lineGross);
+                const totalDiscount = sumLines(draftItems, lineDiscount);
+                const totalTax = sumLines(draftItems, lineTax);
+                const totalFree = draftItems.reduce((acc, d) => acc + (d.freeQty || 0), 0);
+                const transCostNum = parseFloat(transportationCost) || 0;
+                const grandTotalCost = totalItemsCost - totalDiscount + totalTax + transCostNum;
+
+                return (
+                  <div className="bg-slate-900 text-slate-100 p-4 rounded-xl space-y-2 border border-slate-800 text-right font-sans">
+                    <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-slate-400">
+                      <span className="font-mono">{totalItemsCost.toFixed(2)} $</span>
+                      <span>{isAr ? 'إجمالي السلع:' : 'Items Total:'}</span>
+                    </div>
+                    {totalDiscount > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-emerald-300" id="purchase-draft-discount">
+                        <span className="font-mono">- {totalDiscount.toFixed(2)} $</span>
+                        <span>{isAr ? 'الحسم:' : 'Discount:'}</span>
+                      </div>
+                    )}
+                    {offerItems.length > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-sky-300" id="purchase-draft-offer">
+                        <span className="font-mono">{offerItems.reduce((a, o) => a + o.qty, 0)} ({offerFreeValue(offerForMath).toFixed(2)} $)</span>
+                        <span>{isAr ? 'هدية عرض الفاتورة:' : 'Invoice offer gift:'}</span>
+                      </div>
+                    )}
+                    {totalFree > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-sky-300" id="purchase-draft-free">
+                        <span className="font-mono">{totalFree}</span>
+                        <span>{isAr ? 'بضاعة مجانية (بونص):' : 'Free bonus units:'}</span>
+                      </div>
+                    )}
+                    {totalTax > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-amber-300" id="purchase-draft-vat">
+                        <span className="font-mono">+ {totalTax.toFixed(2)} $</span>
+                        <span>{isAr ? 'الضريبة (TVA):' : 'VAT:'}</span>
+                      </div>
+                    )}
+                    {transCostNum > 0 && (
+                      <div className="flex justify-between border-b border-slate-800 pb-1.5 text-xs text-slate-400">
+                        <span className="font-mono">+ {transCostNum.toFixed(2)} $</span>
+                        <span>{isAr ? 'تكاليف المواصلات:' : 'Transportation:'}</span>
+                      </div>
+                    )}
+                    <div className="pt-1">
+                      <span className="text-[10px] text-slate-400 font-semibold block">{isAr ? 'إجمالي الفاتورة النهائي:' : 'Grand Invoice Total:'}</span>
+                      <span className="text-2xl font-black font-mono text-yellow-400 block">
+                        {grandTotalCost.toFixed(2)} $
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 block font-normal">
+                      {isAr ? 'بالعملة اللبنانية تقريباً:' : 'Approximately in LBP:'}{' '}
+                      <span className="font-mono text-emerald-400 font-bold">
+                        {(grandTotalCost * 89000).toLocaleString()} ل.ل
+                      </span>
+                    </span>
+                  </div>
+                );
+              })()}
+
+              <button
+                onClick={handleSavePurchaseInvoice}
+                disabled={draftItems.length === 0}
+                className={`w-full py-3 px-4 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer ${
+                  draftItems.length > 0 
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-700/20' 
+                  : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                }`}
+              >
+                <Check className="w-4 h-4" />
+                {editingInvoice
+                  ? (isAr ? 'حفظ التعديلات على الفاتورة' : 'Save changes to the invoice')
+                  : (isAr ? 'ترحيل الفاتورة وتحديث مخازن المحل' : 'Save Invoice & Refill Stocks')}
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE/TWO COLUMNS: DRAFT PRODUCTS LIST & ADD-PRODUCT SEARCH BAR: scrolls in its own pane */}
+          <div className="lg:col-span-2 space-y-6 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pe-1" id="purchase-lines-pane">
+            
+            {/* 1. Selector/Search Engine for adding products inside the invoice */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3 relative">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-amber-500" />
+                  {isAr ? 'أدرج بضاعة للشراء والتسعير' : 'Add Stock Items To List'}
+                </h3>
+
+                {/* Quick Add Form Trigger Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddForm(!showQuickAddForm)}
+                  className="bg-indigo-50 border border-indigo-150 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 self-end cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {isAr ? 'إدخال صنف جديد كلياً غير موجود سريعاً' : 'Catalog New Product'}
+                </button>
+              </div>
+
+              {/* QUICK NEW ITEM MASTER CREATION CARD (HIDDEN BY DEFAULT) */}
+              {showQuickAddForm && (
+                <div className="bg-indigo-50/50 border border-indigo-100 p-4 rounded-xl text-right animate-fadeIn">
+                  <form onSubmit={handleQuickAddProduct} className="space-y-3 font-sans">
+                    <h4 className="text-xs font-black text-indigo-800 border-b border-indigo-100 pb-1.5">{isAr ? 'تسجيل صنف جديد في سجلات السوبرماركت مباشرة' : 'New Catalog Record'}</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'الاسم التجاري للصنف:' : 'Name:'}</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={newProdName}
+                          onChange={e => setNewProdName(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs font-sans text-right"
+                          placeholder="مثال: شوكولا كادبوري 200غ"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'الباركود الكامل (رقم الاسكنر):' : 'Barcode:'}</label>
+                        <input 
+                          type="text" 
+                          required
+                          value={newProdBarcode}
+                          onChange={e => setNewProdBarcode(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
+                          placeholder="الباركود"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1 text-[11px]">
+                          <button
+                            type="button"
+                            onClick={() => setShowInlineCategoryInput(!showInlineCategoryInput)}
+                            className="text-xs text-indigo-650 hover:underline font-bold"
+                          >
+                            {showInlineCategoryInput ? (isAr ? 'إلغاء' : 'Cancel') : (isAr ? 'فئة جديدة' : 'New Category')}
+                          </button>
+                          <label className="block text-slate-500 font-bold">{isAr ? 'القسم / فئة البقالة:' : 'Category:'}</label>
+                        </div>
+                        
+                        {showInlineCategoryInput ? (
+                          <div className="flex gap-1.5 items-center">
+                            <button
+                              type="button"
+                              onClick={handleCreateCategoryInline}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-2 rounded-lg text-xs font-black transition cursor-pointer shrink-0"
+                            >
+                              {isAr ? 'حفظ' : 'Add'}
+                            </button>
+                            <input
+                              type="text"
+                              value={inlineCategoryName}
+                              onChange={e => setInlineCategoryName(e.target.value)}
+                              placeholder={isAr ? 'اسم القسم الجديد...' : 'New Category...'}
+                              className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs font-sans text-right"
+                            />
+                          </div>
+                        ) : (
+                          <select 
+                            value={newProdCategory}
+                            onChange={e => setNewProdCategory(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-right font-sans hover:border-slate-350 transition"
+                          >
+                            {categories.map(c => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bought by the carton: units per carton, cartons and carton price fill the fields below */}
+                    <div className="flex flex-wrap items-end gap-3 bg-indigo-50/60 border border-indigo-100 rounded-lg p-2.5">
+                      <div className="w-28">
+                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-upc">{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
+                        <input id="quick-add-upc" type="number" min="0" value={newProdUpc} placeholder="12"
+                          onChange={e => {
+                            const upc = parseInt(e.target.value) || 0;
+                            setNewProdUpc(e.target.value);
+                            if (upc > 0 && parseFloat(newProdCartons) > 0) setNewProdQty(String(parseFloat(newProdCartons) * upc));
+                            if (upc > 0 && parseFloat(newProdCartonPrice) > 0) setNewProdCost(String(Number((parseFloat(newProdCartonPrice) / upc).toFixed(4))));
+                          }}
+                          className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono font-bold" />
+                      </div>
+                      <div className="w-28">
+                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-cartons">{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
+                        <input id="quick-add-cartons" type="number" min="0" step="any" value={newProdCartons} placeholder="5" disabled={!(parseInt(newProdUpc) > 0)}
+                          onChange={e => {
+                            setNewProdCartons(e.target.value);
+                            const upc = parseInt(newProdUpc) || 0;
+                            if (upc > 0) setNewProdQty(String((parseFloat(e.target.value) || 0) * upc));
+                          }}
+                          className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono font-black disabled:bg-slate-100" />
+                      </div>
+                      <div className="w-32">
+                        <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-carton-price">{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
+                        <input id="quick-add-carton-price" type="number" min="0" step="any" value={newProdCartonPrice} placeholder="0.00" disabled={!(parseInt(newProdUpc) > 0)}
+                          onChange={e => {
+                            setNewProdCartonPrice(e.target.value);
+                            const upc = parseInt(newProdUpc) || 0;
+                            if (upc > 0) setNewProdCost(String(Number(((parseFloat(e.target.value) || 0) / upc).toFixed(4))));
+                          }}
+                          className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono disabled:bg-slate-100" />
+                      </div>
+                      <span className="text-[10px] text-indigo-700 font-semibold pb-2">
+                        {isAr ? 'إذا بتشتري بالكرتونة: البرنامج بيعبّي الكمية بالحبّة وسعر الحبّة لحالو.' : 'Buying by the carton fills the units and unit cost for you.'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+                      <div>
+                        <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة:' : 'Received Qty:'}</label>
+                        <input
+                          id="quick-add-qty"
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="any"
+                          required
+                          value={newProdQty}
+                          onChange={e => setNewProdQty(e.target.value)}
+                          className="w-full bg-white border-2 border-rose-300 focus:border-emerald-500 rounded-lg p-2 text-xs text-center font-mono font-black"
+                          placeholder={isAr ? 'مثال: 24' : 'e.g. 24'}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر كلفة الشراء ($):' : 'Cost Price ($):'}</label>
+                        <input 
+                          type="text" 
+                          inputMode="decimal"
+                          required
+                          value={newProdCost}
+                          onChange={e => setNewProdCost(e.target.value)}
+                          onBlur={e => handleMathBlur(e.target.value, setNewProdCost)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdCost)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
+                        <div className="flex gap-1">
+                          <input
+                            id="quick-add-vat"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={newProdTaxRate}
+                            onChange={e => setNewProdTaxRate(e.target.value)}
+                            className="w-full min-w-0 bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
+                          />
+                          {VAT_PRESETS.filter(r => r > 0).map(r => (
+                            <button
+                              key={`quick-vat-${r}`}
+                              type="button"
+                              onClick={() => setNewProdTaxRate(parseFloat(newProdTaxRate) === r ? '0' : String(r))}
+                              className={`px-2 rounded-lg border text-[10px] font-black cursor-pointer shrink-0 ${parseFloat(newProdTaxRate) === r ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400'}`}
+                            >
+                              {r}%
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <CostAfterTaxInput
+                        id="quick-add-cost-after-tax"
+                        cost={parseFloat(newProdCost) || 0}
+                        taxRate={Math.max(0, parseFloat(newProdTaxRate) || 0)}
+                        discountPercent={Math.max(0, parseFloat(newProdDiscount) || 0)}
+                        onCost={c => {
+                          setNewProdCost(String(c));
+                          const upc = parseInt(newProdUpc) || 0;
+                          if (upc > 0 && newProdCartonPrice) setNewProdCartonPrice(String(Number((c * upc).toFixed(2))));
+                        }}
+                        isAr={isAr}
+                        className="w-full bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-center font-mono font-bold text-amber-800"
+                      />
+
+                      <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر البيع مفرق للرف ($):' : 'Retail Price ($):'}</label>
+                        <input 
+                          type="text" 
+                          inputMode="decimal"
+                          required
+                          value={newProdSellRetail}
+                          onChange={e => setNewProdSellRetail(e.target.value)}
+                          onBlur={e => handleMathBlur(e.target.value, setNewProdSellRetail)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdSellRetail)}
+                          className="w-full bg-white border border-indigo-200 rounded-lg p-2 text-xs text-center font-mono font-bold text-indigo-700"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر البيع جملة ($):' : 'Wholesale Price ($):'}</label>
+                        <input 
+                          type="text" 
+                          inputMode="decimal"
+                          value={newProdSellWholesale}
+                          onChange={e => setNewProdSellWholesale(e.target.value)}
+                          onBlur={e => handleMathBlur(e.target.value, setNewProdSellWholesale)}
+                          onKeyDown={e => handleMathKeyDown(e, e.currentTarget.value, setNewProdSellWholesale)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
+                          placeholder="أو يترك تلقائي"
+                        />
+                      </div>
+
+                      {!noExpiry && <div>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'تاريخ انتهاء الصلاحية:' : 'Expiry Date:'}</label>
+                        <input 
+                          type="date" 
+                          value={newProdExpiry}
+                          onChange={e => setNewProdExpiry(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-center font-mono"
+                        />
+                      </div>}
+                    </div>
+
+                    {/* Supplier discount and bonus for the new item */}
+                    <div className="flex flex-wrap items-end gap-3 text-xs bg-white/70 border border-slate-200 rounded-lg p-2.5">
+                      <div className="w-32">
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-discount">{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
+                        <input
+                          id="quick-add-discount"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="any"
+                          placeholder="0"
+                          value={newProdDiscount}
+                          onChange={e => setNewProdDiscount(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold text-emerald-700"
+                        />
+                      </div>
+                      <div className="flex items-end gap-1.5">
+                        <div>
+                          <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-bonus-every">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
+                          <input
+                            id="quick-add-bonus-every"
+                            type="number"
+                            min="0"
+                            placeholder="—"
+                            value={newProdBonusEvery}
+                            onChange={e => setNewProdBonusEvery(e.target.value)}
+                            className="w-16 bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold"
+                          />
+                        </div>
+                        <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
+                        <input
+                          id="quick-add-bonus-free"
+                          type="number"
+                          min="0"
+                          placeholder="—"
+                          value={newProdBonusFree}
+                          onChange={e => setNewProdBonusFree(e.target.value)}
+                          className="w-14 bg-white border border-slate-200 rounded-lg p-2 text-center font-mono font-bold"
+                          aria-label={isAr ? 'الكمية المجانية لكل دفعة' : 'Free units per batch'}
+                        />
+                        <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'مجاناً' : 'free'}</span>
+                      </div>
+                      <div className="w-28">
+                        <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free">{isAr ? 'الكمية المجانية (حبّة):' : 'Free units:'}</label>
+                        <input id="quick-add-free" type="number" min="0" step="any" placeholder="0" value={newProdFreeQty}
+                          onChange={e => setNewProdFreeQty(e.target.value)}
+                          className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
+                      </div>
+                      {parseInt(newProdUpc) > 0 && (
+                        <div className="w-28">
+                          <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free-cartons">{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
+                          <input id="quick-add-free-cartons" type="number" min="0" step="any" placeholder="0"
+                            value={parseFloat(newProdFreeQty) > 0 ? Number((parseFloat(newProdFreeQty) / parseInt(newProdUpc)).toFixed(3)) : ''}
+                            onChange={e => setNewProdFreeQty(String((parseFloat(e.target.value) || 0) * parseInt(newProdUpc)))}
+                            className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
+                        </div>
+                      )}
+                      {(() => {
+                        const free = quickFreeUnits(parseFloat(newProdQty) || 0);
+                        return free > 0 ? (
+                          <span className="text-[11px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded mb-1">
+                            {isAr ? `+${free} مجاناً على هالكمية` : `+${free} free on this quantity`}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+
+                    {/* --- DYNAMIC PRICING MARGIN ASSISTANT FOR QUICK NEW PRODUCT --- */}
+                    {(() => {
+                      const qQty = parseFloat(newProdQty) || 0;
+                      const qCost = landedCost({ // real unit cost: after discount, VAT included, spread over free units
+                        qty: qQty,
+                        costPriceUSD: parseFloat(newProdCost) || 0,
+                        taxRate: Math.max(0, parseFloat(newProdTaxRate) || 0),
+                        discountPercent: Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0)),
+                        freeQty: quickFreeUnits(qQty),
+                      });
+                      const qPrice = parseFloat(newProdSellRetail) || 0;
+                      const qProfit = qPrice - qCost;
+                      const qMargin = qPrice > 0 ? (qProfit / qPrice) * 100 : 0;
+                      const qMarkup = qCost > 0 ? (qProfit / qCost) * 100 : 0;
+
+                      return (
+                        <div className="bg-emerald-50/40 border border-emerald-100 p-4 rounded-xl text-right font-sans space-y-3.5 mt-3">
+                          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-emerald-100 pb-2.5 w-full">
+                            <div className="text-xs font-black text-emerald-950 flex items-center justify-start gap-1 flex-row-reverse">
+                              <span>احتساب السعر التلقائي بهامش الربح:</span>
+                            </div>
+                            
+                            <div className="flex flex-col gap-2">
+                              {/* Presets */}
+                              <div className="flex flex-wrap items-center justify-end gap-1.5 flex-row-reverse text-xs">
+                                <span className="text-slate-650 font-bold ml-1 text-[10px]">هامش ربح مبيع (Margin):</span>
+                                {[5, 10, 15, 20, 25, 30, 40, 50].map(m => (
+                                  <button
+                                    key={`q-m-${m}`}
+                                    type="button"
+                                    onClick={() => {
+                                      if (qCost > 0) {
+                                        const targetPrice = qCost / (1 - m / 100);
+                                        setNewProdSellRetail(targetPrice.toFixed(2));
+                                        setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
+                                        showToast('success', `تم احتساب سعر المبيع بهامش ربح %${m}!`);
+                                      } else {
+                                        showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً لتشغيل الحاسبة بشكل صحيح.');
+                                      }
+                                    }}
+                                    className="px-2 py-0.5 bg-white hover:bg-emerald-100 text-emerald-800 font-bold rounded border border-slate-200 hover:border-emerald-300 transition-all text-[9.5px] cursor-pointer"
+                                  >
+                                    %{m}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <div className="flex flex-wrap items-center justify-end gap-1.5 flex-row-reverse text-xs">
+                                <span className="text-slate-655 font-bold ml-1 text-[10px]">زيادة فوق التكلفة (Markup):</span>
+                                {[10, 20, 30, 45, 60, 80, 100].map(mk => (
+                                  <button
+                                    key={`q-mk-${mk}`}
+                                    type="button"
+                                    onClick={() => {
+                                      if (qCost > 0) {
+                                        const targetPrice = qCost * (1 + mk / 100);
+                                        setNewProdSellRetail(targetPrice.toFixed(2));
+                                        setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
+                                        showToast('success', `تم احتساب سعر المبيع بزيادة %${mk} فوق التكلفة!`);
+                                      } else {
+                                        showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً.');
+                                      }
+                                    }}
+                                    className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded border border-indigo-100 hover:border-indigo-200 transition-all text-[9.5px] cursor-pointer"
+                                  >
+                                    %{mk}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Manual Input inline in purchase tab */}
+                          <div className="flex flex-wrap items-center justify-end gap-3 flex-row-reverse border-t border-emerald-100/50 pt-2.5 text-xs">
+                            <span className="text-slate-700 font-extrabold text-[10px] ml-1">تحديد يدوي مخصص:</span>
+                            
+                            <div className="flex items-center gap-1.5 flex-row-reverse">
+                              <span className="text-[9px] text-slate-500 font-bold">هامش ربح مبيع %:</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="99"
+                                placeholder="مثال: 12"
+                                value={quickMarginVal}
+                                onChange={e => setQuickMarginVal(e.target.value)}
+                                className="w-14 text-center bg-white border border-slate-200 focus:ring-1 focus:ring-emerald-500 py-0.5 px-1 rounded text-[10px] font-bold font-sans"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const m = parseFloat(quickMarginVal);
+                                  if (isNaN(m) || m < 0 || m >= 100) {
+                                    showToast('error', 'يرجى إدخال رقم هامش مبيع صحيح بين 0 و 99.');
+                                    return;
+                                  }
+                                  if (qCost > 0) {
+                                    const targetPrice = qCost / (1 - m / 100);
+                                    setNewProdSellRetail(targetPrice.toFixed(2));
+                                    setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
+                                    showToast('success', `تم احتساب سعر المبيع بهامش ربح يدوي %${m}!`);
+                                  } else {
+                                    showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً لتشغيل الحاسبة.');
+                                  }
+                                }}
+                                className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded text-[9px] cursor-pointer"
+                              >
+                                تطبيق هامش
+                              </button>
+                            </div>
+
+                            <span className="text-slate-300">|</span>
+
+                            <div className="flex items-center gap-1.5 flex-row-reverse">
+                              <span className="text-[9px] text-slate-500 font-bold">زيادة فوق التكلفة %:</span>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="مثال: 25"
+                                value={quickMarkupVal}
+                                onChange={e => setQuickMarkupVal(e.target.value)}
+                                className="w-14 text-center bg-white border border-slate-200 focus:ring-1 focus:ring-indigo-500 py-0.5 px-1 rounded text-[10px] font-bold font-sans"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const mk = parseFloat(quickMarkupVal);
+                                  if (isNaN(mk) || mk < 0) {
+                                    showToast('error', 'يرجى إدخال نسبة مئوية صحيحة للزيادة أكبر من الصفر.');
+                                    return;
+                                  }
+                                  if (qCost > 0) {
+                                    const targetPrice = qCost * (1 + mk / 100);
+                                    setNewProdSellRetail(targetPrice.toFixed(2));
+                                    setNewProdSellWholesale((targetPrice * 0.9).toFixed(2));
+                                    showToast('success', `تم احتساب سعر المبيع بزيادة يدوية %${mk}!`);
+                                  } else {
+                                    showToast('error', 'يرجى إدخال سعر كلفة الشراء أولاً.');
+                                  }
+                                }}
+                                className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded text-[9px] cursor-pointer"
+                              >
+                                تطبيق زيادة
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Live Math analysis */}
+                          <div className="grid grid-cols-4 gap-2 text-center text-[10px] pt-1.5 border-t border-dashed border-emerald-100">
+                            <div className="bg-white/70 p-1.5 rounded">
+                              <span className="text-slate-400 block">{isAr ? 'كلفة الحبّة الفعلية' : 'Real unit cost'}</span>
+                              <span className="font-mono font-black text-slate-700" id="quick-add-real-cost">{qCost.toFixed(3)} $</span>
+                            </div>
+                            <div className="bg-white/70 p-1.5 rounded">
+                              <span className="text-slate-400 block">سعر البيع المقترح</span>
+                              <span className="font-mono font-black text-emerald-850">{qPrice.toFixed(2)} $</span>
+                            </div>
+                            <div className="bg-white/70 p-1.5 rounded">
+                              <span className="text-slate-400 block">صافي الربح ($)</span>
+                              <span className="font-mono font-black text-slate-800">{qProfit.toFixed(2)} $</span>
+                            </div>
+                            <div className="bg-white/70 p-1.5 rounded text-left">
+                              <span className="text-slate-400 block">النسبة الفعلية للربحية</span>
+                              <span className="font-bold text-indigo-850 block">من المبيع: {qMargin.toFixed(1)}% | فوق الكلفة: {qMarkup.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                          {qCost > 0 && (
+                            <CostSteps id="quick-add-cost-steps" steps={costSteps({
+                              qty: qQty, costPriceUSD: parseFloat(newProdCost) || 0, taxRate: Math.max(0, parseFloat(newProdTaxRate) || 0),
+                              discountPercent: Math.min(100, Math.max(0, parseFloat(newProdDiscount) || 0)), freeQty: quickFreeUnits(qQty),
+                            }, qCost)} />
+                          )}
+
+                        </div>
+                      );
+                    })()}
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAddForm(false)}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                      >
+                        {isAr ? 'إلغاء' : 'Cancel'}
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-1.5 rounded-lg text-xs font-black transition shadow-xs"
+                      >
+                        {isAr ? 'حفظ الصنف وإدراجه بالفاتورة' : 'Save and Insert'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* Product search box */}
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={prodSearchQuery}
+                  onChange={e => {
+                    setProdSearchQuery(e.target.value);
+                    setShowProdDropdown(true);
+                  }}
+                  onFocus={() => setShowProdDropdown(true)}
+                  placeholder={isAr ? 'ابحث باسم الصنف أو بالباركود لإدراجه في فواتير الشراء للتسعير... (أو انقر لعرض الكل)' : 'Scan or search master products index...'}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-3 pr-10 text-xs font-sans text-right placeholder-slate-400"
+                />
+                <Search className="w-4.5 h-4.5 text-slate-400 absolute right-3.5 top-3.5" />
+
+                {/* DROPDOWN MATCHED ITEMS LIST */}
+                {showProdDropdown && (
+                  <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto text-right divide-y divide-slate-100">
+                    <div className="p-2 flex items-center justify-between bg-slate-50 text-[10px] text-slate-400">
+                      <button 
+                        onClick={() => setShowProdDropdown(false)}
+                        className="text-rose-500 font-extrabold hover:underline"
+                      >
+                        {isAr ? 'إغلاق القائمة' : 'Close'}
+                      </button>
+                      <span>{isAr ? 'اختر صنفاً متاحاً لإدراجه في فاتورة الشراء:' : 'Select product to put on receipt:'}</span>
+                    </div>
+
+                    {products
+                      .filter(p => {
+                        if (!prodSearchQuery) return true;
+                        const s = prodSearchQuery.toLowerCase().trim();
+                        return p.name.toLowerCase().includes(s) || p.barcode.includes(s) || (p.barcodes && p.barcodes.some(b => b.includes(s)));
+                      })
+                      .map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleAddProductToDraft(p)}
+                          className="w-full p-3 hover:bg-emerald-50 transition flex items-center justify-between text-xs gap-3 font-sans cursor-pointer text-right"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="bg-emerald-50 text-emerald-705 border border-emerald-100 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
+                              {p.quantity} {isAr ? 'بالمحل' : 'in shop'}
+                            </span>
+                            <span className="bg-indigo-50 text-indigo-705 border border-indigo-100 px-2 py-0.5 rounded text-[10px] font-mono font-bold">
+                              {p.warehouseQuantity || 0} {isAr ? 'بالمستودع' : 'in WH'}
+                            </span>
+                            <span className="text-slate-400 font-mono text-[10px]">{p.barcode}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-slate-800 block">{p.name}</span>
+                            <span className="text-[10px] text-slate-400 bg-slate-50 px-1 py-0.2 rounded font-sans">{p.category}</span>
+                          </div>
+                        </button>
+                      ))}
+
+                    {products.filter(p => {
+                      if (!prodSearchQuery) return true;
+                      const s = prodSearchQuery.toLowerCase().trim();
+                      return p.name.toLowerCase().includes(s) || p.barcode.includes(s) || (p.barcodes && p.barcodes.some(b => b.includes(s)));
+                    }).length === 0 && (
+                      <div className="p-6 text-center text-slate-400 text-xs font-semibold space-y-2">
+                        <p>{isAr ? 'عفواً! لم يتم العثور على أي صنف مطابق للبحث حالياً.' : 'No catalog items match your query.'}</p>
+                        <button
+                          onClick={() => {
+                            setNewProdBarcode(prodSearchQuery.trim());
+                            setNewProdName(prodSearchQuery);
+                            setShowQuickAddForm(true);
+                            setShowProdDropdown(false);
+                          }}
+                          className="text-[#1D9E75] font-extrabold text-xs underline block mx-auto hover:text-emerald-700 font-sans"
+                        >
+                          {isAr ? 'انقر هنا لتسجيل هذا الصنف سريعاً بالأرفف' : 'Quick register this query'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 2. DRAFT ITEMS TABLE */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#1D9E75]/10 text-[#1D9E75] px-3 py-1 rounded-lg text-xs font-extrabold font-mono">
+                    {draftItems.length} {isAr ? 'أصناف مختلفة' : 'variants listed'}
+                  </span>
+                  {(draftItems.length > 0 || offerItems.length > 0) && (
+                    <>
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg" id="purchase-draft-saved">
+                        {isAr ? 'محفوظة كمسودة' : 'Saved as draft'}
+                      </span>
+                      <button
+                        type="button"
+                        id="btn-discard-purchase-draft"
+                        onClick={() => { if (window.confirm(isAr ? 'مسح كل أصناف هالفاتورة والبدء من جديد؟' : 'Discard this purchase draft?')) discardDraft(); }}
+                        className="text-[10px] font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg cursor-pointer"
+                      >
+                        {isAr ? 'مسح المسودة' : 'Discard'}
+                      </button>
+                    </>
+                  )}
+                </div>
+                <h4 className="font-bold text-slate-800 text-sm">{isAr ? 'قائمة الفواتير والأسعار المدخلة' : 'Purchase Receipt Items Details'}</h4>
+              </div>
+
+              {draftItems.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 font-sans space-y-3">
+                  <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-slate-300">
+                    <Truck className="w-8 h-8" />
+                  </div>
+                  <p className="text-xs font-bold">{isAr ? 'لم تقم بإدراج أي أصناف في فاتورة الشراء هذه حتى الآن!' : 'Procurement scratchpad is empty. Use the box above to add products.'}</p>
+                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">{isAr ? 'يرجى كتابة اسم الصنف في محرك البحث بالأعلى أو تمرير باركود الاستلام لإدخاله فورياً وقيد الكميات.' : 'Type any stock item inside scanner search or click toggle to construct a new catalog item directly.'}</p>
+                </div>
+              ) : (
+                <div className="space-y-4 font-sans text-right">
+                  {draftItems.map((item, idx) => {
+                    return (
+                      <div key={item.product.id} className={`bg-slate-50 border rounded-xl p-4 space-y-3 transition relative ${item.qty > 0 ? 'border-slate-150 hover:border-slate-300' : 'border-rose-300'}`}>
+                        
+                        {/* Title and Category block */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 pb-2">
+                          
+                          {/* Row actions */}
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-emerald-600' font-extrabold text-xs bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded">
+                              {isAr ? 'المجموع:' : 'Sub:'} <span className="font-black">{lineTotal(item).toFixed(2)}$</span>
+                              {item.discountPercent > 0 && <span className="text-[9px] font-bold text-emerald-700 mr-1">{isAr ? `بعد حسم ${item.discountPercent}%` : `after ${item.discountPercent}% off`}</span>}
+                              {item.taxRate > 0 && <span className="text-[9px] font-bold text-amber-700 mr-1">{isAr ? `شامل ضريبة ${item.taxRate}%` : `incl. ${item.taxRate}% VAT`}</span>}
+                            </span>
+                            {item.freeQty > 0 && (
+                              <span className="text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded">
+                                {isAr ? `+${item.freeQty} مجاناً` : `+${item.freeQty} free`}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleRemoveFromDraft(idx)}
+                              className="text-rose-500 hover:text-white hover:bg-rose-500 p-1 rounded-lg transition"
+                              title={isAr ? 'بعد من الفاتورة' : 'Remove item'}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* Brand Info */}
+                          <div className="font-sans text-right">
+                            <span className="font-black text-slate-800 text-sm block">{draftItems.length - idx}. {item.product.name}</span>
+                            <div className="flex items-center gap-2 mt-0.5 justify-end">
+                              <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded font-semibold font-mono">{item.product.barcode}</span>
+                              <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded font-semibold">{item.product.category}</span>
+                              <span className="text-[10px] bg-amber-50 border border-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black font-mono">
+                                {isAr ? 'متوفر حالياً بالرف:' : 'In-stock currently:'} {item.product.quantity}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Editable properties: Inputs */}
+                        <div className="grid grid-cols-2 sm:grid-cols-7 gap-3 font-sans text-xs">
+                          
+                          {/* 1. Qty to buy */}
+                          <div>
+                            <label className={`block font-bold mb-1 text-[10px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${item.product.id}`}>{isAr ? 'الكمية المستلمة (مطلوب):' : 'Received Qty (required):'}</label>
+                            <input
+                              id={`draft-qty-${item.product.id}`}
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              step="any"
+                              required
+                              placeholder={isAr ? 'الكمية' : 'Qty'}
+                              value={item.qty > 0 ? item.qty : ''}
+                              onChange={e => handleUpdateDraftField(idx, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className={`w-full rounded-lg p-1.5 text-center font-mono font-black text-slate-800 border-2 ${item.qty > 0 ? 'bg-white border-slate-200' : 'bg-rose-50 border-rose-400'}`}
+                            />
+                          </div>
+
+                          {/* 2. Cost Price */}
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'سعر التكلفة الجديد ($):' : 'Unit Cost Price ($):'}</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              required
+                              id={`draft-cost-${item.product.id}`}
+                              value={item.costPriceUSD}
+                              onChange={e => handleUpdateDraftField(idx, 'costPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-slate-700"
+                            />
+                          </div>
+
+                          {/* 2b. VAT charged by the supplier */}
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
+                            <div className="flex gap-1">
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.taxRate}
+                                onChange={e => handleUpdateDraftField(idx, 'taxRate', Math.max(0, parseFloat(e.target.value) || 0))}
+                                className="w-full min-w-0 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-slate-700"
+                                aria-label={isAr ? 'نسبة الضريبة' : 'VAT rate'}
+                              />
+                              {VAT_PRESETS.filter(r => r > 0).map(r => (
+                                <button
+                                  key={`vat-${idx}-${r}`}
+                                  type="button"
+                                  onClick={() => handleUpdateDraftField(idx, 'taxRate', item.taxRate === r ? 0 : r)}
+                                  className={`px-1.5 rounded-lg border text-[10px] font-black cursor-pointer shrink-0 ${item.taxRate === r ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400'}`}
+                                >
+                                  {r}%
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 2c. Unit cost after discount and VAT (editable: works the supplier price back out) */}
+                          <CostAfterTaxInput
+                            id={`draft-cost-after-tax-${item.product.id}`}
+                            cost={item.costPriceUSD}
+                            taxRate={item.taxRate}
+                            discountPercent={item.discountPercent || 0}
+                            onCost={c => handleUpdateDraftField(idx, 'costPriceUSD', c)}
+                            isAr={isAr}
+                            className="w-full bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-center font-mono font-bold text-amber-800"
+                          />
+
+                          {/* 3. Retail Sell Price */}
+                          <div>
+                            <label className="block text-slate-600 font-black mb-1 text-[10px] text-[#1D9E75]">{isAr ? 'سعر البيع مفرّق الجديد ($):' : 'New Retail Sell ($):'}</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              required
+                              value={item.newPriceUSD}
+                              onChange={e => handleUpdateDraftField(idx, 'newPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className="w-full bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 text-center font-mono font-black text-emerald-800"
+                            />
+                          </div>
+
+                          {/* 4. Wholesale Sell Price */}
+                          <div>
+                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'سعر الجملة الجديد ($):' : 'New Wholesale Sell ($):'}</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.newPriceWholesale}
+                              onChange={e => handleUpdateDraftField(idx, 'newPriceWholesale', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono"
+                            />
+                          </div>
+
+                          {/* 5. Expiry update date (not for phone shops) */}
+                          {!noExpiry && <div className="col-span-2 sm:col-span-1">
+                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'تاريخ الصلاحية الجديد:' : 'New Batch Expiry:'}</label>
+                            <input
+                              type="date"
+                              value={item.expiryDate}
+                              onChange={e => handleUpdateDraftField(idx, 'expiryDate', e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono text-slate-700"
+                            />
+                          </div>}
+
+                        </div>
+
+                        {/* Supplier discount and bonus (free units) */}
+                        <div className="flex flex-wrap items-end gap-3 font-sans text-xs bg-white/60 border border-slate-150 rounded-lg p-2.5">
+                          <div className="w-24">
+                            <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-upc-${item.product.id}`}>{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
+                            <input
+                              id={`draft-upc-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              placeholder="12"
+                              value={item.unitsPerCarton || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'unitsPerCarton', Math.max(0, parseInt(e.target.value) || 0))}
+                              className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-bold text-indigo-800"
+                            />
+                          </div>
+                          {item.unitsPerCarton > 0 && (
+                            <>
+                              <div className="w-24">
+                                <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-cartons-${item.product.id}`}>{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
+                                <input
+                                  id={`draft-cartons-${item.product.id}`}
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  placeholder="0"
+                                  value={item.qty > 0 ? Number((item.qty / item.unitsPerCarton).toFixed(3)) : ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'cartons', Math.max(0, parseFloat(e.target.value) || 0))}
+                                  className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-black text-indigo-800"
+                                />
+                              </div>
+                              <div className="w-28">
+                                <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-carton-price-${item.product.id}`}>{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
+                                <input
+                                  id={`draft-carton-price-${item.product.id}`}
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={Number((item.costPriceUSD * item.unitsPerCarton).toFixed(2))}
+                                  onChange={e => handleUpdateDraftField(idx, 'cartonPrice', Math.max(0, parseFloat(e.target.value) || 0))}
+                                  className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-bold text-indigo-800"
+                                />
+                              </div>
+                            </>
+                          )}
+                          <div className="w-28">
+                            <label className="block text-slate-500 font-bold mb-1 text-[10px]" htmlFor={`draft-discount-${item.product.id}`}>{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
+                            <input
+                              id={`draft-discount-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="any"
+                              placeholder="0"
+                              value={item.discountPercent || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'discountPercent', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-emerald-700"
+                            />
+                          </div>
+                          <div className="flex items-end gap-1.5">
+                            <div>
+                              <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
+                              <input
+                                id={`draft-bonus-every-${item.product.id}`}
+                                type="number"
+                                min="0"
+                                placeholder="—"
+                                value={item.bonusEvery || ''}
+                                onChange={e => handleUpdateDraftField(idx, 'bonusEvery', Math.max(0, parseInt(e.target.value) || 0))}
+                                className="w-16 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
+                              />
+                            </div>
+                            <span className="pb-2 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
+                            <input
+                              id={`draft-bonus-free-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              placeholder="—"
+                              value={item.bonusFree || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'bonusFree', Math.max(0, parseInt(e.target.value) || 0))}
+                              className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
+                            />
+                            <span className="pb-2 text-slate-500 font-bold">{isAr ? 'مجاناً' : 'free'}</span>
+                          </div>
+                          <div className="w-28">
+                            <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-${item.product.id}`}>{isAr ? 'الكمية المجانية:' : 'Free units:'}</label>
+                            <input
+                              id={`draft-free-${item.product.id}`}
+                              type="number"
+                              min="0"
+                              step="any"
+                              placeholder="0"
+                              value={item.freeQty || ''}
+                              onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, parseFloat(e.target.value) || 0))}
+                              className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
+                            />
+                          </div>
+                          {item.unitsPerCarton > 0 && (
+                            <div className="w-28">
+                              <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-cartons-${item.product.id}`}>{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
+                              <input
+                                id={`draft-free-cartons-${item.product.id}`}
+                                type="number"
+                                min="0"
+                                step="any"
+                                placeholder="0"
+                                value={item.freeQty > 0 ? Number((item.freeQty / item.unitsPerCarton).toFixed(3)) : ''}
+                                onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, (parseFloat(e.target.value) || 0) * item.unitsPerCarton))}
+                                className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
+                              />
+                            </div>
+                          )}
+                          {(item.freeQty > 0 || item.discountPercent > 0 || offerFactor < 1) && item.qty > 0 && (
+                            <span className="text-[10px] text-slate-500 font-semibold pb-2" id={`draft-real-cost-${item.product.id}`}>
+                              {isAr
+                                ? `بينضاف للمخزن ${item.qty + item.freeQty + offerShare(item.product.id).units} • كلفة القطعة الفعلية ${effectiveCost(item).toFixed(3)}$`
+                                : `${item.qty + item.freeQty + offerShare(item.product.id).units} into stock • real unit cost ${effectiveCost(item).toFixed(3)}$`}
+                            </span>
+                          )}
+                        </div>
+
+                        {item.product.trackSerial && (() => {
+                          const list = parseSerialList(item.serialText || '');
+                          const needed = item.qty + (item.freeQty || 0) + offerShare(item.product.id).units;
+                          return (
+                            <div className="bg-sky-50 border border-sky-200 rounded-lg p-2.5 text-xs">
+                              <label className="block font-black text-sky-900 mb-1" htmlFor={`draft-serials-${item.product.id}`}>
+                                {isAr ? 'أرقام IMEI (امسح أو اكتب، واحد بكل سطر)' : 'IMEIs (scan or type, one per line)'}
+                                <span className={`mr-2 font-mono ${list.length === needed && needed > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{list.length} / {needed}</span>
+                              </label>
+                              <textarea
+                                id={`draft-serials-${item.product.id}`}
+                                rows={Math.min(6, Math.max(2, needed))}
+                                dir="ltr"
+                                value={item.serialText || ''}
+                                onChange={e => handleUpdateDraftField(idx, 'serialText', e.target.value)}
+                                className="w-full bg-white border border-sky-200 rounded-lg p-2 font-mono text-xs"
+                                placeholder="356789012345678"
+                              />
+                            </div>
+                          );
+                        })()}
+
+                        {/* --- INLINE DYNAMIC PRICING MARGIN ASSISTANT FOR DRAFT ITEM --- */}
+                        {(() => {
+                          const dCost = effectiveCost(item); // margins on the real cost, VAT and offers included
+                          const dPrice = item.newPriceUSD;
+                          const dProfit = dPrice - dCost;
+                          const dMargin = dPrice > 0 ? (dProfit / dPrice) * 100 : 0;
+                          const dMarkup = dCost > 0 ? (dProfit / dCost) * 100 : 0;
+
+                          const marginInputVal = draftMarginInputs[item.product.id] || '';
+                          const markupInputVal = draftMarkupInputs[item.product.id] || '';
+
+                          return (
+                            <div className="bg-emerald-50/20 border border-emerald-50/70 p-3 rounded-lg text-right font-sans space-y-2.5 mt-2.5">
+                              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 border-b border-emerald-50/60 pb-2">
+                                <div className="text-[10px] font-extrabold text-emerald-950 flex items-center justify-start gap-1 flex-row-reverse">
+                                  <span>حاسبة وبدائل هوامش هذا الصنف:</span>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                  {/* Presets */}
+                                  <div className="flex flex-wrap items-center justify-end gap-1 flex-row-reverse text-[11px]">
+                                    <span className="text-slate-500 font-semibold ml-1 text-[9px]">{isAr ? 'هامش ربح مبيع (Margin):' : 'Margin Presets:'}</span>
+                                    {[5, 10, 15, 20, 25, 30, 40, 50].map(m => (
+                                      <button
+                                        key={`item-m-${idx}-${m}`}
+                                        type="button"
+                                        onClick={() => {
+                                          if (dCost > 0) {
+                                            const targetPrice = dCost / (1 - m / 100);
+                                            handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
+                                            handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
+                                            showToast('success', isAr ? `تم تعيين البيع مفرق بهامش %${m}!` : `Retail set at %${m} margin!`);
+                                          } else {
+                                            showToast('error', isAr ? 'يرجى تحديد كلفة شراء الصنف أولاً!' : 'Please enter item cost first!');
+                                          }
+                                        }}
+                                        className="px-1.5 py-0.5 bg-white hover:bg-emerald-50 text-emerald-800 font-bold rounded border border-slate-150 hover:border-emerald-250 transition-all text-[8.5px] cursor-pointer"
+                                      >
+                                        %{m}
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center justify-end gap-1 flex-row-reverse text-[11px]">
+                                    <span className="text-slate-500 font-semibold ml-1 text-[9px]">{isAr ? 'زيادة عن التكلفة (Markup):' : 'Markup Presets:'}</span>
+                                    {[10, 20, 30, 45, 60, 80, 100].map(mk => (
+                                      <button
+                                        key={`item-mk-${idx}-${mk}`}
+                                        type="button"
+                                        onClick={() => {
+                                          if (dCost > 0) {
+                                            const targetPrice = dCost * (1 + mk / 100);
+                                            handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
+                                            handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
+                                            showToast('success', isAr ? `تم تعيين البيع بزيادة %${mk}!` : `Retail set at %${mk} markup!`);
+                                          } else {
+                                            showToast('error', isAr ? 'يرجى تحديد كلفة شراء الصنف أولاً!' : 'Please enter item cost first!');
+                                          }
+                                        }}
+                                        className="px-1.5 py-0.5 bg-indigo-50/70 hover:bg-indigo-100/70 text-indigo-800 font-bold rounded border border-indigo-100 hover:border-indigo-150 transition-all text-[8.5px] cursor-pointer"
+                                      >
+                                        %{mk}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Custom Inline Inputs */}
+                              <div className="flex flex-wrap items-center justify-end gap-2.5 flex-row-reverse border-t border-emerald-50/30 pt-2 text-[11px]">
+                                <span className="text-slate-600 font-extrabold text-[9px] ml-1">{isAr ? 'يدوي مخصص:' : 'Manual:'}</span>
+
+                                <div className="flex items-center gap-1 flex-row-reverse">
+                                  <span className="text-[8px] text-slate-400">{isAr ? 'هامش مبيع %:' : 'Margin %:'}</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="99"
+                                    placeholder="15"
+                                    value={marginInputVal}
+                                    onChange={e => setDraftMarginInputs(prev => ({ ...prev, [item.product.id]: e.target.value }))}
+                                    className="w-10 text-center bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 py-0.5 px-1 rounded text-[9px] font-bold font-sans"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const m = parseFloat(marginInputVal);
+                                      if (isNaN(m) || m < 0 || m >= 100) {
+                                        showToast('error', isAr ? 'أدخل نسبة صحيحة بين 0 و 99' : 'Enter margin between 0 and 99');
+                                        return;
+                                      }
+                                      if (dCost > 0) {
+                                        const targetPrice = dCost / (1 - m / 100);
+                                        handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
+                                        handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
+                                        showToast('success', isAr ? `هامش مبيع %${m} يدوي` : `Applied manual %${m} margin`);
+                                      } else {
+                                        showToast('error', isAr ? 'أدخل سعر الكلفة أولاً' : 'Enter cost first');
+                                      }
+                                    }}
+                                    className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded text-[8px] cursor-pointer"
+                                  >
+                                    {isAr ? 'تطبيق' : 'Apply'}
+                                  </button>
+                                </div>
+
+                                <span className="text-slate-200">|</span>
+
+                                <div className="flex items-center gap-1 flex-row-reverse">
+                                  <span className="text-[8px] text-slate-400">{isAr ? 'زيادة كلفة %:' : 'Markup %:'}</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="20"
+                                    value={markupInputVal}
+                                    onChange={e => setDraftMarkupInputs(prev => ({ ...prev, [item.product.id]: e.target.value }))}
+                                    className="w-10 text-center bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 py-0.5 px-1 rounded text-[9px] font-bold font-sans"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const mk = parseFloat(markupInputVal);
+                                      if (isNaN(mk) || mk < 0) {
+                                        showToast('error', isAr ? 'أدخل زيادة صحيحة' : 'Enter correct markup percentage');
+                                        return;
+                                      }
+                                      if (dCost > 0) {
+                                        const targetPrice = dCost * (1 + mk / 100);
+                                        handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
+                                        handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
+                                        showToast('success', isAr ? `زيادة %${mk} يدوية` : `Applied manual %${mk} markup`);
+                                      } else {
+                                        showToast('error', isAr ? 'أدخل سعر الكلفة أولاً' : 'Enter cost first');
+                                      }
+                                    }}
+                                    className="px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded text-[8px] cursor-pointer"
+                                  >
+                                    {isAr ? 'تطبيق' : 'Apply'}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Yield metrics summary feedback */}
+                              <div className="grid grid-cols-4 gap-1.5 text-center text-[9px] pt-1.5 border-t border-dashed border-emerald-100">
+                                <div>
+                                  <span className="text-slate-400 block">{isAr ? 'الكلفة:' : 'Cost:'}</span>
+                                  <strong className="font-mono text-slate-700">{dCost.toFixed(2)} $</strong>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block">{isAr ? 'المبيع مفرق المقترح:' : 'Suggested Retail:'}</span>
+                                  <strong className="font-mono text-emerald-700">{dPrice.toFixed(2)} $</strong>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 block">{isAr ? 'صافي الربح القطعة:' : 'Net Profit:'}</span>
+                                  <strong className={`font-mono ${dProfit >= 0 ? 'text-emerald-700' : 'text-red-650'}`}>{dProfit.toFixed(2)} $</strong>
+                                </div>
+                                <div className="text-left">
+                                  <span className="text-slate-400 block">{isAr ? 'العائد الفعلي:' : 'Current Margins:'}</span>
+                                  <span className="font-bold text-slate-800 block">
+                                    {isAr ? `هامش: ${dMargin.toFixed(1)}%` : `Margin: ${dMargin.toFixed(1)}%`}
+                                  </span>
+                                  <span className="text-[8px] text-slate-500 font-medium block">
+                                    {isAr ? `زيادة: ${dMarkup.toFixed(1)}%` : `Markup: ${dMarkup.toFixed(1)}%`}
+                                  </span>
+                                </div>
+                              </div>
+                              {dCost > 0 && (
+                                <CostSteps id={`draft-cost-steps-${item.product.id}`} steps={costSteps(item, dCost, offerShare(item.product.id).units)} />
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                      </div>
+                    );
+                  })}
+
+                </div>
+              )}
+
+              {/* --- INVOICE OFFER: free goods for the whole invoice --- */}
+              {(() => {
+                const freeValue = offerFreeValue(offerForMath);
+                const pickedProd = findOfferProduct(offerSearch);
+                const pickedUpc = pickedProd ? (draftItems.find(d => d.product.id === pickedProd.id)?.unitsPerCarton || pickedProd.unitsPerCarton || 0) : 0;
+                return (
+                  <div className="bg-sky-50/60 border-2 border-dashed border-sky-200 rounded-xl p-4 space-y-3 text-xs" id="purchase-offer-box">
+                    <div>
+                      <h5 className="font-black text-sky-900 text-sm">{isAr ? 'بضاعة مجانية من عرض الفاتورة' : 'Free goods from an invoice offer'}</h5>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {isAr
+                          ? 'للعروض على الطلبية كلّها (متلاً: 5 كراتين من كل صنف = 4 كراتين مجاناً). البضاعة بتفوت عالمخزن، وقيمتها بتتوزّع حسم على كل أصناف الفاتورة.'
+                          : 'For offers on the whole order. The goods go into stock and their value is spread as a discount over every item.'}
+                      </p>
+                    </div>
+                    {draftItems.length === 0 && (
+                      <p className="text-[11px] font-bold text-amber-700">{isAr ? 'زيد أول أصناف الفاتورة المدفوعة من البحث فوق، وبعدين سجّل الهدية هون.' : 'Add the paid items first, then record the gift here.'}</p>
+                    )}
+                    {draftItems.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5" id="offer-quick-picks">
+                        <span className="text-[10px] font-bold text-slate-500">{isAr ? 'اختيار سريع من أصناف الفاتورة:' : 'Quick pick from this invoice:'}</span>
+                        {[...draftItems].reverse().map(d => {
+                          const selected = pickedProd?.id === d.product.id;
+                          return (
+                            <button
+                              key={`offer-pick-${d.product.id}`}
+                              type="button"
+                              data-offer-pick={d.product.id}
+                              onClick={() => { setOfferSearch(d.product.name); setOfferUnitValue(''); setOfferInCartons(true); }}
+                              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition cursor-pointer ${selected ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-sky-200 text-sky-800 hover:bg-sky-100'}`}
+                            >
+                              {selected ? '✓ ' : ''}{d.product.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <datalist id="offer-products-list">
+                      {products.map(p => <option key={p.id} value={p.name}>{p.barcode}</option>)}
+                    </datalist>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="flex-1 min-w-[180px]">
+                        <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-product">{isAr ? 'الصنف المجاني:' : 'Free product:'}</label>
+                        <input
+                          id="offer-product"
+                          list="offer-products-list"
+                          value={offerSearch}
+                          onChange={e => { setOfferSearch(e.target.value); setOfferUnitValue(''); }}
+                          placeholder={isAr ? 'اسم الصنف أو الباركود' : 'Name or barcode'}
+                          className="w-full bg-white border border-sky-200 rounded-lg p-2 font-bold"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-qty">{isAr ? 'الكمية:' : 'Qty:'}</label>
+                        <input id="offer-qty" type="number" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
+                          className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono font-black" placeholder="4" />
+                      </div>
+                      {pickedUpc > 0 && (
+                        <div className="flex rounded-lg border border-sky-200 overflow-hidden text-[11px] font-bold" role="group">
+                          <button type="button" id="offer-unit-cartons" onClick={() => setOfferInCartons(true)} className={`px-2.5 py-2 ${offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? `كرتونة (${pickedUpc})` : `carton (${pickedUpc})`}</button>
+                          <button type="button" id="offer-unit-units" onClick={() => setOfferInCartons(false)} className={`px-2.5 py-2 ${!offerInCartons ? 'bg-sky-600 text-white' : 'bg-white text-slate-600'}`}>{isAr ? 'حبّة' : 'unit'}</button>
+                        </div>
+                      )}
+                      <div className="w-28">
+                        <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-unit-value">{isAr ? 'قيمة الحبّة ($):' : 'Value per unit ($):'}</label>
+                        <input id="offer-unit-value" type="number" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
+                          placeholder={pickedProd ? offerDefaultUnitValue(pickedProd).toFixed(3) : '0.00'}
+                          className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono" />
+                      </div>
+                      <button type="button" id="btn-add-offer-item" onClick={handleAddOfferItem}
+                        className="bg-sky-600 hover:bg-sky-700 text-white font-black px-4 py-2 rounded-lg cursor-pointer">
+                        {isAr ? '+ زيد' : '+ Add'}
+                      </button>
+                    </div>
+
+                    {offerItems.length > 0 && (
+                      <div className="space-y-1.5">
+                        {offerItems.map((o, i) => {
+                          const upc = o.product.unitsPerCarton || draftItems.find(d => d.product.id === o.product.id)?.unitsPerCarton || 0;
+                          return (
+                            <div key={`${o.product.id}-${i}`} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
+                              <span className="font-bold text-slate-800">
+                                {o.product.name} — {o.qty} {isAr ? 'حبّة' : 'units'}{upc > 0 ? ` (${Number((o.qty / upc).toFixed(2))} ${isAr ? 'كرتونة' : 'cartons'})` : ''}
+                                <span className="text-slate-500 font-mono mx-2">{(o.qty * o.unitValueUSD).toFixed(2)}$</span>
+                              </span>
+                              <button type="button" onClick={() => setOfferItems(prev => prev.filter((_, j) => j !== i))} className="text-rose-500 hover:bg-rose-500 hover:text-white p-1 rounded" aria-label={isAr ? 'حذف' : 'Remove'}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                        <div className="text-[11px] font-black text-sky-900 bg-sky-100 rounded-lg px-3 py-2" id="offer-summary">
+                          {isAr
+                            ? `قيمة الهدية ${freeValue.toFixed(2)}$ • كل البضاعة (المدفوعة والمجانية) كلفتها نزلت ${((1 - offerFactor) * 100).toFixed(1)}%`
+                            : `Gift value ${freeValue.toFixed(2)}$ • every unit's cost drops ${((1 - offerFactor) * 100).toFixed(1)}%`}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* SUBTAB: LEDGER RECORD BOOK VIEW */}
+      {subTab === 'ledger' && (
+        <div className="space-y-6 text-right font-sans">
+          
+          {/* STATS HEADERS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 text-right flex items-center justify-between shadow-sm">
+              <div className="bg-emerald-50 text-[#1D9E75] p-3 rounded-xl border border-emerald-100">
+                <DollarSign className="w-8 h-8" />
+              </div>
+              <div>
+                <span className="block text-xs text-slate-400 font-bold mb-0.5">{isAr ? 'إجمالي فواتير المشتريات والتموين' : 'Purchase Sourcing Costs'}</span>
+                <span className="text-xl font-bold font-mono text-slate-800">{totalProcurementExpensesUSD.toFixed(2)} $</span>
+                <span className="block text-[10px] font-mono text-slate-400">{(totalProcurementExpensesUSD * 89000).toLocaleString() + ' ل.ل'}</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 text-right flex items-center justify-between shadow-sm">
+              <div className="bg-amber-50 text-amber-700 p-3 rounded-xl border border-amber-100">
+                <Layers className="w-8 h-8" />
+              </div>
+              <div>
+                <span className="block text-xs text-slate-400 font-bold mb-0.5">{isAr ? 'إجمالي كمية البضائع المستلمة' : 'Refilled Products Qty'}</span>
+                <span className="text-xl font-bold font-mono text-slate-800">{totalProcurementItemsCount} {isAr ? 'قطعة' : 'individual items'}</span>
+                <span className="block text-[10px] text-slate-400">{isAr ? 'جاهزة وموزعة على الرفوف' : 'refilled in master catalog'}</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 text-right flex items-center justify-between shadow-sm">
+              <div className="bg-indigo-50 text-indigo-700 p-3 rounded-xl border border-indigo-100">
+                <Truck className="w-8 h-8" />
+              </div>
+              <div>
+                <span className="block text-xs text-slate-400 font-bold mb-0.5">{isAr ? 'عدد شركات الموردين المتعامَلة' : 'Suppliers & Distribution Channels'}</span>
+                <span className="text-xl font-bold text-slate-800 font-mono">{uniqueSuppliersCount} {isAr ? 'مورّدين' : 'suppliers listed'}</span>
+                <span className="block text-[10px] text-slate-400">{isAr ? 'من الفواتير السابقة والحالية' : 'historical unique suppliers'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* LEDGER FILTER ACTION ROW */}
+          <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+            <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#1D9E75]" />
+              {isAr ? 'مستندات تسليم وإدخال البضاعة والأسعار' : 'Procurement Invoices Archive'}
+            </h3>
+
+            <div className="relative w-full md:w-80">
+              <input 
+                type="text" 
+                value={ledgerSearch}
+                onChange={e => setLedgerSearch(e.target.value)}
+                placeholder={isAr ? 'بحث باسم المورد أو رقم الفاتورة...' : 'Search by supplier, invoice code...'}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-3 pr-9 text-xs text-right placeholder-slate-400"
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
+            </div>
+          </div>
+
+          {/* PREVIOUS PURCHASES RECORDS ACCORDION TABLE */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto text-xs">
+              <table className="w-full border-collapse text-right">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
+                    <th className="p-3 text-center w-24">{isAr ? 'التفاصيل' : 'Breakdown'}</th>
+                    <th className="p-3 text-center">{isAr ? 'الملاحظة' : 'Supplying Note'}</th>
+                    <th className="p-3 text-center">{isAr ? 'الحالة الماليّة' : 'Settlement'}</th>
+                    <th className="p-3 text-center">{isAr ? 'إجمالي الفاتورة ($)' : 'Purchase Cost ($)'}</th>
+                    <th className="p-3 text-center">{isAr ? 'عدد الأصناف' : 'Variants Count'}</th>
+                    <th className="p-3 text-center">{isAr ? 'تاريخ الشراء' : 'Purchase Date'}</th>
+                    <th className="p-3">{isAr ? 'الشركة المورّدة' : 'Supplier Distributor'}</th>
+                    <th className="p-3">{isAr ? 'رقم الفاتورة' : 'Invoice number'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-sans">
+                  {filteredLedger.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center p-8 text-slate-400 font-bold">
+                        {isAr ? 'سجل المشتريات فارغ! لا توجد فواتير تموين مسجلة مطابقة لبحثك.' : 'No procurement registers found.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLedger.map(inv => {
+                      const isExpanded = expandedInvoiceId === inv.id;
+                      const totalQty = inv.items.reduce((acc, i) => acc + i.qty, 0);
+
+                      return (
+                        <React.Fragment key={inv.id}>
+                          <tr className="hover:bg-slate-50/50 transition">
+                            
+                            {/* Toggle detailed products and prices in accordion */}
+                            <td className="p-3 text-center">
+                              <button
+                                onClick={() => setExpandedInvoiceId(isExpanded ? null : inv.id)}
+                                className="bg-slate-100 font-extrabold hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded text-[10px] transition flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                              >
+                                {isAr ? 'المعاينة' : 'Details'}
+                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                            </td>
+
+                            <td className="p-3 text-center text-slate-400 max-w-xs truncate" title={inv.note}>
+                              {inv.note ? inv.note : <span className="text-slate-300 font-normal">—</span>}
+                            </td>
+
+                            <td className="p-3 text-center">
+                              {inv.paymentStatus === 'paid' ? (
+                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                                  {isAr ? 'مدفوع نقداً' : 'Cash Paid'}
+                                </span>
+                              ) : (
+                                <span className="bg-rose-50 text-rose-700 border border-rose-100 px-2.5 py-0.5 rounded-full text-[10px] font-bold animate-pulse">
+                                  {isAr ? 'دين بالآجل' : 'On Credit'}
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="p-3 text-center font-mono font-black text-[#1D9E75]">
+                              {inv.totalAmountUSD.toFixed(2)} $
+                            </td>
+
+                            <td className="p-3 text-center font-bold text-slate-600">
+                              {inv.items.length} {isAr ? 'أصناف' : 'items'} <span className="text-[10px] font-normal text-slate-400">({totalQty} قطعة كلي)</span>
+                            </td>
+
+                            <td className="p-3 text-center font-mono font-bold text-slate-600">
+                              {inv.date}
+                            </td>
+
+                            <td className="p-3 font-bold text-slate-800">
+                              <div>{inv.supplierName}</div>
+                              {inv.destination === 'warehouse' ? (
+                                <span className="inline-block bg-indigo-100 text-indigo-800 border border-indigo-200 px-2 py-0.5 rounded text-[9px] font-black mt-1 font-sans">
+                                  المستودع/المخزن
+                                </span>
+                              ) : (
+                                <span className="inline-block bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[9px] font-black mt-1 font-sans">
+                                  رفوف المحل
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="p-3 font-mono text-slate-500 font-semibold">
+                              {inv.invoiceNumber}
+                            </td>
+
+                          </tr>
+
+                          {/* EXPANDED ACCORDION VIEW DETAILS FOR RECORD */}
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={8} className="bg-slate-50/70 p-4 border-t border-b border-slate-200 font-sans">
+                                <div className="bg-white rounded-xl border border-slate-200/80 p-4 space-y-3 shadow-inner">
+                                  <h4 className="font-bold text-slate-800 text-xs border-b pb-1.5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setActivePrintPurchase(inv)}
+                                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-black px-3 py-1.5 rounded-lg border border-emerald-100 text-[10px] flex items-center gap-1.5 transition cursor-pointer"
+                                    >
+                                      <span>طباعة وتصدير كـ PDF/📄</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      data-edit-purchase={inv.id}
+                                      onClick={() => handleEditInvoice(inv)}
+                                      className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-black px-3 py-1.5 rounded-lg border border-amber-200 text-[10px] flex items-center gap-1.5 transition cursor-pointer"
+                                    >
+                                      <span>{isAr ? 'تعديل الفاتورة' : 'Edit invoice'}</span>
+                                    </button>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span>{inv.supplierName}</span>
+                                      <span>←</span>
+                                      <span className="font-extrabold text-blue-700 text-[11px]">{isAr ? `الأصناف المدرجة في الفاتورة رقم [${inv.invoiceNumber}]` : `Breakdown for ${inv.invoiceNumber}`}</span>
+                                    </div>
+                                  </h4>
+
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse text-right text-[11px]">
+                                      <thead>
+                                        <tr className="border-b border-slate-100 text-slate-400 font-bold bg-slate-50">
+                                          {!noExpiry && <th className="p-2 text-center">{isAr ? 'تاريخ الصلاحية الجديد' : 'Expiry set'}</th>}
+                                          <th className="p-2 text-center text-[#1D9E75]">{isAr ? 'سعر البيع مفرق الجديد ($)' : 'New Ret. Price ($)'}</th>
+                                          <th className="p-2 text-center">{isAr ? 'سعر الشراء تكلفة ($)' : 'Unit Cost ($)'}</th>
+                                          <th className="p-2 text-center">{isAr ? 'إجمالي تكلفة الصنف ($)' : 'Procurement cost ($)'}</th>
+                                          <th className="p-2 text-center">{isAr ? 'الكمية المشتراة' : 'Purchased Qty'}</th>
+                                          <th className="p-2 text-right">{isAr ? 'اسم المنتج' : 'Product name'}</th>
+                                          <th className="p-2 text-center w-8">#</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100">
+                                        {inv.items.map((i, sIdx) => {
+                                          return (
+                                            <tr key={i.id} className="hover:bg-slate-50">
+                                              
+                                              {!noExpiry && <td className="p-2 text-center font-mono text-slate-600 font-bold">
+                                                {i.expiryDate ? i.expiryDate : <span className="text-slate-300">—</span>}
+                                              </td>}
+
+                                              <td className="p-2 text-center font-mono text-emerald-700 font-black">
+                                                {i.newPriceUSD.toFixed(2)} $
+                                              </td>
+
+                                              <td className="p-2 text-center font-mono text-slate-600 font-bold">
+                                                {i.costPriceUSD.toFixed(2)} $
+                                                {(i.discountPercent || 0) > 0 && <span className="block text-[9px] text-emerald-700">-{i.discountPercent}% {isAr ? 'حسم' : 'off'}</span>}
+                                                {(i.taxRate || 0) > 0 && <span className="block text-[9px] text-amber-700">+{i.taxRate}% TVA</span>}
+                                              </td>
+
+                                              <td className="p-2 text-center font-mono text-slate-500 font-semibold bg-emerald-50/20">
+                                                {lineTotal(i).toFixed(2)} $
+                                              </td>
+
+                                              <td className="p-2 text-center font-mono font-bold text-slate-800">
+                                                {i.qty} {isAr ? 'قطعة' : 'pcs'}
+                                                {(i.freeQty || 0) > 0 && <span className="block text-[9px] text-sky-700">🎁 +{i.freeQty} {isAr ? 'مجاناً' : 'free'}</span>}
+                                              </td>
+
+                                              <td className="p-2 text-right font-bold text-slate-800">
+                                                {i.productName}
+                                              </td>
+
+                                              <td className="p-2 text-center text-slate-400 font-mono font-bold">
+                                                {sIdx + 1}
+                                              </td>
+
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+
+                                  {/* Subtotals & transportation cost & total */}
+                                  <div className="border-t border-slate-100 pt-3 flex flex-wrap items-center justify-between text-xs bg-slate-50/50 p-3 rounded-lg gap-3">
+                                    <div className="flex gap-4 items-center">
+                                      <span className="text-slate-500 font-bold">
+                                        {isAr ? 'الإجمالي العام للفاتورة:' : 'Grand Total:'}{' '}
+                                        <span className="font-mono font-black text-emerald-700 text-sm">
+                                          {inv.totalAmountUSD.toFixed(2)} $
+                                        </span>
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-4 items-center flex-row-reverse flex-wrap">
+                                      {(inv.discountUSD || 0) > 0 && (
+                                        <span className="inline-flex items-center gap-1 font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded">
+                                          {isAr ? 'الحسم: ' : 'Discount: '}
+                                          <strong className="font-mono text-emerald-900">-{(inv.discountUSD || 0).toFixed(2)} $</strong>
+                                        </span>
+                                      )}
+                                      {(inv.taxUSD || 0) > 0 && (
+                                        <span className="inline-flex items-center gap-1 font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
+                                          {isAr ? 'الضريبة (TVA): ' : 'VAT: '}
+                                          <strong className="font-mono text-amber-900">{(inv.taxUSD || 0).toFixed(2)} $</strong>
+                                        </span>
+                                      )}
+                                      {(inv.offerFreeItems || []).length > 0 && (
+                                        <span className="inline-flex items-center gap-1 font-bold bg-sky-50 text-sky-800 border border-sky-200 px-2.5 py-1 rounded">
+                                          {isAr ? 'عرض الفاتورة: ' : 'Invoice offer: '}
+                                          {(inv.offerFreeItems || []).map(o => `${o.productName} ×${o.qty}`).join('، ')}
+                                          <strong className="font-mono text-sky-900">({(inv.offerFreeValueUSD || 0).toFixed(2)} $)</strong>
+                                        </span>
+                                      )}
+                                      {inv.transportationCostUSD !== undefined && inv.transportationCostUSD > 0 && (
+                                        <span className="inline-flex items-center gap-1 text-slate-600 font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded">
+                                          {isAr ? `تكاليف المواصلات والشحن: ` : `Transportation Cost: `}
+                                          <strong className="font-mono text-amber-900">{inv.transportationCostUSD.toFixed(2)} $</strong>
+                                        </span>
+                                      )}
+                                      <span className="text-slate-500 font-medium">
+                                        {isAr ? 'قيمة السلع الثنائية:' : 'Items cost:'}{' '}
+                                        <strong className="font-mono bg-slate-100 text-slate-800 px-2 py-0.5 rounded">
+                                          {(inv.totalAmountUSD - (inv.transportationCostUSD || 0) - (inv.taxUSD || 0)).toFixed(2)} $
+                                        </strong>
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* PROCUREMENT BILL VIEW MODAL FOR PRINT & PDF */}
+      {activePrintPurchase && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans no-print text-right text-slate-800" id="print-purchase-modal">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden border border-slate-100"
+          >
+            <button 
+              onClick={() => setActivePrintPurchase(null)}
+              className="absolute top-4 left-4 text-slate-400 hover:text-slate-650 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex-1 overflow-y-auto space-y-6 pr-1 text-right" id="purchase-invoice-print-area">
+              {/* Header Info */}
+              <div className="border-b pb-4 text-center mt-4">
+                <h3 className="text-xl font-black text-slate-800">سند استلام بضائع وفاتورة شراء</h3>
+                <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest">Procurement Order & Goods Received Note</p>
+                <div className="flex justify-between items-center mt-4 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-150 text-xs gap-3">
+                  <div className="text-right">
+                    <span className="text-slate-500 block">رقم الفاتورة المعتمد</span>
+                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">{activePrintPurchase.invoiceNumber}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-slate-500 block">تاريخ الشراء والتدوين</span>
+                    <span className="font-mono font-bold text-slate-900 mt-0.5 block">{activePrintPurchase.date}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-slate-500 block">الشركة الموردة</span>
+                    <span className="font-bold text-blue-700 mt-0.5 block">{activePrintPurchase.supplierName}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div>
+                <h4 className="font-bold text-slate-800 text-xs mb-2 border-r-2 border-indigo-500 pr-2">الأصناف والسلع التي تم توريدها للمستودع:</h4>
+                <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                  <table className="w-full text-right border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-[11px]">
+                        {!noExpiry && <th className="p-3 text-center">{isAr ? 'الصلاحية' : 'Expiry'}</th>}
+                        <th className="p-3 text-center">{isAr ? 'سعر البيع الجديد' : 'New Price'}</th>
+                        <th className="p-3 text-center">{isAr ? 'سعر الكلفة' : 'Cost Cost'}</th>
+                        <th className="p-3 text-center">{isAr ? 'الكمية المستلمة' : 'Supplied Qty'}</th>
+                        <th className="p-3 pr-4">{isAr ? 'اسم المنتج' : 'Product Target'}</th>
+                        <th className="p-3 text-center w-8">#</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {activePrintPurchase.items.map((it, idx) => (
+                        <tr key={it.id} className="hover:bg-slate-50/50">
+                          {!noExpiry && <td className="p-3 text-center font-mono font-semibold text-slate-600">
+                            {it.expiryDate || <span className="text-slate-300">—</span>}
+                          </td>}
+                          <td className="p-3 text-center font-mono font-extrabold text-emerald-600">
+                            {it.newPriceUSD.toFixed(1)} $
+                          </td>
+                          <td className="p-3 text-center font-mono font-bold text-slate-700">
+                            {it.costPriceUSD.toFixed(1)} $
+                            {(it.discountPercent || 0) > 0 && <span className="block text-[9px] text-emerald-700">-{it.discountPercent}% {isAr ? 'حسم' : 'off'}</span>}
+                            {(it.taxRate || 0) > 0 && <span className="block text-[9px] text-amber-700">+{it.taxRate}% TVA</span>}
+                          </td>
+                          <td className="p-3 text-center font-mono font-black text-slate-850">
+                            {it.qty} {isAr ? 'قطع' : 'pcs'}
+                            {(it.freeQty || 0) > 0 && <span className="block text-[9px] text-sky-700">🎁 +{it.freeQty} {isAr ? 'مجاناً' : 'free'}</span>}
+                          </td>
+                          <td className="p-3 pr-4 font-bold text-slate-800">
+                            {it.productName}
+                          </td>
+                          <td className="p-3 text-center font-mono font-bold text-slate-400">
+                            {idx + 1}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Invoice Summary Card */}
+              {(() => {
+                const transCost = activePrintPurchase.transportationCostUSD || 0;
+                const taxCost = activePrintPurchase.taxUSD || 0;
+                const discountCost = activePrintPurchase.discountUSD || 0;
+                const itemsCost = activePrintPurchase.totalAmountUSD - transCost - taxCost + discountCost; // before discount
+
+                return (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center text-xs gap-4">
+                    <div className="text-right">
+                      <span className="text-slate-400 block">{isAr ? 'ملاحظة الفاتورة المرفقة' : 'Supplier Attached Note'}</span>
+                      <span className="text-slate-700 font-medium block mt-0.5">{activePrintPurchase.note || '—'}</span>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-slate-400 block">{isAr ? 'طريقة تسوية الاستحقاق' : 'Financial Status'}</span>
+                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold mt-1 ${activePrintPurchase.paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'}`}>
+                        {activePrintPurchase.paymentStatus === 'paid' ? (isAr ? 'مدفوع نقداً بالكامل' : 'Paid in cash') : (isAr ? 'دين بالآجل على الحساب' : 'On Credit')}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 text-right font-sans text-[11px] bg-slate-100/50 p-2.5 rounded-lg border border-slate-200">
+                      <div className="flex justify-between gap-6">
+                        <span className="font-mono text-slate-700">{itemsCost.toFixed(2)} $</span>
+                        <span className="text-slate-500">{isAr ? 'قيمة السلع:' : 'Items Value:'}</span>
+                      </div>
+                      {discountCost > 0 && (
+                        <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
+                          <span className="font-mono text-emerald-700">-{discountCost.toFixed(2)} $</span>
+                          <span className="text-slate-500">{isAr ? 'الحسم:' : 'Discount:'}</span>
+                        </div>
+                      )}
+                      {taxCost > 0 && (
+                        <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
+                          <span className="font-mono text-amber-800">+{taxCost.toFixed(2)} $</span>
+                          <span className="text-slate-500">{isAr ? 'الضريبة (TVA):' : 'VAT:'}</span>
+                        </div>
+                      )}
+                      {transCost > 0 && (
+                        <div className="flex justify-between gap-6 border-t border-slate-200/50 pt-1">
+                          <span className="font-mono text-amber-800">+{transCost.toFixed(2)} $</span>
+                          <span className="text-slate-500">{isAr ? 'المواصلات والشحن:' : 'Transportation:'}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-left bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl">
+                      <span className="text-emerald-700 font-bold block text-[10px]">{isAr ? 'إجمالي المدفوعات للمورد' : 'Disbursement Total'}</span>
+                      <span className="text-lg font-black font-mono text-emerald-600 block mt-0.5">{activePrintPurchase.totalAmountUSD.toFixed(2)} $</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Print trigger and exit buttons */}
+            <div className="flex gap-2 text-xs font-sans border-t pt-4 mt-4 select-none">
+              <button 
+                onClick={() => {
+                  let shop = { name: '', logo: undefined as string | undefined };
+                  try {
+                    const st = JSON.parse(storage.getItem('pos_settings') || '{}');
+                    shop = { name: st.shopName || '', logo: st.shopLogo || st.receiptLogoBase64 || undefined };
+                  } catch {}
+                  printPurchaseInvoice(activePrintPurchase, shop, lang);
+                }}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Printer className="w-4 h-4" />
+                <span>طباعة أو سحب كـ PDF/📄</span>
+              </button>
+              <button 
+                onClick={() => setActivePrintPurchase(null)}
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3.5 rounded-xl transition cursor-pointer"
+              >
+                إغلاق نافذة المعاينة
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* 2. SMART INVOICE CAMERA SCANNER MODAL OVERLAY */}
+      {showInvoiceScannerModal && (
+        <div className="fixed inset-0 bg-slate-900/85 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 text-right space-y-5 flex flex-col justify-between"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b dark:border-slate-800 pb-4">
+              <button 
+                type="button"
+                onClick={() => setShowInvoiceScannerModal(false)}
+                className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              
+              <div className="flex items-center gap-2.5 flex-row-reverse text-[#1D9E75] font-extrabold text-sm sm:text-base">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-xl text-emerald-600 dark:text-emerald-400">
+                  <Camera className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-slate-900 dark:text-white font-black">{isAr ? 'ماسح باركود الفواتير الذكي وعين الكاميرا' : 'Smart Camera Barcode Invoice OCR'}</h3>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium font-sans">{isAr ? 'استخرج السلع، الكميات، والتكاليف من فواتير الموردين تلقائياً' : 'Automated procurement intake using advanced scanning mechanics'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Scanning active processing animation */}
+            {isScanningActive ? (
+              <div className="p-10 flex flex-col items-center justify-center space-y-6 text-center font-sans">
+                <div className="relative w-28 h-28 flex items-center justify-center">
+                  <div className="absolute inset-0 border-4 border-dashed border-indigo-600 rounded-full animate-[spin_10s_linear_infinite]" />
+                  <div className="absolute inset-2 bg-indigo-50 dark:bg-indigo-950/40 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-12 h-12 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                  </div>
+                  <div className="absolute -top-1 -left-1 text-yellow-500">✨</div>
+                </div>
+
+                <div className="space-y-2 max-w-md">
+                  <h4 className="text-sm font-black text-slate-800 dark:text-white font-sans">{isAr ? 'معالجة صورة الفاتورة برؤية الآلة...' : 'Executing OCR reading passes on paper matrix...'}</h4>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-extrabold font-sans animate-pulse">{scanningStepName}</p>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full max-w-sm bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-indigo-600 h-full transition-all duration-300"
+                    style={{ width: `${scanningProgress}%` }}
+                  />
+                </div>
+                <span className="font-mono text-xs font-black text-slate-500">{scanningProgress}%</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
+                
+                {/* Visual Viewfinder representation column */}
+                <div className="space-y-4">
+                  <div className="bg-slate-950 rounded-2xl aspect-video sm:aspect-square relative overflow-hidden flex flex-col items-center justify-center border border-slate-800 text-center text-xs group">
+                    
+                    {/* Cam view or canvas holding video feed */}
+                    <video 
+                      ref={videoRef}
+                      autoPlay 
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover opacity-85"
+                    />
+
+                    {/* Camera scan framing box */}
+                    <div className="absolute inset-8 border border-dashed border-emerald-400/60 rounded-xl flex items-center justify-center pointer-events-none select-none">
+                      <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-emerald-400" />
+                      <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-emerald-400" />
+                      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-emerald-400" />
+                      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-emerald-400" />
+                      
+                      {/* Scan red laser line animates up and down */}
+                      <div className="w-full bg-red-500/80 h-0.5 shadow-[0_0_10px_2px_rgba(239,68,68,0.8)] absolute left-0 right-0 animate-[bounce_3s_infinite_linear]" />
+                    </div>
+
+                    {/* Camera feedback text indicator if stream is inactive */}
+                    <div className="absolute bottom-3 left-3 bg-slate-900/85 backdrop-blur-xs px-2.5 py-1 rounded-md text-[10px] font-sans flex items-center gap-1.5 text-emerald-400 z-10 pointer-events-none">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping animate-pulse" />
+                      <span className="font-mono font-black tracking-widest text-[9px] text-[#1D9E75]">LENS OVERLAY</span>
+                    </div>
+
+                    <div className="p-4 z-10 text-slate-400 font-sans pointer-events-none select-none max-w-xs transition duration-300 group-hover:opacity-10 opacity-70">
+                      <Camera className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                      <p className="font-bold text-[10px] text-slate-300">{isAr ? 'عدسة الكاميرا نشطة الآن' : 'Webcam module ready'}</p>
+                      <p className="text-[9px] text-slate-500 mt-1">{isAr ? 'ضع الفاتورة أمام الكاميرا لمسحها أو اضغط على عينة جاهزة من اليسار للتجربة فوراً' : 'Face invoice towards camera lens or click a fast preset to simulated OCR'}</p>
+                    </div>
+                  </div>
+
+                  {/* Drag-n-drop Upload trigger zone alternative */}
+                  <div className="bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-250 dark:border-slate-800 p-4 rounded-xl text-center relative hover:bg-slate-100 dark:hover:bg-slate-800/80 transition">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const sampleUploadItems = [
+                            { barcode: '1111', qty: 12, costPriceUSD: 11.00 },
+                            { barcode: '4444', qty: 30, costPriceUSD: 0.70 },
+                            { barcode: '1212', qty: 15, costPriceUSD: 7.20 }
+                          ];
+                          handleExecuteInvoiceScan(sampleUploadItems, 'شركة الموزع العام للغذائيات', `SCN-${Math.floor(100000 + Math.random() * 900000)}`);
+                        }
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    />
+                    <Upload className="w-5 h-5 text-indigo-500 mx-auto mb-1.5 animate-bounce" />
+                    <span className="font-sans block text-slate-500 font-extrabold text-[11px]">{isAr ? 'عوضاً عن الكاميرا، ارفع ملف صورة الفاتورة' : 'Or drag and drop document image here'}</span>
+                    <span className="text-[10px] block text-slate-400 mt-1">{isAr ? 'بصيغة PNG, JPG أو مصورة مسبقاً' : 'PNG, JPEG, or pre-scanned receipt formats'}</span>
+                  </div>
+                </div>
+
+                {/* Left column: Choose from Preset items and templates for rapid demonstration click */}
+                <div className="space-y-4 font-sans text-right">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 block font-bold mb-2">
+                    {isAr ? 'للتجريب السريع، انقر على نموذج فاتورة مورّد جاهز لتشغيل محاكي الذكاء الاصطناعي:' : 'Quick Testing: click a supplier receipt preset to execute simulated OCR parsing:'}
+                  </span>
+
+                  <div className="space-y-3">
+                    
+                    {/* Template 1 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const items = [
+                          { barcode: '1111', qty: 24, costPriceUSD: 10.50 },
+                          { barcode: '2222', qty: 15, costPriceUSD: 2.90 },
+                          { barcode: '3333', qty: 30, costPriceUSD: 4.50 }
+                        ];
+                        handleExecuteInvoiceScan(items, 'مؤسسة الهدى للألبان والأجبان', 'INV-HOD-9401');
+                      }}
+                      className="w-full text-right bg-slate-50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 border border-slate-205 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-900 rounded-xl p-3 px-3.5 transition flex flex-col gap-2 cursor-pointer group hover:scale-[1.01]"
+                    >
+                      <div className="flex items-center justify-between w-full flex-row-reverse">
+                        <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded text-[9px] font-black">{isAr ? 'مواد مبردة ألبان' : 'Chilled Dairy'}</span>
+                        <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-800 dark:group-hover:text-[#1D9E75] flex items-center gap-1">
+                          <span>مؤسسة الهدى للألبان والأجبان</span>
+                        </h5>
+                      </div>
+                      
+                      <div className="flex justify-between text-[10px] text-slate-400 w-full font-mono flex-row-reverse">
+                        <span>رقم الفاتورة: #INV-HOD-9401</span>
+                        <span className="font-sans text-slate-500 font-bold">{isAr ? 'عدد السلع: 3 أصناف مختلفة' : 'Variants: 3 items'}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-150/50 dark:bg-slate-800 p-1.5 rounded-lg w-full text-right font-sans leading-relaxed">
+                        {isAr ? 'حليب نيدو مجفف [24 قطعة] • لبنة بلدية [15 قطعة] • قشقوان عكاوي [30 قطعة]' : 'Nido dairy, Labneh wholesale container packs'}
+                      </div>
+                    </button>
+
+                    {/* Template 2 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const items = [
+                          { barcode: '6666', qty: 72, costPriceUSD: 1.05 },
+                          { barcode: '7777', qty: 48, costPriceUSD: 0.75 }
+                        ];
+                        handleExecuteInvoiceScan(items, 'بيبسي لبنان للتوزيع', 'INV-PEP-3029');
+                      }}
+                      className="w-full text-right bg-slate-50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 border border-slate-205 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-900 rounded-xl p-3 px-3.5 transition flex flex-col gap-2 cursor-pointer group hover:scale-[1.01]"
+                    >
+                      <div className="flex items-center justify-between w-full flex-row-reverse">
+                        <span className="bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded text-[9px] font-black">{isAr ? 'مرطبات ومشروبات' : 'Beverages'}</span>
+                        <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-800 dark:group-hover:text-[#1D9E75] flex items-center gap-1">
+                          <span>بيبسي لبنان للتوزيع والوكيل</span>
+                        </h5>
+                      </div>
+                      
+                      <div className="flex justify-between text-[10px] text-slate-400 w-full font-mono flex-row-reverse">
+                        <span>رقم الفاتورة: #INV-PEP-3029</span>
+                        <span className="font-sans text-slate-500 font-bold">{isAr ? 'عدد السلع: صنفين كبيرين' : 'Variants: 2 items'}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-150/50 dark:bg-slate-800 p-1.5 rounded-lg w-full text-right font-sans leading-relaxed">
+                        {isAr ? 'بيبسي عائلي 2.25 لتر [72 قطعة] • عصير راني تفاح [48 قطعة]' : 'Pepsi family sizes, Rani apple juice packs'}
+                      </div>
+                    </button>
+
+                    {/* Template 3 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const items = [
+                          { barcode: '8888', qty: 36, costPriceUSD: 2.15 },
+                          { barcode: '9999', qty: 120, costPriceUSD: 0.50 },
+                          { barcode: '1122', qty: 18, costPriceUSD: 5.80 }
+                        ];
+                        handleExecuteInvoiceScan(items, 'شركة الموزع العام للغذائيات', 'INV-GEN-5541');
+                      }}
+                      className="w-full text-right bg-slate-50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 border border-slate-205 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-900 rounded-xl p-3 px-3.5 transition flex flex-col gap-2 cursor-pointer group hover:scale-[1.01]"
+                    >
+                      <div className="flex items-center justify-between w-full flex-row-reverse">
+                        <span className="bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded text-[9px] font-black">{isAr ? 'معلبات ومواد جافة' : 'Dry Goods'}</span>
+                        <h5 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-800 dark:group-hover:text-[#1D9E75] flex items-center gap-1">
+                          <span>شركة الموزع العام للغذائيات</span>
+                        </h5>
+                      </div>
+                      
+                      <div className="flex justify-between text-[10px] text-slate-400 w-full font-mono flex-row-reverse">
+                        <span>رقم الفاتورة: #INV-GEN-5541</span>
+                        <span className="font-sans text-slate-500 font-bold">{isAr ? 'عدد السلع: 3 أصناف أساسية' : 'Variants: 3 items'}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-150/50 dark:bg-slate-800 p-1.5 rounded-lg w-full text-right font-sans leading-relaxed">
+                        {isAr ? 'حلاوة طحينية [36 قطعة] • سردين فيله حار [120 علبة] • أرز بسمتي هندي ممتاز [18 كيس]' : 'Halawa 400g, Sardines, India rice bags'}
+                      </div>
+                    </button>
+
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Modal Footer warning & controls */}
+            <div className="flex items-center justify-between border-t dark:border-slate-800 pt-4 text-xs select-none">
+              <span className="text-[10px] text-slate-400 font-semibold block text-right">
+                {isAr ? 'يتم تطبيق نسبة هامش الربح الافتراضي تلقائياً لتسعير المنتجات فور استخلاص التكلفة من الكاميرا.' : 'Margin calculations computed dynamically from dynamic settings.'}
+              </span>
+              <button 
+                type="button"
+                onClick={() => setShowInvoiceScannerModal(false)}
+                className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-5 py-2.5 rounded-xl transition font-black cursor-pointer"
+              >
+                {isAr ? 'إلغاء وإغلاق' : 'Cancel & Close'}
+              </button>
+            </div>
+
+          </motion.div>
+        </div>
+      )}
+
+    </div>
+  );
+}

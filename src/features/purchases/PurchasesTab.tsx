@@ -31,6 +31,8 @@ import * as storage from '../../lib/storage';
 import { VAT_PRESETS, lineGross, lineDiscount, lineTax, lineTotal, landedCost, bonusFor, sumLines, costFactor, landedCostWithOffer, offerFreeValue } from './purchaseMath';
 import { printPurchaseInvoice } from './purchaseInvoicePrint';
 import { parseSerialList } from '../../lib/serials';
+import { CalcInput } from '../../components/CalcInput';
+import { evaluateCalc } from '../../lib/calc';
 
 const PURCHASE_DRAFT_KEY = 'pos_purchase_draft';
 
@@ -45,7 +47,7 @@ function CostAfterTaxInput({ id, cost, taxRate, discountPercent, onCost, isAr, c
   const shown = cost > 0 ? String(Number((cost * factor).toFixed(3))) : '';
   const [text, setText] = useState<string | null>(null); // what is being typed, null when not editing
   const commit = (raw: string) => {
-    const v = parseFloat(raw);
+    const v = evaluateCalc(raw) ?? NaN; // a sum such as 17.4/12 works here too
     if (v >= 0 && factor > 0) onCost(Number((v / factor).toFixed(4)));
     setText(null);
   };
@@ -195,6 +197,10 @@ export function PurchasesTab({
   const [quickMarginVal, setQuickMarginVal] = useState<string>('');
   const [quickMarkupVal, setQuickMarkupVal] = useState<string>('');
   const [draftMarginInputs, setDraftMarginInputs] = useState<{[productId: string]: string}>({});
+  const [showOffer, setShowOffer] = useState(false); // the invoice-offer box, opened by hand
+  const [showNote, setShowNote] = useState(false);
+  const [showTransport, setShowTransport] = useState(false);
+  const [openDeals, setOpenDeals] = useState<Set<string>>(() => new Set()); // draft lines with the supplier-deal box opened by hand
   const [draftMarkupInputs, setDraftMarkupInputs] = useState<{[productId: string]: string}>({});
   const [transportationCost, setTransportationCost] = useState<string>(savedDraft?.transportationCost || '0');
   // A saved invoice opened for editing: saving replaces it and corrects the stock
@@ -933,35 +939,31 @@ export function PurchasesTab({
 
   return (
     <div className={`space-y-6 ${subTab === 'new' ? 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col' : ''}`} id="tab-purchases-manager">
-      {/* 1. Header with custom icon and title representing corporate quality */}
-      <div className="bg-gradient-to-l from-emerald-600 to-[#1D9E75] text-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-right">
-        <div>
-          <h2 className="text-xl font-black flex items-center gap-2.5 justify-end">
-            <span className="bg-white/20 p-2 rounded-xl">
-              <Truck className="w-6 h-6 text-yellow-300" />
-            </span>
+      {/* 1. A slim title bar: the title, what saving does, and the two views */}
+      <div className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-right" id="purchase-title-bar">
+        <div className="min-w-0">
+          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <Truck className="w-5 h-5 text-slate-500 shrink-0" />
             {isAr ? 'فاتورة شراء بضائع وتحديث الأسعار' : 'Inventory Procurement & Purchase Invoices'}
           </h2>
-          <p className="text-xs text-emerald-100 font-sans mt-2 max-w-xl">
-            {isAr 
-              ? 'صندوق إدخال البضائع والطلبيات الجديدة للمخزن. عند حفظ الفاتورة، سيتم إضافة كميتها تلقائياً للمخازن وتحديث أسعار التكلفة وسعر البيع للرف في النظام مباشرة.'
-              : 'Supply room system. Adding items increases current quantities on floor, archives purchasing costs, and instantly edits checkout prices.'}
+          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+            {isAr
+              ? 'عند حفظ الفاتورة بتنضاف الكميات للمخزن وبتتحدّث أسعار الكلفة والبيع.'
+              : 'Saving adds the quantities to stock and updates cost and selling prices.'}
           </p>
         </div>
-        
-        {/* Toggle subtabs */}
-        <div className="bg-white/10 p-1.5 rounded-xl border border-white/10 flex items-center gap-1">
-          <button 
-            onClick={() => setSubTab('ledger')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition ${subTab === 'ledger' ? 'bg-white text-emerald-800' : 'text-white hover:bg-white/10'}`}
-          >
-            {isAr ? 'سجل الفواتير والموردين' : 'Ledger Records'}
-          </button>
-          <button 
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg shrink-0" role="tablist">
+          <button
             onClick={() => setSubTab('new')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition ${subTab === 'new' ? 'bg-white text-emerald-800' : 'text-white hover:bg-white/10'}`}
+            className={`px-4 py-1.5 rounded-md text-xs font-bold transition ${subTab === 'new' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
           >
             {isAr ? 'إدخال فاتورة شراء جديدة' : 'New Supply Receipt'}
+          </button>
+          <button
+            onClick={() => setSubTab('ledger')}
+            className={`px-4 py-1.5 rounded-md text-xs font-bold transition ${subTab === 'ledger' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            {isAr ? 'سجل الفواتير والموردين' : 'Ledger Records'}
           </button>
         </div>
       </div>
@@ -1007,21 +1009,33 @@ export function PurchasesTab({
               </button>
 
               <div className="space-y-3 font-sans text-xs">
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'رقم الفاتورة (الـ POS أو الموزع):' : 'Invoice Reference ID:'}</label>
-                  <input 
-                    type="text" 
-                    value={invoiceNumber}
-                    onChange={e => setInvoiceNumber(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-center text-slate-800 font-extrabold"
-                    placeholder="رقم الفاتورة"
-                  />
+                {/* Number and date on one line */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">{isAr ? 'رقم الفاتورة' : 'Invoice no.'}</label>
+                    <input
+                      type="text"
+                      value={invoiceNumber}
+                      onChange={e => setInvoiceNumber(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-center text-slate-800 font-extrabold"
+                      placeholder="رقم الفاتورة"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">{isAr ? 'تاريخ الفاتورة' : 'Invoice date'}</label>
+                    <input
+                      type="date"
+                      value={invoiceDate}
+                      onChange={e => setInvoiceDate(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-center font-mono text-slate-800 font-semibold"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'اسم المورّد / الموزّع (مطلوب):' : 'Supplier Name (Required):'}</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'اسم المورّد / الموزّع *' : 'Supplier name *'}</label>
+                  <input
+                    type="text"
                     value={supplierName}
                     onChange={e => setSupplierName(e.target.value)}
                     list="suppliers-list-datalist"
@@ -1037,105 +1051,102 @@ export function PurchasesTab({
                   </datalist>
                 </div>
 
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'تاريخ الفاتورة:' : 'Invoice Date:'}</label>
-                  <input 
-                    type="date" 
-                    value={invoiceDate}
-                    onChange={e => setInvoiceDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-center font-mono text-slate-800 font-semibold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'حالة الدفع للموزّع:' : 'Payment Terms:'}</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button 
-                      onClick={() => setPaymentStatus('paid')}
-                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border ${paymentStatus === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-400 font-black' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-transparent'}`}
-                    >
-                      {isAr ? 'تم الدفع (كاش/نقداً)' : 'Paid Cash'}
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setPaymentStatus('pending')}
-                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border ${paymentStatus === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-400 font-black animate-pulse' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-transparent'}`}
-                    >
-                      {isAr ? 'ذمم/آجل (على الحساب)' : 'Pending/Credit'}
-                    </button>
+                {/* Payment and destination side by side */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">{isAr ? 'الدفع' : 'Payment'}</label>
+                    <div className="flex bg-slate-100 p-1 rounded-lg gap-1" role="group">
+                      <button type="button" onClick={() => setPaymentStatus('paid')}
+                        className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition cursor-pointer ${paymentStatus === 'paid' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}>
+                        {isAr ? 'مدفوعة' : 'Paid'}
+                      </button>
+                      <button type="button" onClick={() => setPaymentStatus('pending')}
+                        className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition cursor-pointer ${paymentStatus === 'pending' ? 'bg-white text-amber-800 shadow-xs' : 'text-slate-500'}`}>
+                        {isAr ? 'آجل / دين' : 'On credit'}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">{isAr ? 'البضاعة بتروح عـ' : 'Goes to'}</label>
+                    <div className="flex bg-slate-100 p-1 rounded-lg gap-1" role="group">
+                      <button type="button" onClick={() => setPurchaseDestination('shop')}
+                        className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition cursor-pointer ${purchaseDestination === 'shop' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}>
+                        {isAr ? 'المحل' : 'Shop'}
+                      </button>
+                      <button type="button" onClick={() => setPurchaseDestination('warehouse')}
+                        className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition cursor-pointer ${purchaseDestination === 'warehouse' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'}`}>
+                        {isAr ? 'المستودع' : 'Warehouse'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-slate-700 font-black mb-1 flex items-center justify-end gap-1">
-                    <span>{isAr ? 'وجهة تخزين السلع المستلمة:' : 'Storage/Refill Destination:'}</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button 
-                      type="button"
-                      onClick={() => setPurchaseDestination('shop')}
-                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border flex items-center justify-center gap-1.5 cursor-pointer ${purchaseDestination === 'shop' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
-                    >
-                      <span>{isAr ? 'المحل مباشرة' : 'Direct to Shop'}</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setPurchaseDestination('warehouse')}
-                      className={`py-2 px-3 rounded-lg text-xs font-bold transition border flex items-center justify-center gap-1.5 cursor-pointer ${purchaseDestination === 'warehouse' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'}`}
-                    >
-                      <span>{isAr ? 'المستودع / المخزن' : 'Warehouse'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-500 font-bold mb-1">{isAr ? 'ملاحظات إضافية على التموين:' : 'Internal Stock Note:'}</label>
-                  <textarea 
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    rows={2}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 placeholder-slate-400"
-                    placeholder={isAr ? 'ملاحظات حول طريقة الاستلام أو خصومات إضافية...' : 'e.g. Received by storekeeper'}
-                  />
-                </div>
-
-                {/* Transportation / Delivery Expenses */}
-                <div className="bg-emerald-50/20 p-3 bg-[#EAF7FA]/20 border border-emerald-100/50 rounded-xl space-y-2 text-right">
-                  <label className="block text-slate-700 font-black text-xs flex items-center justify-end gap-1.5">
-                    <span>{isAr ? 'تكاليف المواصلات / الشحن ($):' : 'Transportation / Shipment Cost ($):'}</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={transportationCost}
-                      onChange={e => setTransportationCost(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-lg p-2 font-mono text-center text-slate-800 font-bold text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                      placeholder="0.00"
+                {/* Notes and transport: open on a tap, or by themselves when they hold something */}
+                {(showNote || !!note) ? (
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">{isAr ? 'ملاحظات' : 'Notes'}</label>
+                    <textarea
+                      value={note}
+                      onChange={e => setNote(e.target.value)}
+                      rows={2}
+                      autoFocus={showNote && !note}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 placeholder-slate-400"
+                      placeholder={isAr ? 'ملاحظات حول طريقة الاستلام أو خصومات إضافية...' : 'e.g. Received by storekeeper'}
                     />
-                    <button
-                      type="button"
-                      onClick={handleDistributeTransportationCost}
-                      disabled={draftItems.length === 0 || (parseFloat(transportationCost) || 0) <= 0}
-                      className={`px-3 text-[10px] font-black rounded-lg transition shrink-0 cursor-pointer ${
-                        draftItems.length > 0 && (parseFloat(transportationCost) || 0) > 0
-                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 transform active:scale-95 shadow-xs'
-                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                      }`}
-                      title={isAr ? 'توزيع وزيادة تكلفة المواصلات على رأس مال المنتجات بالتناسب تلقائياً' : 'Distribute delivery cost proportionally inside items cost prices'}
-                    >
-                      {isAr ? 'توزيع تناسبي' : 'Amortize'}
-                    </button>
                   </div>
-                  <span className="text-[9px] text-slate-550 block leading-relaxed">
-                    {isAr 
-                      ? 'اضغط "توزيع تناسبي" لزيادة كلفة السلع تلقائياً بناءً على وزنها من تكلفة النقل الإجمالية، أو اتركها لإضافتها لدفتر الفواتير.' 
-                      : 'Toggle "Amortize" to add transport expenses on top of unit costs, or leave it to record strictly on the ledger.'}
-                  </span>
-                </div>
+                ) : null}
+                {(showTransport || (parseFloat(transportationCost) || 0) > 0) ? (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2" id="purchase-transport-box">
+                    <label className="block text-slate-700 font-black text-xs">{isAr ? 'المواصلات / الشحن ($)' : 'Transport / shipping ($)'}</label>
+                    <div className="flex gap-2">
+                      <CalcInput
+                        min="0"
+                        value={transportationCost}
+                        onChange={e => setTransportationCost(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2 font-mono text-center text-slate-800 font-bold text-xs focus:outline-none"
+                        placeholder="0.00"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleDistributeTransportationCost}
+                        disabled={draftItems.length === 0 || (parseFloat(transportationCost) || 0) <= 0}
+                        className={`px-3 text-[11px] font-black rounded-lg transition shrink-0 cursor-pointer ${
+                          draftItems.length > 0 && (parseFloat(transportationCost) || 0) > 0
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                        }`}
+                        title={isAr ? 'توزيع وزيادة تكلفة المواصلات على رأس مال المنتجات بالتناسب تلقائياً' : 'Distribute delivery cost proportionally inside items cost prices'}
+                      >
+                        {isAr ? 'توزيع تناسبي' : 'Amortize'}
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-slate-500 block leading-relaxed">
+                      {isAr
+                        ? '"توزيع تناسبي" بيزيد كلفة كل صنف حسب حصّته، أو اتركها لتنسجّل عالفاتورة بس.'
+                        : '"Amortize" adds it to each item\'s cost by its share, or leave it on the invoice only.'}
+                    </span>
+                  </div>
+                ) : null}
+                {(!(showNote || !!note) || !(showTransport || (parseFloat(transportationCost) || 0) > 0)) && (
+                  <div className="flex flex-wrap gap-2">
+                    {!(showNote || !!note) && (
+                      <button type="button" id="btn-open-note" onClick={() => setShowNote(true)}
+                        className="text-[11px] font-bold text-slate-600 hover:bg-slate-100 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer">
+                        {isAr ? '+ ملاحظة' : '+ Note'}
+                      </button>
+                    )}
+                    {!(showTransport || (parseFloat(transportationCost) || 0) > 0) && (
+                      <button type="button" id="btn-open-transport" onClick={() => setShowTransport(true)}
+                        className="text-[11px] font-bold text-slate-600 hover:bg-slate-100 border border-dashed border-slate-300 rounded-lg px-3 py-1.5 cursor-pointer">
+                        {isAr ? '+ مواصلات / شحن' : '+ Transport'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
+              {/* Total and save: kept in view at the bottom of the column */}
+              <div className="lg:sticky lg:bottom-0 bg-white pt-2 space-y-3 z-10" id="purchase-total-sticky">
               {/* Total Invoice Draft Calculation Card */}
               {(() => {
                 const totalItemsCost = sumLines(draftItems, lineGross);
@@ -1211,6 +1222,7 @@ export function PurchasesTab({
                   ? (isAr ? 'حفظ التعديلات على الفاتورة' : 'Save changes to the invoice')
                   : (isAr ? 'ترحيل الفاتورة وتحديث مخازن المحل' : 'Save Invoice & Refill Stocks')}
               </button>
+              </div>
             </div>
           </div>
 
@@ -1314,7 +1326,7 @@ export function PurchasesTab({
                     <div className="flex flex-wrap items-end gap-3 bg-indigo-50/60 border border-indigo-100 rounded-lg p-2.5">
                       <div className="w-28">
                         <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-upc">{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
-                        <input id="quick-add-upc" type="number" min="0" value={newProdUpc} placeholder="12"
+                        <CalcInput id="quick-add-upc" min="0" value={newProdUpc} placeholder="12"
                           onChange={e => {
                             const upc = parseInt(e.target.value) || 0;
                             setNewProdUpc(e.target.value);
@@ -1325,7 +1337,7 @@ export function PurchasesTab({
                       </div>
                       <div className="w-28">
                         <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-cartons">{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
-                        <input id="quick-add-cartons" type="number" min="0" step="any" value={newProdCartons} placeholder="5" disabled={!(parseInt(newProdUpc) > 0)}
+                        <CalcInput id="quick-add-cartons" min="0" step="any" value={newProdCartons} placeholder="5" disabled={!(parseInt(newProdUpc) > 0)}
                           onChange={e => {
                             setNewProdCartons(e.target.value);
                             const upc = parseInt(newProdUpc) || 0;
@@ -1335,7 +1347,7 @@ export function PurchasesTab({
                       </div>
                       <div className="w-32">
                         <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-carton-price">{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
-                        <input id="quick-add-carton-price" type="number" min="0" step="any" value={newProdCartonPrice} placeholder="0.00" disabled={!(parseInt(newProdUpc) > 0)}
+                        <CalcInput id="quick-add-carton-price" min="0" step="any" value={newProdCartonPrice} placeholder="0.00" disabled={!(parseInt(newProdUpc) > 0)}
                           onChange={e => {
                             setNewProdCartonPrice(e.target.value);
                             const upc = parseInt(newProdUpc) || 0;
@@ -1351,9 +1363,8 @@ export function PurchasesTab({
                     <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                       <div>
                         <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة:' : 'Received Qty:'}</label>
-                        <input
+                        <CalcInput
                           id="quick-add-qty"
-                          type="number"
                           inputMode="decimal"
                           min="0"
                           step="any"
@@ -1383,9 +1394,8 @@ export function PurchasesTab({
                       <div>
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
                         <div className="flex gap-1">
-                          <input
+                          <CalcInput
                             id="quick-add-vat"
-                            type="number"
                             step="0.01"
                             min="0"
                             value={newProdTaxRate}
@@ -1463,9 +1473,8 @@ export function PurchasesTab({
                     <div className="flex flex-wrap items-end gap-3 text-xs bg-white/70 border border-slate-200 rounded-lg p-2.5">
                       <div className="w-32">
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-discount">{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
-                        <input
+                        <CalcInput
                           id="quick-add-discount"
-                          type="number"
                           min="0"
                           max="100"
                           step="any"
@@ -1478,9 +1487,8 @@ export function PurchasesTab({
                       <div className="flex items-end gap-1.5">
                         <div>
                           <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-bonus-every">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
-                          <input
+                          <CalcInput
                             id="quick-add-bonus-every"
-                            type="number"
                             min="0"
                             placeholder="—"
                             value={newProdBonusEvery}
@@ -1489,9 +1497,8 @@ export function PurchasesTab({
                           />
                         </div>
                         <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
-                        <input
+                        <CalcInput
                           id="quick-add-bonus-free"
-                          type="number"
                           min="0"
                           placeholder="—"
                           value={newProdBonusFree}
@@ -1503,14 +1510,14 @@ export function PurchasesTab({
                       </div>
                       <div className="w-28">
                         <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free">{isAr ? 'الكمية المجانية (حبّة):' : 'Free units:'}</label>
-                        <input id="quick-add-free" type="number" min="0" step="any" placeholder="0" value={newProdFreeQty}
+                        <CalcInput id="quick-add-free" min="0" step="any" placeholder="0" value={newProdFreeQty}
                           onChange={e => setNewProdFreeQty(e.target.value)}
                           className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
                       </div>
                       {parseInt(newProdUpc) > 0 && (
                         <div className="w-28">
                           <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free-cartons">{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
-                          <input id="quick-add-free-cartons" type="number" min="0" step="any" placeholder="0"
+                          <CalcInput id="quick-add-free-cartons" min="0" step="any" placeholder="0"
                             value={parseFloat(newProdFreeQty) > 0 ? Number((parseFloat(newProdFreeQty) / parseInt(newProdUpc)).toFixed(3)) : ''}
                             onChange={e => setNewProdFreeQty(String((parseFloat(e.target.value) || 0) * parseInt(newProdUpc)))}
                             className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
@@ -1604,8 +1611,7 @@ export function PurchasesTab({
                             
                             <div className="flex items-center gap-1.5 flex-row-reverse">
                               <span className="text-[9px] text-slate-500 font-bold">هامش ربح مبيع %:</span>
-                              <input
-                                type="number"
+                              <CalcInput
                                 min="0"
                                 max="99"
                                 placeholder="مثال: 12"
@@ -1640,8 +1646,7 @@ export function PurchasesTab({
 
                             <div className="flex items-center gap-1.5 flex-row-reverse">
                               <span className="text-[9px] text-slate-500 font-bold">زيادة فوق التكلفة %:</span>
-                              <input
-                                type="number"
+                              <CalcInput
                                 min="0"
                                 placeholder="مثال: 25"
                                 value={quickMarkupVal}
@@ -1840,472 +1845,269 @@ export function PurchasesTab({
               ) : (
                 <div className="space-y-4 font-sans text-right">
                   {draftItems.map((item, idx) => {
+                    const pid = item.product.id;
+                    const dCost = effectiveCost(item); // margins on the real cost, VAT and offers included
+                    const dPrice = item.newPriceUSD;
+                    const dProfit = dPrice - dCost;
+                    const dMargin = dPrice > 0 ? (dProfit / dPrice) * 100 : 0;
+                    const dMarkup = dCost > 0 ? (dProfit / dCost) * 100 : 0;
+                    const marginInputVal = draftMarginInputs[pid] || '';
+                    const markupInputVal = draftMarkupInputs[pid] || '';
+                    const hasDeal = (item.bonusEvery || 0) > 0 || (item.bonusFree || 0) > 0 || (item.freeQty || 0) > 0;
+                    const dealOpen = hasDeal || openDeals.has(pid);
+                    const setPrice = (target: number, msg: string) => {
+                      handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(target.toFixed(2)));
+                      handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((target * 0.9).toFixed(2)));
+                      showToast('success', msg);
+                    };
+                    const applyMargin = (m: number) => {
+                      if (isNaN(m) || m < 0 || m >= 100) { showToast('error', isAr ? 'أدخل نسبة صحيحة بين 0 و 99' : 'Enter margin between 0 and 99'); return; }
+                      if (dCost <= 0) { showToast('error', isAr ? 'أدخل سعر الكلفة أولاً' : 'Enter cost first'); return; }
+                      setPrice(dCost / (1 - m / 100), isAr ? `سعر المفرّق بهامش ${m}%` : `Retail at ${m}% margin`);
+                    };
+                    const applyMarkup = (mk: number) => {
+                      if (isNaN(mk) || mk < 0) { showToast('error', isAr ? 'أدخل زيادة صحيحة' : 'Enter correct markup percentage'); return; }
+                      if (dCost <= 0) { showToast('error', isAr ? 'أدخل سعر الكلفة أولاً' : 'Enter cost first'); return; }
+                      setPrice(dCost * (1 + mk / 100), isAr ? `سعر المفرّق بزيادة ${mk}%` : `Retail at ${mk}% markup`);
+                    };
+                    const field = 'w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-center font-mono font-bold text-slate-800';
+                    const lab = 'block text-slate-500 font-bold mb-1 text-[11px] truncate';
+                    const rowTitle = 'text-[11px] font-black text-slate-400 pt-6 sm:w-16 shrink-0';
                     return (
-                      <div key={item.product.id} className={`bg-slate-50 border rounded-xl p-4 space-y-3 transition relative ${item.qty > 0 ? 'border-slate-150 hover:border-slate-300' : 'border-rose-300'}`}>
-                        
-                        {/* Title and Category block */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/60 pb-2">
-                          
-                          {/* Row actions */}
+                      <div key={pid} className={`bg-white border rounded-xl overflow-hidden ${item.qty > 0 ? 'border-slate-200' : 'border-rose-300'}`} id={`draft-card-${pid}`}>
+
+                        {/* Name, codes and stock on one side; line total and remove on the other */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200">
+                          <div className="text-right min-w-0">
+                            <div className="font-black text-slate-900 text-[15px] truncate">{draftItems.length - idx}. {item.product.name}</div>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-slate-500 font-semibold">
+                              <span className="font-mono">{item.product.barcode}</span>
+                              <span>·</span>
+                              <span>{item.product.category}</span>
+                              <span>·</span>
+                              <span>{isAr ? 'بالرف:' : 'On shelf:'} <b className="font-mono text-slate-700">{item.product.quantity}</b></span>
+                            </div>
+                          </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-emerald-600' font-extrabold text-xs bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded">
-                              {isAr ? 'المجموع:' : 'Sub:'} <span className="font-black">{lineTotal(item).toFixed(2)}$</span>
-                              {item.discountPercent > 0 && <span className="text-[9px] font-bold text-emerald-700 mr-1">{isAr ? `بعد حسم ${item.discountPercent}%` : `after ${item.discountPercent}% off`}</span>}
-                              {item.taxRate > 0 && <span className="text-[9px] font-bold text-amber-700 mr-1">{isAr ? `شامل ضريبة ${item.taxRate}%` : `incl. ${item.taxRate}% VAT`}</span>}
-                            </span>
                             {item.freeQty > 0 && (
-                              <span className="text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-2 py-1 rounded">
+                              <span className="text-[11px] font-black text-sky-800 bg-sky-50 border border-sky-200 px-2 py-1 rounded-lg">
                                 {isAr ? `+${item.freeQty} مجاناً` : `+${item.freeQty} free`}
                               </span>
                             )}
-                            <button
-                              onClick={() => handleRemoveFromDraft(idx)}
-                              className="text-rose-500 hover:text-white hover:bg-rose-500 p-1 rounded-lg transition"
-                              title={isAr ? 'بعد من الفاتورة' : 'Remove item'}
-                            >
+                            <div className="text-left">
+                              <div className="text-[10px] text-slate-400 font-bold">{isAr ? 'مجموع السطر' : 'Line total'}</div>
+                              <div className="font-mono font-black text-slate-900 text-base">{lineTotal(item).toFixed(2)}$</div>
+                            </div>
+                            <button onClick={() => handleRemoveFromDraft(idx)} className="text-rose-500 hover:text-white hover:bg-rose-500 p-1.5 rounded-lg transition" title={isAr ? 'بعد من الفاتورة' : 'Remove item'}>
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
-
-                          {/* Brand Info */}
-                          <div className="font-sans text-right">
-                            <span className="font-black text-slate-800 text-sm block">{draftItems.length - idx}. {item.product.name}</span>
-                            <div className="flex items-center gap-2 mt-0.5 justify-end">
-                              <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded font-semibold font-mono">{item.product.barcode}</span>
-                              <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded font-semibold">{item.product.category}</span>
-                              <span className="text-[10px] bg-amber-50 border border-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black font-mono">
-                                {isAr ? 'متوفر حالياً بالرف:' : 'In-stock currently:'} {item.product.quantity}
-                              </span>
-                            </div>
-                          </div>
                         </div>
 
-                        {/* Editable properties: Inputs */}
-                        <div className="grid grid-cols-2 sm:grid-cols-7 gap-3 font-sans text-xs">
-                          
-                          {/* 1. Qty to buy */}
-                          <div>
-                            <label className={`block font-bold mb-1 text-[10px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${item.product.id}`}>{isAr ? 'الكمية المستلمة (مطلوب):' : 'Received Qty (required):'}</label>
-                            <input
-                              id={`draft-qty-${item.product.id}`}
-                              type="number"
-                              inputMode="decimal"
-                              min="0"
-                              step="any"
-                              required
-                              placeholder={isAr ? 'الكمية' : 'Qty'}
-                              value={item.qty > 0 ? item.qty : ''}
-                              onChange={e => handleUpdateDraftField(idx, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
-                              className={`w-full rounded-lg p-1.5 text-center font-mono font-black text-slate-800 border-2 ${item.qty > 0 ? 'bg-white border-slate-200' : 'bg-rose-50 border-rose-400'}`}
-                            />
-                          </div>
-
-                          {/* 2. Cost Price */}
-                          <div>
-                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'سعر التكلفة الجديد ($):' : 'Unit Cost Price ($):'}</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              required
-                              id={`draft-cost-${item.product.id}`}
-                              value={item.costPriceUSD}
-                              onChange={e => handleUpdateDraftField(idx, 'costPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))}
-                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-slate-700"
-                            />
-                          </div>
-
-                          {/* 2b. VAT charged by the supplier */}
-                          <div>
-                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
-                            <div className="flex gap-1">
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.taxRate}
-                                onChange={e => handleUpdateDraftField(idx, 'taxRate', Math.max(0, parseFloat(e.target.value) || 0))}
-                                className="w-full min-w-0 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-slate-700"
-                                aria-label={isAr ? 'نسبة الضريبة' : 'VAT rate'}
-                              />
-                              {VAT_PRESETS.filter(r => r > 0).map(r => (
-                                <button
-                                  key={`vat-${idx}-${r}`}
-                                  type="button"
-                                  onClick={() => handleUpdateDraftField(idx, 'taxRate', item.taxRate === r ? 0 : r)}
-                                  className={`px-1.5 rounded-lg border text-[10px] font-black cursor-pointer shrink-0 ${item.taxRate === r ? 'bg-amber-500 border-amber-500 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-amber-400'}`}
-                                >
-                                  {r}%
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* 2c. Unit cost after discount and VAT (editable: works the supplier price back out) */}
-                          <CostAfterTaxInput
-                            id={`draft-cost-after-tax-${item.product.id}`}
-                            cost={item.costPriceUSD}
-                            taxRate={item.taxRate}
-                            discountPercent={item.discountPercent || 0}
-                            onCost={c => handleUpdateDraftField(idx, 'costPriceUSD', c)}
-                            isAr={isAr}
-                            className="w-full bg-amber-50 border border-amber-200 rounded-lg p-1.5 text-center font-mono font-bold text-amber-800"
-                          />
-
-                          {/* 3. Retail Sell Price */}
-                          <div>
-                            <label className="block text-slate-600 font-black mb-1 text-[10px] text-[#1D9E75]">{isAr ? 'سعر البيع مفرّق الجديد ($):' : 'New Retail Sell ($):'}</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              required
-                              value={item.newPriceUSD}
-                              onChange={e => handleUpdateDraftField(idx, 'newPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))}
-                              className="w-full bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 text-center font-mono font-black text-emerald-800"
-                            />
-                          </div>
-
-                          {/* 4. Wholesale Sell Price */}
-                          <div>
-                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'سعر الجملة الجديد ($):' : 'New Wholesale Sell ($):'}</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={item.newPriceWholesale}
-                              onChange={e => handleUpdateDraftField(idx, 'newPriceWholesale', Math.max(0, parseFloat(e.target.value) || 0))}
-                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono"
-                            />
-                          </div>
-
-                          {/* 5. Expiry update date (not for phone shops) */}
-                          {!noExpiry && <div className="col-span-2 sm:col-span-1">
-                            <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'تاريخ الصلاحية الجديد:' : 'New Batch Expiry:'}</label>
-                            <input
-                              type="date"
-                              value={item.expiryDate}
-                              onChange={e => handleUpdateDraftField(idx, 'expiryDate', e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono text-slate-700"
-                            />
-                          </div>}
-
-                        </div>
-
-                        {/* Supplier discount and bonus (free units) */}
-                        <div className="flex flex-wrap items-end gap-3 font-sans text-xs bg-white/60 border border-slate-150 rounded-lg p-2.5">
-                          <div className="w-24">
-                            <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-upc-${item.product.id}`}>{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
-                            <input
-                              id={`draft-upc-${item.product.id}`}
-                              type="number"
-                              min="0"
-                              placeholder="12"
-                              value={item.unitsPerCarton || ''}
-                              onChange={e => handleUpdateDraftField(idx, 'unitsPerCarton', Math.max(0, parseInt(e.target.value) || 0))}
-                              className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-bold text-indigo-800"
-                            />
-                          </div>
-                          {item.unitsPerCarton > 0 && (
-                            <>
-                              <div className="w-24">
-                                <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-cartons-${item.product.id}`}>{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
-                                <input
-                                  id={`draft-cartons-${item.product.id}`}
-                                  type="number"
-                                  min="0"
-                                  step="any"
-                                  placeholder="0"
-                                  value={item.qty > 0 ? Number((item.qty / item.unitsPerCarton).toFixed(3)) : ''}
-                                  onChange={e => handleUpdateDraftField(idx, 'cartons', Math.max(0, parseFloat(e.target.value) || 0))}
-                                  className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-black text-indigo-800"
-                                />
+                        <div className="px-4 py-3 space-y-3 text-xs">
+                          {/* Row 1: quantity */}
+                          <div className="flex flex-col sm:flex-row gap-x-3">
+                            <div className={rowTitle}>{isAr ? 'الكمية' : 'Quantity'}</div>
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-2.5">
+                              <div>
+                                <label className={`block font-bold mb-1 text-[11px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${pid}`}>{isAr ? 'الكمية *' : 'Qty *'}</label>
+                                <CalcInput id={`draft-qty-${pid}`} min="0" required placeholder={isAr ? 'الكمية' : 'Qty'}
+                                  value={item.qty > 0 ? item.qty : ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'qty', Math.max(0, parseFloat(e.target.value) || 0))}
+                                  className={`w-full rounded-lg px-2 py-2 text-center font-mono font-black text-slate-900 border-2 ${item.qty > 0 ? 'bg-white border-slate-300' : 'bg-rose-50 border-rose-400'}`} />
                               </div>
-                              <div className="w-28">
-                                <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-carton-price-${item.product.id}`}>{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
-                                <input
-                                  id={`draft-carton-price-${item.product.id}`}
-                                  type="number"
-                                  min="0"
-                                  step="any"
-                                  value={Number((item.costPriceUSD * item.unitsPerCarton).toFixed(2))}
-                                  onChange={e => handleUpdateDraftField(idx, 'cartonPrice', Math.max(0, parseFloat(e.target.value) || 0))}
-                                  className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-1.5 text-center font-mono font-bold text-indigo-800"
-                                />
+                              <div>
+                                <label className={lab} htmlFor={`draft-upc-${pid}`}>{isAr ? 'حبّة بالكرتونة' : 'Units/carton'}</label>
+                                <CalcInput id={`draft-upc-${pid}`} min="0" placeholder="—" value={item.unitsPerCarton || ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'unitsPerCarton', Math.max(0, parseInt(e.target.value) || 0))} className={field} />
                               </div>
-                            </>
-                          )}
-                          <div className="w-28">
-                            <label className="block text-slate-500 font-bold mb-1 text-[10px]" htmlFor={`draft-discount-${item.product.id}`}>{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
-                            <input
-                              id={`draft-discount-${item.product.id}`}
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="any"
-                              placeholder="0"
-                              value={item.discountPercent || ''}
-                              onChange={e => handleUpdateDraftField(idx, 'discountPercent', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                              className="w-full bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold text-emerald-700"
-                            />
-                          </div>
-                          <div className="flex items-end gap-1.5">
-                            <div>
-                              <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
-                              <input
-                                id={`draft-bonus-every-${item.product.id}`}
-                                type="number"
-                                min="0"
-                                placeholder="—"
-                                value={item.bonusEvery || ''}
-                                onChange={e => handleUpdateDraftField(idx, 'bonusEvery', Math.max(0, parseInt(e.target.value) || 0))}
-                                className="w-16 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
-                              />
-                            </div>
-                            <span className="pb-2 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
-                            <input
-                              id={`draft-bonus-free-${item.product.id}`}
-                              type="number"
-                              min="0"
-                              placeholder="—"
-                              value={item.bonusFree || ''}
-                              onChange={e => handleUpdateDraftField(idx, 'bonusFree', Math.max(0, parseInt(e.target.value) || 0))}
-                              className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-center font-mono font-bold"
-                            />
-                            <span className="pb-2 text-slate-500 font-bold">{isAr ? 'مجاناً' : 'free'}</span>
-                          </div>
-                          <div className="w-28">
-                            <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-${item.product.id}`}>{isAr ? 'الكمية المجانية:' : 'Free units:'}</label>
-                            <input
-                              id={`draft-free-${item.product.id}`}
-                              type="number"
-                              min="0"
-                              step="any"
-                              placeholder="0"
-                              value={item.freeQty || ''}
-                              onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, parseFloat(e.target.value) || 0))}
-                              className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
-                            />
-                          </div>
-                          {item.unitsPerCarton > 0 && (
-                            <div className="w-28">
-                              <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-cartons-${item.product.id}`}>{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
-                              <input
-                                id={`draft-free-cartons-${item.product.id}`}
-                                type="number"
-                                min="0"
-                                step="any"
-                                placeholder="0"
-                                value={item.freeQty > 0 ? Number((item.freeQty / item.unitsPerCarton).toFixed(3)) : ''}
-                                onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, (parseFloat(e.target.value) || 0) * item.unitsPerCarton))}
-                                className="w-full bg-sky-50 border border-sky-200 rounded-lg p-1.5 text-center font-mono font-black text-sky-800"
-                              />
-                            </div>
-                          )}
-                          {(item.freeQty > 0 || item.discountPercent > 0 || offerFactor < 1) && item.qty > 0 && (
-                            <span className="text-[10px] text-slate-500 font-semibold pb-2" id={`draft-real-cost-${item.product.id}`}>
-                              {isAr
-                                ? `بينضاف للمخزن ${item.qty + item.freeQty + offerShare(item.product.id).units} • كلفة القطعة الفعلية ${effectiveCost(item).toFixed(3)}$`
-                                : `${item.qty + item.freeQty + offerShare(item.product.id).units} into stock • real unit cost ${effectiveCost(item).toFixed(3)}$`}
-                            </span>
-                          )}
-                        </div>
-
-                        {item.product.trackSerial && (() => {
-                          const list = parseSerialList(item.serialText || '');
-                          const needed = item.qty + (item.freeQty || 0) + offerShare(item.product.id).units;
-                          return (
-                            <div className="bg-sky-50 border border-sky-200 rounded-lg p-2.5 text-xs">
-                              <label className="block font-black text-sky-900 mb-1" htmlFor={`draft-serials-${item.product.id}`}>
-                                {isAr ? 'أرقام IMEI (امسح أو اكتب، واحد بكل سطر)' : 'IMEIs (scan or type, one per line)'}
-                                <span className={`mr-2 font-mono ${list.length === needed && needed > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{list.length} / {needed}</span>
-                              </label>
-                              <textarea
-                                id={`draft-serials-${item.product.id}`}
-                                rows={Math.min(6, Math.max(2, needed))}
-                                dir="ltr"
-                                value={item.serialText || ''}
-                                onChange={e => handleUpdateDraftField(idx, 'serialText', e.target.value)}
-                                className="w-full bg-white border border-sky-200 rounded-lg p-2 font-mono text-xs"
-                                placeholder="356789012345678"
-                              />
-                            </div>
-                          );
-                        })()}
-
-                        {/* --- INLINE DYNAMIC PRICING MARGIN ASSISTANT FOR DRAFT ITEM --- */}
-                        {(() => {
-                          const dCost = effectiveCost(item); // margins on the real cost, VAT and offers included
-                          const dPrice = item.newPriceUSD;
-                          const dProfit = dPrice - dCost;
-                          const dMargin = dPrice > 0 ? (dProfit / dPrice) * 100 : 0;
-                          const dMarkup = dCost > 0 ? (dProfit / dCost) * 100 : 0;
-
-                          const marginInputVal = draftMarginInputs[item.product.id] || '';
-                          const markupInputVal = draftMarkupInputs[item.product.id] || '';
-
-                          return (
-                            <div className="bg-emerald-50/20 border border-emerald-50/70 p-3 rounded-lg text-right font-sans space-y-2.5 mt-2.5">
-                              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 border-b border-emerald-50/60 pb-2">
-                                <div className="text-[10px] font-extrabold text-emerald-950 flex items-center justify-start gap-1 flex-row-reverse">
-                                  <span>حاسبة وبدائل هوامش هذا الصنف:</span>
-                                </div>
-
-                                <div className="flex flex-col gap-1.5">
-                                  {/* Presets */}
-                                  <div className="flex flex-wrap items-center justify-end gap-1 flex-row-reverse text-[11px]">
-                                    <span className="text-slate-500 font-semibold ml-1 text-[9px]">{isAr ? 'هامش ربح مبيع (Margin):' : 'Margin Presets:'}</span>
-                                    {[5, 10, 15, 20, 25, 30, 40, 50].map(m => (
-                                      <button
-                                        key={`item-m-${idx}-${m}`}
-                                        type="button"
-                                        onClick={() => {
-                                          if (dCost > 0) {
-                                            const targetPrice = dCost / (1 - m / 100);
-                                            handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
-                                            handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
-                                            showToast('success', isAr ? `تم تعيين البيع مفرق بهامش %${m}!` : `Retail set at %${m} margin!`);
-                                          } else {
-                                            showToast('error', isAr ? 'يرجى تحديد كلفة شراء الصنف أولاً!' : 'Please enter item cost first!');
-                                          }
-                                        }}
-                                        className="px-1.5 py-0.5 bg-white hover:bg-emerald-50 text-emerald-800 font-bold rounded border border-slate-150 hover:border-emerald-250 transition-all text-[8.5px] cursor-pointer"
-                                      >
-                                        %{m}
-                                      </button>
-                                    ))}
+                              {item.unitsPerCarton > 0 && (
+                                <>
+                                  <div>
+                                    <label className={lab} htmlFor={`draft-cartons-${pid}`}>{isAr ? 'عدد الكراتين' : 'Cartons'}</label>
+                                    <CalcInput id={`draft-cartons-${pid}`} min="0" placeholder="0"
+                                      value={item.qty > 0 ? Number((item.qty / item.unitsPerCarton).toFixed(3)) : ''}
+                                      onChange={e => handleUpdateDraftField(idx, 'cartons', Math.max(0, parseFloat(e.target.value) || 0))} className={field} />
                                   </div>
-
-                                  <div className="flex flex-wrap items-center justify-end gap-1 flex-row-reverse text-[11px]">
-                                    <span className="text-slate-500 font-semibold ml-1 text-[9px]">{isAr ? 'زيادة عن التكلفة (Markup):' : 'Markup Presets:'}</span>
-                                    {[10, 20, 30, 45, 60, 80, 100].map(mk => (
-                                      <button
-                                        key={`item-mk-${idx}-${mk}`}
-                                        type="button"
-                                        onClick={() => {
-                                          if (dCost > 0) {
-                                            const targetPrice = dCost * (1 + mk / 100);
-                                            handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
-                                            handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
-                                            showToast('success', isAr ? `تم تعيين البيع بزيادة %${mk}!` : `Retail set at %${mk} markup!`);
-                                          } else {
-                                            showToast('error', isAr ? 'يرجى تحديد كلفة شراء الصنف أولاً!' : 'Please enter item cost first!');
-                                          }
-                                        }}
-                                        className="px-1.5 py-0.5 bg-indigo-50/70 hover:bg-indigo-100/70 text-indigo-800 font-bold rounded border border-indigo-100 hover:border-indigo-150 transition-all text-[8.5px] cursor-pointer"
-                                      >
-                                        %{mk}
-                                      </button>
-                                    ))}
+                                  <div>
+                                    <label className={lab} htmlFor={`draft-carton-price-${pid}`}>{isAr ? 'سعر الكرتونة ($)' : 'Carton price ($)'}</label>
+                                    <CalcInput id={`draft-carton-price-${pid}`} min="0"
+                                      value={Number((item.costPriceUSD * item.unitsPerCarton).toFixed(2))}
+                                      onChange={e => handleUpdateDraftField(idx, 'cartonPrice', Math.max(0, parseFloat(e.target.value) || 0))} className={field} />
                                   </div>
-                                </div>
-                              </div>
-
-                              {/* Custom Inline Inputs */}
-                              <div className="flex flex-wrap items-center justify-end gap-2.5 flex-row-reverse border-t border-emerald-50/30 pt-2 text-[11px]">
-                                <span className="text-slate-600 font-extrabold text-[9px] ml-1">{isAr ? 'يدوي مخصص:' : 'Manual:'}</span>
-
-                                <div className="flex items-center gap-1 flex-row-reverse">
-                                  <span className="text-[8px] text-slate-400">{isAr ? 'هامش مبيع %:' : 'Margin %:'}</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="99"
-                                    placeholder="15"
-                                    value={marginInputVal}
-                                    onChange={e => setDraftMarginInputs(prev => ({ ...prev, [item.product.id]: e.target.value }))}
-                                    className="w-10 text-center bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 py-0.5 px-1 rounded text-[9px] font-bold font-sans"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const m = parseFloat(marginInputVal);
-                                      if (isNaN(m) || m < 0 || m >= 100) {
-                                        showToast('error', isAr ? 'أدخل نسبة صحيحة بين 0 و 99' : 'Enter margin between 0 and 99');
-                                        return;
-                                      }
-                                      if (dCost > 0) {
-                                        const targetPrice = dCost / (1 - m / 100);
-                                        handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
-                                        handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
-                                        showToast('success', isAr ? `هامش مبيع %${m} يدوي` : `Applied manual %${m} margin`);
-                                      } else {
-                                        showToast('error', isAr ? 'أدخل سعر الكلفة أولاً' : 'Enter cost first');
-                                      }
-                                    }}
-                                    className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded text-[8px] cursor-pointer"
-                                  >
-                                    {isAr ? 'تطبيق' : 'Apply'}
-                                  </button>
-                                </div>
-
-                                <span className="text-slate-200">|</span>
-
-                                <div className="flex items-center gap-1 flex-row-reverse">
-                                  <span className="text-[8px] text-slate-400">{isAr ? 'زيادة كلفة %:' : 'Markup %:'}</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    placeholder="20"
-                                    value={markupInputVal}
-                                    onChange={e => setDraftMarkupInputs(prev => ({ ...prev, [item.product.id]: e.target.value }))}
-                                    className="w-10 text-center bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 py-0.5 px-1 rounded text-[9px] font-bold font-sans"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const mk = parseFloat(markupInputVal);
-                                      if (isNaN(mk) || mk < 0) {
-                                        showToast('error', isAr ? 'أدخل زيادة صحيحة' : 'Enter correct markup percentage');
-                                        return;
-                                      }
-                                      if (dCost > 0) {
-                                        const targetPrice = dCost * (1 + mk / 100);
-                                        handleUpdateDraftField(idx, 'newPriceUSD', parseFloat(targetPrice.toFixed(2)));
-                                        handleUpdateDraftField(idx, 'newPriceWholesale', parseFloat((targetPrice * 0.9).toFixed(2)));
-                                        showToast('success', isAr ? `زيادة %${mk} يدوية` : `Applied manual %${mk} markup`);
-                                      } else {
-                                        showToast('error', isAr ? 'أدخل سعر الكلفة أولاً' : 'Enter cost first');
-                                      }
-                                    }}
-                                    className="px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded text-[8px] cursor-pointer"
-                                  >
-                                    {isAr ? 'تطبيق' : 'Apply'}
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Yield metrics summary feedback */}
-                              <div className="grid grid-cols-4 gap-1.5 text-center text-[9px] pt-1.5 border-t border-dashed border-emerald-100">
+                                </>
+                              )}
+                              {!noExpiry && (
                                 <div>
-                                  <span className="text-slate-400 block">{isAr ? 'الكلفة:' : 'Cost:'}</span>
-                                  <strong className="font-mono text-slate-700">{dCost.toFixed(2)} $</strong>
+                                  <label className={lab}>{isAr ? 'تاريخ الصلاحية' : 'Expiry'}</label>
+                                  <input type="date" value={item.expiryDate} onChange={e => handleUpdateDraftField(idx, 'expiryDate', e.target.value)}
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-center font-mono text-slate-700" />
                                 </div>
-                                <div>
-                                  <span className="text-slate-400 block">{isAr ? 'المبيع مفرق المقترح:' : 'Suggested Retail:'}</span>
-                                  <strong className="font-mono text-emerald-700">{dPrice.toFixed(2)} $</strong>
-                                </div>
-                                <div>
-                                  <span className="text-slate-400 block">{isAr ? 'صافي الربح القطعة:' : 'Net Profit:'}</span>
-                                  <strong className={`font-mono ${dProfit >= 0 ? 'text-emerald-700' : 'text-red-650'}`}>{dProfit.toFixed(2)} $</strong>
-                                </div>
-                                <div className="text-left">
-                                  <span className="text-slate-400 block">{isAr ? 'العائد الفعلي:' : 'Current Margins:'}</span>
-                                  <span className="font-bold text-slate-800 block">
-                                    {isAr ? `هامش: ${dMargin.toFixed(1)}%` : `Margin: ${dMargin.toFixed(1)}%`}
-                                  </span>
-                                  <span className="text-[8px] text-slate-500 font-medium block">
-                                    {isAr ? `زيادة: ${dMarkup.toFixed(1)}%` : `Markup: ${dMarkup.toFixed(1)}%`}
-                                  </span>
-                                </div>
-                              </div>
-                              {dCost > 0 && (
-                                <CostSteps id={`draft-cost-steps-${item.product.id}`} steps={costSteps(item, dCost, offerShare(item.product.id).units)} />
                               )}
                             </div>
-                          );
-                        })()}
+                          </div>
 
+                          {/* Row 2: cost, in the order it is worked out */}
+                          <div className="flex flex-col sm:flex-row gap-x-3 border-t border-dashed border-slate-200 pt-3">
+                            <div className={rowTitle}>{isAr ? 'الكلفة' : 'Cost'}</div>
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
+                              <div>
+                                <label className={lab} htmlFor={`draft-cost-${pid}`}>{isAr ? 'سعر المورّد ($)' : 'Supplier price ($)'}</label>
+                                <CalcInput id={`draft-cost-${pid}`} min="0" required value={item.costPriceUSD}
+                                  onChange={e => handleUpdateDraftField(idx, 'costPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))} className={field} />
+                              </div>
+                              <div>
+                                <label className={lab} htmlFor={`draft-discount-${pid}`}>{isAr ? 'حسم المورّد (%)' : 'Discount (%)'}</label>
+                                <CalcInput id={`draft-discount-${pid}`} min="0" max="100" placeholder="0" value={item.discountPercent || ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'discountPercent', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))} className={field} />
+                              </div>
+                              <div>
+                                <label className={lab}>{isAr ? 'الضريبة TVA (%)' : 'VAT (%)'}</label>
+                                <div className="flex gap-1">
+                                  {[0, ...VAT_PRESETS.filter(r => r > 0)].map(r => (
+                                    <button key={`vat-${idx}-${r}`} type="button" onClick={() => handleUpdateDraftField(idx, 'taxRate', r)}
+                                      className={`px-2.5 py-2 rounded-lg border text-[11px] font-black cursor-pointer shrink-0 ${item.taxRate === r ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`}>
+                                      {r}%
+                                    </button>
+                                  ))}
+                                  <CalcInput min="0" value={item.taxRate}
+                                    onChange={e => handleUpdateDraftField(idx, 'taxRate', Math.max(0, parseFloat(e.target.value) || 0))}
+                                    className="w-full min-w-0 bg-white border border-slate-200 rounded-lg px-1 py-2 text-center font-mono font-bold text-slate-700"
+                                    aria-label={isAr ? 'نسبة الضريبة' : 'VAT rate'} />
+                                </div>
+                              </div>
+                              <CostAfterTaxInput
+                                id={`draft-cost-after-tax-${pid}`}
+                                cost={item.costPriceUSD}
+                                taxRate={item.taxRate}
+                                discountPercent={item.discountPercent || 0}
+                                onCost={c => handleUpdateDraftField(idx, 'costPriceUSD', c)}
+                                isAr={isAr}
+                                className="w-full bg-amber-50 border-2 border-amber-300 rounded-lg px-2 py-2 text-center font-mono font-black text-amber-900"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Row 3: selling prices with what they earn */}
+                          <div className="flex flex-col sm:flex-row gap-x-3 border-t border-dashed border-slate-200 pt-3">
+                            <div className={rowTitle}>{isAr ? 'البيع' : 'Selling'}</div>
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2.5 items-end">
+                              <div>
+                                <label className="block text-slate-700 font-black mb-1 text-[11px]">{isAr ? 'سعر المفرّق ($)' : 'Retail price ($)'}</label>
+                                <CalcInput min="0" required value={item.newPriceUSD} id={`draft-retail-${pid}`}
+                                  onChange={e => handleUpdateDraftField(idx, 'newPriceUSD', Math.max(0, parseFloat(e.target.value) || 0))}
+                                  className="w-full bg-white border-2 border-slate-300 rounded-lg px-2 py-2 text-center font-mono font-black text-slate-900" />
+                              </div>
+                              <div>
+                                <label className={lab}>{isAr ? 'سعر الجملة ($)' : 'Wholesale price ($)'}</label>
+                                <CalcInput min="0" value={item.newPriceWholesale} id={`draft-wholesale-${pid}`}
+                                  onChange={e => handleUpdateDraftField(idx, 'newPriceWholesale', Math.max(0, parseFloat(e.target.value) || 0))} className={field} />
+                              </div>
+                              <div className="md:col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1 pb-2 text-[12px] font-bold" id={`draft-yield-${pid}`}>
+                                <span className="text-slate-500">{isAr ? 'ربح القطعة' : 'Profit/unit'} <b className={`font-mono ${dProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>{dProfit.toFixed(2)}$</b></span>
+                                <span className="text-slate-500">{isAr ? 'هامش' : 'Margin'} <b className="font-mono text-slate-800">{dMargin.toFixed(1)}%</b></span>
+                                <span className="text-slate-500">{isAr ? 'زيادة' : 'Markup'} <b className="font-mono text-slate-800">{dMarkup.toFixed(1)}%</b></span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Margin calculator: one line */}
+                          <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" id={`draft-margin-calc-${pid}`}>
+                            <span className="text-[11px] font-black text-slate-600">{isAr ? 'سعّر بهامش:' : 'Price at margin:'}</span>
+                            {[10, 20, 30, 50].map(m => (
+                              <button key={`item-m-${idx}-${m}`} type="button" onClick={() => applyMargin(m)}
+                                className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-md text-[11px] font-black text-slate-700 cursor-pointer">{m}%</button>
+                            ))}
+                            <span className="w-px h-5 bg-slate-200 mx-1" />
+                            <div className="flex items-center gap-1">
+                              <CalcInput min="0" max="99" placeholder={isAr ? 'هامش %' : 'Margin %'} value={marginInputVal}
+                                onChange={e => setDraftMarginInputs(prev => ({ ...prev, [pid]: e.target.value }))}
+                                className="w-20 text-center bg-white border border-slate-200 py-1 px-1 rounded-md text-[11px] font-bold" />
+                              <button type="button" onClick={() => applyMargin(parseFloat(marginInputVal))}
+                                className="px-2.5 py-1 bg-slate-900 text-white font-black rounded-md text-[11px] cursor-pointer">{isAr ? 'تطبيق' : 'Apply'}</button>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CalcInput min="0" placeholder={isAr ? 'زيادة %' : 'Markup %'} value={markupInputVal}
+                                onChange={e => setDraftMarkupInputs(prev => ({ ...prev, [pid]: e.target.value }))}
+                                className="w-20 text-center bg-white border border-slate-200 py-1 px-1 rounded-md text-[11px] font-bold" />
+                              <button type="button" onClick={() => applyMarkup(parseFloat(markupInputVal))}
+                                className="px-2.5 py-1 bg-slate-900 text-white font-black rounded-md text-[11px] cursor-pointer">{isAr ? 'تطبيق' : 'Apply'}</button>
+                            </div>
+                          </div>
+
+                          {/* Supplier deal: bonus and free units, folded away until used */}
+                          {!dealOpen ? (
+                            <button type="button" id={`btn-open-deal-${pid}`}
+                              onClick={() => setOpenDeals(prev => new Set(prev).add(pid))}
+                              className="text-[12px] font-black text-sky-700 hover:bg-sky-50 border border-dashed border-sky-300 rounded-lg px-3 py-1.5 cursor-pointer">
+                              {isAr ? '+ عرض من المورّد (بونص أو بضاعة مجانية)' : '+ Supplier deal (bonus or free units)'}
+                            </button>
+                          ) : (
+                            <div className="flex flex-wrap items-end gap-3 bg-sky-50/60 border border-sky-200 rounded-lg p-3" id={`draft-deal-${pid}`}>
+                              <span className="text-[11px] font-black text-sky-900 w-full">{isAr ? 'عرض من المورّد' : 'Supplier deal'}</span>
+                              <div className="flex items-end gap-1.5">
+                                <div>
+                                  <label className={lab}>{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
+                                  <CalcInput id={`draft-bonus-every-${pid}`} min="0" placeholder="—" value={item.bonusEvery || ''}
+                                    onChange={e => handleUpdateDraftField(idx, 'bonusEvery', Math.max(0, parseInt(e.target.value) || 0))}
+                                    className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-2 text-center font-mono font-bold" />
+                                </div>
+                                <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
+                                <CalcInput id={`draft-bonus-free-${pid}`} min="0" placeholder="—" value={item.bonusFree || ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'bonusFree', Math.max(0, parseInt(e.target.value) || 0))}
+                                  className="w-14 bg-white border border-slate-200 rounded-lg px-1 py-2 text-center font-mono font-bold" />
+                                <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'مجاناً' : 'free'}</span>
+                              </div>
+                              <div className="w-28">
+                                <label className={lab} htmlFor={`draft-free-${pid}`}>{isAr ? 'الكمية المجانية' : 'Free units'}</label>
+                                <CalcInput id={`draft-free-${pid}`} min="0" placeholder="0" value={item.freeQty || ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, parseFloat(e.target.value) || 0))} className={field} />
+                              </div>
+                              {item.unitsPerCarton > 0 && (
+                                <div className="w-28">
+                                  <label className={lab} htmlFor={`draft-free-cartons-${pid}`}>{isAr ? 'أو كراتين مجانية' : 'or free cartons'}</label>
+                                  <CalcInput id={`draft-free-cartons-${pid}`} min="0" placeholder="0"
+                                    value={item.freeQty > 0 ? Number((item.freeQty / item.unitsPerCarton).toFixed(3)) : ''}
+                                    onChange={e => handleUpdateDraftField(idx, 'freeQty', Math.max(0, (parseFloat(e.target.value) || 0) * item.unitsPerCarton))} className={field} />
+                                </div>
+                              )}
+                              {!hasDeal && (
+                                <button type="button" onClick={() => setOpenDeals(prev => { const n = new Set(prev); n.delete(pid); return n; })}
+                                  className="text-[11px] font-bold text-slate-500 hover:text-slate-800 pb-2.5 cursor-pointer">{isAr ? 'إخفاء' : 'Hide'}</button>
+                              )}
+                            </div>
+                          )}
+
+                          {item.product.trackSerial && (() => {
+                            const list = parseSerialList(item.serialText || '');
+                            const needed = item.qty + (item.freeQty || 0) + offerShare(pid).units;
+                            return (
+                              <div className="bg-sky-50 border border-sky-200 rounded-lg p-2.5 text-xs">
+                                <label className="block font-black text-sky-900 mb-1" htmlFor={`draft-serials-${pid}`}>
+                                  {isAr ? 'أرقام IMEI (امسح أو اكتب، واحد بكل سطر)' : 'IMEIs (scan or type, one per line)'}
+                                  <span className={`mr-2 font-mono ${list.length === needed && needed > 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{list.length} / {needed}</span>
+                                </label>
+                                <textarea id={`draft-serials-${pid}`} rows={Math.min(6, Math.max(2, needed))} dir="ltr" value={item.serialText || ''}
+                                  onChange={e => handleUpdateDraftField(idx, 'serialText', e.target.value)}
+                                  className="w-full bg-white border border-sky-200 rounded-lg p-2 font-mono text-xs" placeholder="356789012345678" />
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        {/* One summary line: how the real unit cost is reached, and what goes into stock */}
+                        {dCost > 0 && (
+                          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 bg-slate-50 border-t border-slate-200">
+                            <CostSteps id={`draft-cost-steps-${pid}`} steps={costSteps(item, dCost, offerShare(pid).units)} />
+                            {(item.freeQty > 0 || item.discountPercent > 0 || offerFactor < 1) && item.qty > 0 && (
+                              <span className="text-[11px] text-slate-600 font-bold" id={`draft-real-cost-${pid}`}>
+                                {isAr
+                                  ? `بينضاف للمخزن ${item.qty + item.freeQty + offerShare(pid).units} • كلفة القطعة الفعلية ${effectiveCost(item).toFixed(3)}$`
+                                  : `${item.qty + item.freeQty + offerShare(pid).units} into stock • real unit cost ${effectiveCost(item).toFixed(3)}$`}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -2318,10 +2120,23 @@ export function PurchasesTab({
                 const freeValue = offerFreeValue(offerForMath);
                 const pickedProd = findOfferProduct(offerSearch);
                 const pickedUpc = pickedProd ? (draftItems.find(d => d.product.id === pickedProd.id)?.unitsPerCarton || pickedProd.unitsPerCarton || 0) : 0;
+                if (!showOffer && offerItems.length === 0) {
+                  return (
+                    <button type="button" id="btn-open-offer" onClick={() => setShowOffer(true)}
+                      className="w-full text-[12px] font-black text-sky-700 hover:bg-sky-50 border border-dashed border-sky-300 rounded-xl px-4 py-2.5 cursor-pointer text-right">
+                      {isAr ? '+ بضاعة مجانية من عرض الفاتورة (مثلاً: 5 كراتين = 4 مجاناً)' : '+ Free goods from an invoice offer'}
+                    </button>
+                  );
+                }
                 return (
-                  <div className="bg-sky-50/60 border-2 border-dashed border-sky-200 rounded-xl p-4 space-y-3 text-xs" id="purchase-offer-box">
+                  <div className="bg-sky-50/60 border border-sky-200 rounded-xl p-4 space-y-3 text-xs" id="purchase-offer-box">
                     <div>
-                      <h5 className="font-black text-sky-900 text-sm">{isAr ? 'بضاعة مجانية من عرض الفاتورة' : 'Free goods from an invoice offer'}</h5>
+                      <div className="flex items-center justify-between gap-2">
+                        <h5 className="font-black text-sky-900 text-sm">{isAr ? 'بضاعة مجانية من عرض الفاتورة' : 'Free goods from an invoice offer'}</h5>
+                        {offerItems.length === 0 && (
+                          <button type="button" onClick={() => setShowOffer(false)} className="text-[11px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer">{isAr ? 'إخفاء' : 'Hide'}</button>
+                        )}
+                      </div>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         {isAr
                           ? 'للعروض على الطلبية كلّها (متلاً: 5 كراتين من كل صنف = 4 كراتين مجاناً). البضاعة بتفوت عالمخزن، وقيمتها بتتوزّع حسم على كل أصناف الفاتورة.'
@@ -2367,7 +2182,7 @@ export function PurchasesTab({
                       </div>
                       <div className="w-24">
                         <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-qty">{isAr ? 'الكمية:' : 'Qty:'}</label>
-                        <input id="offer-qty" type="number" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
+                        <CalcInput id="offer-qty" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
                           className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono font-black" placeholder="4" />
                       </div>
                       {pickedUpc > 0 && (
@@ -2378,7 +2193,7 @@ export function PurchasesTab({
                       )}
                       <div className="w-28">
                         <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-unit-value">{isAr ? 'قيمة الحبّة ($):' : 'Value per unit ($):'}</label>
-                        <input id="offer-unit-value" type="number" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
+                        <CalcInput id="offer-unit-value" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
                           placeholder={pickedProd ? offerDefaultUnitValue(pickedProd).toFixed(3) : '0.00'}
                           className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono" />
                       </div>
