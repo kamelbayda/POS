@@ -31,6 +31,8 @@ interface SettingsTabProps {
   onRecalculatePrices: () => void;
   /** The screen and account controls (moved out of the top header). */
   displayPanel: React.ReactNode;
+  /** Phone shops: no "Screen & account" tab; the sizes box stays in the general settings. */
+  classicSizes?: React.ReactNode;
   printerHardware: ReturnType<typeof usePrinterHardware>;
   spooler: {
     activePrintJobs: PrintJob[];
@@ -64,6 +66,7 @@ export function SettingsTab({
   onSaveSettings,
   onRecalculatePrices,
   displayPanel,
+  classicSizes,
   printerHardware,
   spooler,
   license,
@@ -274,7 +277,7 @@ export function SettingsTab({
           <Settings className="w-4 h-4" />
           <span>{lang === 'ar' ? 'الإعدادات التشغيلية والمالية' : 'Operational Settings'}</span>
         </button>
-        <button
+        {!classicSizes && <button
           type="button"
           id="btn-settings-subtab-display"
           onClick={() => setSettingsSubTab('display')}
@@ -286,7 +289,7 @@ export function SettingsTab({
         >
           <MonitorSmartphone className="w-4 h-4" />
           <span>{lang === 'ar' ? 'الشاشة والحساب' : 'Screen & account'}</span>
-        </button>
+        </button>}
       </div>
 
       {settingsSubTab === 'display' ? (
@@ -675,6 +678,8 @@ export function SettingsTab({
           </div>
         </div>
 
+
+        {classicSizes}
 
         {/* Submit form button */}
         <button

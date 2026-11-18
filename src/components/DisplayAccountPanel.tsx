@@ -22,6 +22,8 @@ interface DisplayAccountPanelProps {
   onSwitchShop: () => void;
   handleLogout: () => void;
   showToast: (type: 'success' | 'error' | 'warning', message: string) => void;
+  /** 'sizes': only the font / button / zoom box (phone shops keep it in the general settings). */
+  part?: 'all' | 'sizes';
 }
 
 /**
@@ -32,14 +34,15 @@ interface DisplayAccountPanelProps {
 export function DisplayAccountPanel({
   lang, SYS_DATE, currentUser, handleToggleLang, toggleFullScreen, theme, setTheme, posLayoutMode, setPosLayoutMode,
   globalFontScale, setGlobalFontScale, globalButtonScale, setGlobalButtonScale, globalZoomScale, setGlobalZoomScale,
-  onLock, onSwitchShop, handleLogout, showToast,
+  onLock, onSwitchShop, handleLogout, showToast, part = 'all',
 }: DisplayAccountPanelProps) {
   const ar = lang === 'ar';
   const tile = 'flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 text-right';
   const action = 'text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 flex items-center gap-1.5 cursor-pointer shrink-0';
 
   return (
-    <div className="space-y-6 text-right" id="settings-display-account">
+    <div className="space-y-6 text-right" id={part === 'all' ? 'settings-display-account' : undefined}>
+      {part === 'all' && <>
       {/* Account */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
         <h3 className="font-bold text-slate-800 text-base pb-3 border-b border-slate-100">{ar ? 'الحساب' : 'Account'}</h3>
@@ -113,6 +116,8 @@ export function DisplayAccountPanel({
           </div>
         </div>
       </div>
+
+      </>}
 
       {/* Sizes (moved here from the general settings tab) */}
       <div>

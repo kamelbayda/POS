@@ -18,6 +18,8 @@ interface LockScreenProps {
   isLockShaking: boolean;
   handleUnlock: () => void;
   handleLogout: () => void;
+  /** PIN mode reads a physical keyboard / number pad too (supermarkets). */
+  keyboardPin?: boolean;
 }
 
 export function LockScreen({
@@ -33,6 +35,7 @@ export function LockScreen({
   isLockShaking,
   handleUnlock,
   handleLogout,
+  keyboardPin = true,
 }: LockScreenProps) {
   // How this user unlocks: a numeric PIN on the keypad, or a password typed on the keyboard.
   // Remembered per user on this device.
@@ -57,7 +60,7 @@ export function LockScreen({
   // keyboard is read here: digits from the top row or the number pad (NumLock on or off),
   // Backspace / Delete, Esc to clear, Enter to unlock.
   useEffect(() => {
-    if (mode !== 'pin') return;
+    if (mode !== 'pin' || !keyboardPin) return;
     const NUMPAD_NO_LOCK: Record<string, string> = {
       Insert: '0', End: '1', ArrowDown: '2', PageDown: '3', ArrowLeft: '4', Clear: '5',
       ArrowRight: '6', Home: '7', ArrowUp: '8', PageUp: '9',
@@ -89,7 +92,7 @@ export function LockScreen({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [mode, handleUnlock, setLockPasscode, setLockError]);
+  }, [mode, keyboardPin, handleUnlock, setLockPasscode, setLockError]);
 
   if (!currentUser) return null;
 

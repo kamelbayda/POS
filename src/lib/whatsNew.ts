@@ -8,12 +8,15 @@ export interface WhatsNewEntry {
   date: string;
   ar: string[];
   en: string[];
+  /** Shown only to this kind of shop (missing: every shop). */
+  only?: 'supermarket' | 'phones';
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
     id: '2026-11-09a',
     date: '2026-11-09',
+    only: 'supermarket',
     ar: [
       'شاشة البيع بحلّة جديدة: المجموع يظهر كبيراً بالدولار والليرة مثل شاشة الصندوق، والفاتورة مرتّبة كإيصال، وأزرار الكمية وإلغاء الصنف تظهر عند اختيار سطر.',
       'كل البرنامج بالهوية نفسها: ألوان أهدأ، عناوين الصفحات بلون واحد، والأزرار الرئيسية موحّدة، في الوضع النهاري والليلي.',
