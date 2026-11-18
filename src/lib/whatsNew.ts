@@ -14,6 +14,21 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-18a',
+    date: '2026-11-18',
+    only: 'supermarket',
+    ar: [
+      'فاتورة الشراء أوضح: كل صنف بثلاثة صفوف (الكمية، الكلفة، البيع)، والربح والهامش ظاهرين حدّ سعر البيع، وحاسبة الهامش بسطر واحد.',
+      'البونص والكمية المجانية وعرض الفاتورة والملاحظات والمواصلات صاروا يفتحوا بكبسة، والمجموع وزر الحفظ بيضلّوا ظاهرين.',
+      'الحساب داخل الخانات: اكتب 2*12 أو 17.4/12 أو 100-15% واكبس Enter، بيطلع الجواب بالخانة.',
+    ],
+    en: [
+      'A clearer purchase invoice: each item has three rows (quantity, cost, selling), profit and margin next to the price, and a one-line margin calculator.',
+      'Bonus, free units, the invoice offer, notes and transport open on a tap; the total and the save button stay in view.',
+      'Sums inside the fields: type 2*12, 17.4/12 or 100-15% and press Enter to get the result.',
+    ],
+  },
+  {
     id: '2026-11-09a',
     date: '2026-11-09',
     only: 'supermarket',

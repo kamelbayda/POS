@@ -133,6 +133,7 @@ import { usePrinterHardware } from './hooks/usePrinterHardware';
 import { useLicense } from './hooks/useLicense';
 import { hashPassword, verifyPassword, needsRehash } from './lib/password';
 import { PurchasesTab } from './features/purchases/PurchasesTab';
+import { PurchasesTabClassic } from './features/purchases/PurchasesTabClassic';
 import { openWhatsNew } from './lib/whatsNew';
 import { WarehouseTab } from './features/warehouse/WarehouseTab';
 import { FirebaseSyncTab } from './features/firebase-sync/FirebaseSyncTab';
@@ -1445,6 +1446,20 @@ export default function App() {
               ========================================== */}
           {activeTab === 'purchases' && (
             (currentUser.role !== 'admin' && currentUser.role !== 'accountant') ? <AdminOnlyNotice userName={currentUser?.name} /> : (
+              isPhoneShop ? (
+              <PurchasesTabClassic 
+                products={products}
+                setProducts={setProducts}
+                categories={categories}
+                setCategories={setCategories}
+                purchaseInvoices={purchaseInvoices}
+                setPurchaseInvoices={setPurchaseInvoices}
+                lang={lang}
+                showToast={showToast}
+                sysDate={SYS_DATE}
+                noExpiry={noExpiry}
+              />
+              ) : (
               <PurchasesTab 
                 products={products}
                 setProducts={setProducts}
@@ -1457,6 +1472,7 @@ export default function App() {
                 sysDate={SYS_DATE}
                 noExpiry={noExpiry}
               />
+              )
             )
           )}
 
