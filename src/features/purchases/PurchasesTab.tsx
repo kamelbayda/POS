@@ -31,6 +31,8 @@ import * as storage from '../../lib/storage';
 import { VAT_PRESETS, lineGross, lineDiscount, lineTax, lineTotal, landedCost, bonusFor, sumLines, costFactor, landedCostWithOffer, offerFreeValue } from './purchaseMath';
 import { printPurchaseInvoice } from './purchaseInvoicePrint';
 import { parseSerialList } from '../../lib/serials';
+import { CalcInput } from '../../components/CalcInput';
+import { evaluateCalc } from '../../lib/calc';
 
 const PURCHASE_DRAFT_KEY = 'pos_purchase_draft';
 
@@ -45,7 +47,7 @@ function CostAfterTaxInput({ id, cost, taxRate, discountPercent, onCost, isAr, c
   const shown = cost > 0 ? String(Number((cost * factor).toFixed(3))) : '';
   const [text, setText] = useState<string | null>(null); // what is being typed, null when not editing
   const commit = (raw: string) => {
-    const v = parseFloat(raw);
+    const v = evaluateCalc(raw) ?? NaN; // a sum such as 17.4/12 works here too
     if (v >= 0 && factor > 0) onCost(Number((v / factor).toFixed(4)));
     setText(null);
   };
@@ -1105,8 +1107,7 @@ export function PurchasesTab({
                     <span>{isAr ? 'تكاليف المواصلات / الشحن ($):' : 'Transportation / Shipment Cost ($):'}</span>
                   </label>
                   <div className="flex gap-2">
-                    <input 
-                      type="number"
+                    <CalcInput 
                       step="0.01"
                       min="0"
                       value={transportationCost}
@@ -1314,7 +1315,7 @@ export function PurchasesTab({
                     <div className="flex flex-wrap items-end gap-3 bg-indigo-50/60 border border-indigo-100 rounded-lg p-2.5">
                       <div className="w-28">
                         <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-upc">{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
-                        <input id="quick-add-upc" type="number" min="0" value={newProdUpc} placeholder="12"
+                        <CalcInput id="quick-add-upc" min="0" value={newProdUpc} placeholder="12"
                           onChange={e => {
                             const upc = parseInt(e.target.value) || 0;
                             setNewProdUpc(e.target.value);
@@ -1325,7 +1326,7 @@ export function PurchasesTab({
                       </div>
                       <div className="w-28">
                         <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-cartons">{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
-                        <input id="quick-add-cartons" type="number" min="0" step="any" value={newProdCartons} placeholder="5" disabled={!(parseInt(newProdUpc) > 0)}
+                        <CalcInput id="quick-add-cartons" min="0" step="any" value={newProdCartons} placeholder="5" disabled={!(parseInt(newProdUpc) > 0)}
                           onChange={e => {
                             setNewProdCartons(e.target.value);
                             const upc = parseInt(newProdUpc) || 0;
@@ -1335,7 +1336,7 @@ export function PurchasesTab({
                       </div>
                       <div className="w-32">
                         <label className="block text-indigo-700 font-black mb-1 text-[11px]" htmlFor="quick-add-carton-price">{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
-                        <input id="quick-add-carton-price" type="number" min="0" step="any" value={newProdCartonPrice} placeholder="0.00" disabled={!(parseInt(newProdUpc) > 0)}
+                        <CalcInput id="quick-add-carton-price" min="0" step="any" value={newProdCartonPrice} placeholder="0.00" disabled={!(parseInt(newProdUpc) > 0)}
                           onChange={e => {
                             setNewProdCartonPrice(e.target.value);
                             const upc = parseInt(newProdUpc) || 0;
@@ -1351,9 +1352,8 @@ export function PurchasesTab({
                     <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
                       <div>
                         <label className="block text-rose-600 font-black mb-1 text-[11px]" htmlFor="quick-add-qty">{isAr ? 'الكمية المستلمة:' : 'Received Qty:'}</label>
-                        <input
+                        <CalcInput
                           id="quick-add-qty"
-                          type="number"
                           inputMode="decimal"
                           min="0"
                           step="any"
@@ -1383,9 +1383,8 @@ export function PurchasesTab({
                       <div>
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
                         <div className="flex gap-1">
-                          <input
+                          <CalcInput
                             id="quick-add-vat"
-                            type="number"
                             step="0.01"
                             min="0"
                             value={newProdTaxRate}
@@ -1463,9 +1462,8 @@ export function PurchasesTab({
                     <div className="flex flex-wrap items-end gap-3 text-xs bg-white/70 border border-slate-200 rounded-lg p-2.5">
                       <div className="w-32">
                         <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-discount">{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
-                        <input
+                        <CalcInput
                           id="quick-add-discount"
-                          type="number"
                           min="0"
                           max="100"
                           step="any"
@@ -1478,9 +1476,8 @@ export function PurchasesTab({
                       <div className="flex items-end gap-1.5">
                         <div>
                           <label className="block text-slate-500 font-bold mb-1 text-[11px]" htmlFor="quick-add-bonus-every">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
-                          <input
+                          <CalcInput
                             id="quick-add-bonus-every"
-                            type="number"
                             min="0"
                             placeholder="—"
                             value={newProdBonusEvery}
@@ -1489,9 +1486,8 @@ export function PurchasesTab({
                           />
                         </div>
                         <span className="pb-2.5 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
-                        <input
+                        <CalcInput
                           id="quick-add-bonus-free"
-                          type="number"
                           min="0"
                           placeholder="—"
                           value={newProdBonusFree}
@@ -1503,14 +1499,14 @@ export function PurchasesTab({
                       </div>
                       <div className="w-28">
                         <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free">{isAr ? 'الكمية المجانية (حبّة):' : 'Free units:'}</label>
-                        <input id="quick-add-free" type="number" min="0" step="any" placeholder="0" value={newProdFreeQty}
+                        <CalcInput id="quick-add-free" min="0" step="any" placeholder="0" value={newProdFreeQty}
                           onChange={e => setNewProdFreeQty(e.target.value)}
                           className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
                       </div>
                       {parseInt(newProdUpc) > 0 && (
                         <div className="w-28">
                           <label className="block text-sky-700 font-bold mb-1 text-[11px]" htmlFor="quick-add-free-cartons">{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
-                          <input id="quick-add-free-cartons" type="number" min="0" step="any" placeholder="0"
+                          <CalcInput id="quick-add-free-cartons" min="0" step="any" placeholder="0"
                             value={parseFloat(newProdFreeQty) > 0 ? Number((parseFloat(newProdFreeQty) / parseInt(newProdUpc)).toFixed(3)) : ''}
                             onChange={e => setNewProdFreeQty(String((parseFloat(e.target.value) || 0) * parseInt(newProdUpc)))}
                             className="w-full bg-sky-50 border border-sky-200 rounded-lg p-2 text-center font-mono font-black text-sky-800" />
@@ -1604,8 +1600,7 @@ export function PurchasesTab({
                             
                             <div className="flex items-center gap-1.5 flex-row-reverse">
                               <span className="text-[9px] text-slate-500 font-bold">هامش ربح مبيع %:</span>
-                              <input
-                                type="number"
+                              <CalcInput
                                 min="0"
                                 max="99"
                                 placeholder="مثال: 12"
@@ -1640,8 +1635,7 @@ export function PurchasesTab({
 
                             <div className="flex items-center gap-1.5 flex-row-reverse">
                               <span className="text-[9px] text-slate-500 font-bold">زيادة فوق التكلفة %:</span>
-                              <input
-                                type="number"
+                              <CalcInput
                                 min="0"
                                 placeholder="مثال: 25"
                                 value={quickMarkupVal}
@@ -1886,9 +1880,8 @@ export function PurchasesTab({
                           {/* 1. Qty to buy */}
                           <div>
                             <label className={`block font-bold mb-1 text-[10px] ${item.qty > 0 ? 'text-slate-500' : 'text-rose-600'}`} htmlFor={`draft-qty-${item.product.id}`}>{isAr ? 'الكمية المستلمة (مطلوب):' : 'Received Qty (required):'}</label>
-                            <input
+                            <CalcInput
                               id={`draft-qty-${item.product.id}`}
-                              type="number"
                               inputMode="decimal"
                               min="0"
                               step="any"
@@ -1903,8 +1896,7 @@ export function PurchasesTab({
                           {/* 2. Cost Price */}
                           <div>
                             <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'سعر التكلفة الجديد ($):' : 'Unit Cost Price ($):'}</label>
-                            <input
-                              type="number"
+                            <CalcInput
                               step="0.01"
                               min="0"
                               required
@@ -1919,8 +1911,7 @@ export function PurchasesTab({
                           <div>
                             <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'الضريبة TVA (%):' : 'VAT (%):'}</label>
                             <div className="flex gap-1">
-                              <input
-                                type="number"
+                              <CalcInput
                                 step="0.01"
                                 min="0"
                                 value={item.taxRate}
@@ -1955,8 +1946,7 @@ export function PurchasesTab({
                           {/* 3. Retail Sell Price */}
                           <div>
                             <label className="block text-slate-600 font-black mb-1 text-[10px] text-[#1D9E75]">{isAr ? 'سعر البيع مفرّق الجديد ($):' : 'New Retail Sell ($):'}</label>
-                            <input
-                              type="number"
+                            <CalcInput
                               step="0.01"
                               min="0"
                               required
@@ -1969,8 +1959,7 @@ export function PurchasesTab({
                           {/* 4. Wholesale Sell Price */}
                           <div>
                             <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'سعر الجملة الجديد ($):' : 'New Wholesale Sell ($):'}</label>
-                            <input
-                              type="number"
+                            <CalcInput
                               step="0.01"
                               min="0"
                               value={item.newPriceWholesale}
@@ -1996,9 +1985,8 @@ export function PurchasesTab({
                         <div className="flex flex-wrap items-end gap-3 font-sans text-xs bg-white/60 border border-slate-150 rounded-lg p-2.5">
                           <div className="w-24">
                             <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-upc-${item.product.id}`}>{isAr ? 'حبّة بالكرتونة:' : 'Units/carton:'}</label>
-                            <input
+                            <CalcInput
                               id={`draft-upc-${item.product.id}`}
-                              type="number"
                               min="0"
                               placeholder="12"
                               value={item.unitsPerCarton || ''}
@@ -2010,9 +1998,8 @@ export function PurchasesTab({
                             <>
                               <div className="w-24">
                                 <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-cartons-${item.product.id}`}>{isAr ? 'عدد الكراتين:' : 'Cartons:'}</label>
-                                <input
+                                <CalcInput
                                   id={`draft-cartons-${item.product.id}`}
-                                  type="number"
                                   min="0"
                                   step="any"
                                   placeholder="0"
@@ -2023,9 +2010,8 @@ export function PurchasesTab({
                               </div>
                               <div className="w-28">
                                 <label className="block text-indigo-700 font-bold mb-1 text-[10px]" htmlFor={`draft-carton-price-${item.product.id}`}>{isAr ? 'سعر الكرتونة ($):' : 'Carton price ($):'}</label>
-                                <input
+                                <CalcInput
                                   id={`draft-carton-price-${item.product.id}`}
-                                  type="number"
                                   min="0"
                                   step="any"
                                   value={Number((item.costPriceUSD * item.unitsPerCarton).toFixed(2))}
@@ -2037,9 +2023,8 @@ export function PurchasesTab({
                           )}
                           <div className="w-28">
                             <label className="block text-slate-500 font-bold mb-1 text-[10px]" htmlFor={`draft-discount-${item.product.id}`}>{isAr ? 'حسم المورّد (%):' : 'Discount (%):'}</label>
-                            <input
+                            <CalcInput
                               id={`draft-discount-${item.product.id}`}
-                              type="number"
                               min="0"
                               max="100"
                               step="any"
@@ -2052,9 +2037,8 @@ export function PurchasesTab({
                           <div className="flex items-end gap-1.5">
                             <div>
                               <label className="block text-slate-500 font-bold mb-1 text-[10px]">{isAr ? 'بونص: كل' : 'Bonus: every'}</label>
-                              <input
+                              <CalcInput
                                 id={`draft-bonus-every-${item.product.id}`}
-                                type="number"
                                 min="0"
                                 placeholder="—"
                                 value={item.bonusEvery || ''}
@@ -2063,9 +2047,8 @@ export function PurchasesTab({
                               />
                             </div>
                             <span className="pb-2 text-slate-500 font-bold">{isAr ? 'بيطلع' : 'get'}</span>
-                            <input
+                            <CalcInput
                               id={`draft-bonus-free-${item.product.id}`}
-                              type="number"
                               min="0"
                               placeholder="—"
                               value={item.bonusFree || ''}
@@ -2076,9 +2059,8 @@ export function PurchasesTab({
                           </div>
                           <div className="w-28">
                             <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-${item.product.id}`}>{isAr ? 'الكمية المجانية:' : 'Free units:'}</label>
-                            <input
+                            <CalcInput
                               id={`draft-free-${item.product.id}`}
-                              type="number"
                               min="0"
                               step="any"
                               placeholder="0"
@@ -2090,9 +2072,8 @@ export function PurchasesTab({
                           {item.unitsPerCarton > 0 && (
                             <div className="w-28">
                               <label className="block text-sky-700 font-bold mb-1 text-[10px]" htmlFor={`draft-free-cartons-${item.product.id}`}>{isAr ? 'أو كراتين مجانية:' : 'or free cartons:'}</label>
-                              <input
+                              <CalcInput
                                 id={`draft-free-cartons-${item.product.id}`}
-                                type="number"
                                 min="0"
                                 step="any"
                                 placeholder="0"
@@ -2207,8 +2188,7 @@ export function PurchasesTab({
 
                                 <div className="flex items-center gap-1 flex-row-reverse">
                                   <span className="text-[8px] text-slate-400">{isAr ? 'هامش مبيع %:' : 'Margin %:'}</span>
-                                  <input
-                                    type="number"
+                                  <CalcInput
                                     min="0"
                                     max="99"
                                     placeholder="15"
@@ -2243,8 +2223,7 @@ export function PurchasesTab({
 
                                 <div className="flex items-center gap-1 flex-row-reverse">
                                   <span className="text-[8px] text-slate-400">{isAr ? 'زيادة كلفة %:' : 'Markup %:'}</span>
-                                  <input
-                                    type="number"
+                                  <CalcInput
                                     min="0"
                                     placeholder="20"
                                     value={markupInputVal}
@@ -2367,7 +2346,7 @@ export function PurchasesTab({
                       </div>
                       <div className="w-24">
                         <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-qty">{isAr ? 'الكمية:' : 'Qty:'}</label>
-                        <input id="offer-qty" type="number" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
+                        <CalcInput id="offer-qty" min="0" step="any" value={offerQty} onChange={e => setOfferQty(e.target.value)}
                           className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono font-black" placeholder="4" />
                       </div>
                       {pickedUpc > 0 && (
@@ -2378,7 +2357,7 @@ export function PurchasesTab({
                       )}
                       <div className="w-28">
                         <label className="block text-slate-600 font-bold mb-1 text-[10px]" htmlFor="offer-unit-value">{isAr ? 'قيمة الحبّة ($):' : 'Value per unit ($):'}</label>
-                        <input id="offer-unit-value" type="number" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
+                        <CalcInput id="offer-unit-value" min="0" step="any" value={offerUnitValue} onChange={e => setOfferUnitValue(e.target.value)}
                           placeholder={pickedProd ? offerDefaultUnitValue(pickedProd).toFixed(3) : '0.00'}
                           className="w-full bg-white border border-sky-200 rounded-lg p-2 text-center font-mono" />
                       </div>
