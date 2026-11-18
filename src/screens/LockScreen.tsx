@@ -18,6 +18,8 @@ interface LockScreenProps {
   isLockShaking: boolean;
   handleUnlock: () => void;
   handleLogout: () => void;
+  /** PIN mode reads a physical keyboard / number pad too (supermarkets). */
+  keyboardPin?: boolean;
 }
 
 export function LockScreen({
@@ -33,6 +35,7 @@ export function LockScreen({
   isLockShaking,
   handleUnlock,
   handleLogout,
+  keyboardPin = true,
 }: LockScreenProps) {
   // How this user unlocks: a numeric PIN on the keypad, or a password typed on the keyboard.
   // Remembered per user on this device.
@@ -52,6 +55,44 @@ export function LockScreen({
   useEffect(() => {
     if (mode === 'password') document.getElementById('lock-passcode-input')?.focus();
   }, [mode]);
+
+  // PIN mode keeps the field read-only (so a tablet does not pop its keyboard up), so a physical
+  // keyboard is read here: digits from the top row or the number pad (NumLock on or off),
+  // Backspace / Delete, Esc to clear, Enter to unlock.
+  useEffect(() => {
+    if (mode !== 'pin' || !keyboardPin) return;
+    const NUMPAD_NO_LOCK: Record<string, string> = {
+      Insert: '0', End: '1', ArrowDown: '2', PageDown: '3', ArrowLeft: '4', Clear: '5',
+      ArrowRight: '6', Home: '7', ArrowUp: '8', PageUp: '9',
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      let digit: string | null = null;
+      if (/^[0-9]$/.test(e.key)) digit = e.key;
+      else if (/^[٠-٩]$/.test(e.key)) digit = String(e.key.charCodeAt(0) - 0x0660);
+      else if (e.code.startsWith('Numpad') && NUMPAD_NO_LOCK[e.key]) digit = NUMPAD_NO_LOCK[e.key];
+      else if (/^Numpad[0-9]$/.test(e.code) && !/^Arrow|^Page|^Home|^End|^Insert/.test(e.key)) digit = e.code.slice(6);
+      if (digit !== null) {
+        e.preventDefault();
+        setLockPasscode(prev => prev + digit);
+        setLockError('');
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        setLockPasscode(prev => prev.slice(0, -1));
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setLockPasscode('');
+        setLockError('');
+      } else if (e.key === 'Enter') {
+        // the field handles its own Enter when it has focus
+        if ((e.target as HTMLElement | null)?.id === 'lock-passcode-input') return;
+        e.preventDefault();
+        handleUnlock();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mode, keyboardPin, handleUnlock, setLockPasscode, setLockError]);
 
   if (!currentUser) return null;
 

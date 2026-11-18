@@ -81,6 +81,7 @@ import { CustomersTab } from './features/customers/CustomersTab';
 import { SuppliersTab } from './features/suppliers/SuppliersTab';
 import { ReturnsWasteTab } from './features/returns-waste/ReturnsWasteTab';
 import { UsersTab } from './features/users/UsersTab';
+import { DisplayAccountPanel } from './components/DisplayAccountPanel';
 import { StockCountTab } from './features/stock-count/StockCountTab';
 import { InvoicesLogTab } from './features/invoices/InvoicesLogTab';
 import { PriceLabelsTab } from './features/price-labels/PriceLabelsTab';
@@ -99,6 +100,8 @@ import { useExcelImport } from './features/inventory/useExcelImport';
 import { usePosRegister } from './features/pos/usePosRegister';
 import { PosModernScreen } from './features/pos/PosModernScreen';
 import { PosTerminalScreen } from './features/pos/PosTerminalScreen';
+import { PosTerminalScreenClassic } from './features/pos/PosTerminalScreenClassic';
+import { AppHeaderClassic } from './components/AppHeaderClassic';
 import { AppHeader } from './components/AppHeader';
 import { Sidebar } from './components/Sidebar';
 import { AdminOnlyNotice } from './components/AdminOnlyNotice';
@@ -904,6 +907,7 @@ export default function App() {
         isLockShaking={isLockShaking}
         handleUnlock={handleUnlock}
         handleLogout={handleLogout}
+        keyboardPin={!isPhoneShop}
       />
     );
   };
@@ -983,6 +987,37 @@ export default function App() {
       </>
     );
   }
+
+  // Screen and account controls: a tab in Settings (they used to sit in the top header)
+  const displayAccountPanel = (
+    <DisplayAccountPanel
+      lang={lang}
+      SYS_DATE={SYS_DATE}
+      currentUser={currentUser}
+      handleToggleLang={handleToggleLang}
+      toggleFullScreen={toggleFullScreen}
+      theme={theme}
+      setTheme={setTheme}
+      posLayoutMode={posLayoutMode}
+      setPosLayoutMode={setPosLayoutMode}
+      globalFontScale={globalFontScale}
+      setGlobalFontScale={setGlobalFontScale}
+      globalButtonScale={globalButtonScale}
+      setGlobalButtonScale={setGlobalButtonScale}
+      globalZoomScale={globalZoomScale}
+      setGlobalZoomScale={setGlobalZoomScale}
+      onLock={() => {
+        setIsScreenLocked(true);
+        storage.setItem('pos_screen_locked', 'true');
+        setLockPasscode('');
+        setLockError('');
+        showToast('success', lang === 'ar' ? 'تم قفل الشاشة' : 'Screen locked');
+      }}
+      onSwitchShop={() => { handleLogout(); setShowShopSwitcher(true); }}
+      handleLogout={handleLogout}
+      showToast={showToast}
+    />
+  );
 
   // MAIN SYSTEM PAGE
   return (
@@ -1128,7 +1163,8 @@ export default function App() {
       )}
 
       {/* --- TOP BRAND HEADER BAR --- */}
-      <AppHeader
+      {isPhoneShop ? (
+      <AppHeaderClassic
         onSwitchShop={() => { handleLogout(); setShowShopSwitcher(true); }}
         SYS_DATE={SYS_DATE}
         lang={lang}
@@ -1159,6 +1195,20 @@ export default function App() {
         showToast={showToast}
         license={licenseState}
       />
+      ) : (
+      <AppHeader
+        lang={lang}
+        settings={settings}
+        invoices={invoices}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        posLayoutMode={posLayoutMode}
+        setShowPurchaseContactModal={setShowPurchaseContactModal}
+        onSubscribe={() => setShowSubscribe(true)}
+        subscriptionPending={!!subscriptionRequest}
+        license={licenseState}
+      />
+      )}
 
       {cloudSync.choicePending && <CloudAlignModal lang={lang} onChoose={cloudSync.resolveChoice} />}
 
@@ -1199,6 +1249,34 @@ export default function App() {
 
           {/* ACTIVE TERMINAL TAB WRAPPER */}
           {activeTab === 'pos' && posLayoutMode === 'terminal' && (
+            isPhoneShop ? (
+            <PosTerminalScreenClassic
+              register={posRegister}
+              SYS_DATE={SYS_DATE}
+              lang={lang}
+              setLang={setLang}
+              toggleFullScreen={toggleFullScreen}
+              products={products}
+              categories={posCategories}
+              settings={settings}
+              customers={customers}
+              promotions={promotions}
+              theme={theme}
+              setTheme={setTheme}
+              setPosLayoutMode={setPosLayoutMode}
+              terminalProductPage={terminalProductPage}
+              setTerminalProductPage={setTerminalProductPage}
+              terminalItemsPerPage={terminalItemsPerPage}
+              setTerminalItemsPerPage={setTerminalItemsPerPage}
+              executeWithAdminAuth={executeWithAdminAuth}
+              processedProducts={processedProducts}
+              showToast={showToast}
+              openCashDrawer={openCashDrawer}
+              handleLogout={handleLogout}
+              businessType={settings.businessType}
+              onOpenTab={tab => setActiveTab(tab as typeof activeTab)}
+            />
+            ) : (
             <PosTerminalScreen
               register={posRegister}
               SYS_DATE={SYS_DATE}
@@ -1225,6 +1303,7 @@ export default function App() {
               businessType={settings.businessType}
               onOpenTab={tab => setActiveTab(tab as typeof activeTab)}
             />
+            )
           )}
 
           {activeTab === 'pos' && posLayoutMode === 'modern' && (
@@ -1489,7 +1568,7 @@ export default function App() {
               TAB 6: USERS/EMPLOYEE CONTROLLER ()
               ========================================== */}
           {activeTab === 'users' && (
-            <div className="space-y-6" id="tab-users-settings">
+            <div className={`space-y-6 ${isPhoneShop ? '' : 'lg:flex-1 lg:min-h-0 lg:flex lg:flex-col'}`} id="tab-users-settings">
               {currentUser.role !== 'admin' ? (
                 <AdminOnlyNotice userName={currentUser?.name} />
               ) : (
@@ -1501,6 +1580,7 @@ export default function App() {
                   lang={lang}
                   showToast={showToast}
                   onDefaultAccountUpdated={handleDefaultAccountUpdated}
+                  splitScroll={!isPhoneShop}
                 />
               )}
             </div>
@@ -1536,7 +1616,10 @@ export default function App() {
           {activeTab === 'settings' && (
             <div className="space-y-6" id="tab-settings-view">
               {currentUser.role !== 'admin' ? (
-                <AdminOnlyNotice userName={currentUser?.name} />
+                <>
+                  {!isPhoneShop && displayAccountPanel}
+                  <AdminOnlyNotice userName={currentUser?.name} />
+                </>
               ) : (
                 <SettingsTab
                   licensedBusinessType={licensedBusinessType}
@@ -1547,7 +1630,8 @@ export default function App() {
                   showToast={showToast}
                   onSaveSettings={handleUpdateGeneralSettings}
                   onRecalculatePrices={handleRecalculatePricesWithMargin}
-                  displayScale={{ globalFontScale, setGlobalFontScale, globalButtonScale, setGlobalButtonScale, globalZoomScale, setGlobalZoomScale }}
+                  displayPanel={displayAccountPanel}
+                  classicSizes={isPhoneShop ? React.cloneElement(displayAccountPanel, { part: 'sizes' }) : undefined}
                   printerHardware={printerHardware}
                   spooler={{ activePrintJobs, setActivePrintJobs, addPrintJob }}
                   license={licenseState}

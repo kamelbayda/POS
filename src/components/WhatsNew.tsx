@@ -6,11 +6,17 @@ import { WHATS_NEW, WhatsNewEntry, OPEN_WHATS_NEW_EVENT, markWhatsNewSeen, unsee
  * "What's new" window: opens by itself once after an update (not over the lock screen), and
  * from the footer link at any time (then it lists every entry).
  */
+/** The entries meant for this kind of shop (App marks phone shops with html.biz-phones). */
+const forThisShop = (list: WhatsNewEntry[]) => {
+  const kind = document.documentElement.classList.contains('biz-phones') ? 'phones' : 'supermarket';
+  return list.filter(e => !e.only || e.only === kind);
+};
+
 export function WhatsNew() {
   const [entries, setEntries] = useState<WhatsNewEntry[] | null>(null);
 
   useEffect(() => {
-    const open = () => setEntries(WHATS_NEW);
+    const open = () => setEntries(forThisShop(WHATS_NEW));
     window.addEventListener(OPEN_WHATS_NEW_EVENT, open);
     const unseen = unseenWhatsNew();
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -19,7 +25,8 @@ export function WhatsNew() {
       const tryShow = () => {
         if (document.getElementById('lock-screen-container')) return;
         clearInterval(timer);
-        setEntries(unseen);
+        const mine = forThisShop(unseen);
+        if (mine.length) setEntries(mine);
       };
       timer = setInterval(tryShow, 1500);
       tryShow();

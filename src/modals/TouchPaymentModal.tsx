@@ -1,6 +1,6 @@
 import type { PosRegister } from '../features/pos/usePosRegister';
 import { motion } from 'motion/react';
-import { Printer, Delete } from 'lucide-react';
+import { Printer, Delete, X } from 'lucide-react';
 import { SystemSettings, Customer } from '../types';
 import React from 'react';
 
@@ -236,9 +236,13 @@ export function TouchPaymentModal({
             <button 
               type="button"
               onClick={() => setIsTouchPaymentModalOpen(false)}
-              className="w-full text-slate-400 hover:text-rose-600 py-1 transition text-xs font-semibold text-center block"
+              id="btn-touch-payment-cancel"
+              className={settings.businessType === 'phones'
+                ? 'w-full text-slate-400 hover:text-rose-600 py-1 transition text-xs font-semibold text-center block'
+                : 'w-full h-11 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/70 transition text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-px'}
             >
-              {lang === 'ar' ? 'إلغاء السلة ' : 'Cancel Quick Basket'}
+              {settings.businessType !== 'phones' && <X className="w-4 h-4" />}
+              {lang === 'ar' ? (settings.businessType === 'phones' ? 'إلغاء السلة ' : 'إلغاء السلة') : (settings.businessType === 'phones' ? 'Cancel Quick Basket' : 'Cancel basket')}
             </button>
           </div>
         </div>
