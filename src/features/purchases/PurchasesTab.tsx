@@ -1430,7 +1430,7 @@ export function PurchasesTab({
                       />
 
                       <div>
-                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر البيع مفرق للرف ($):' : 'Retail Price ($):'}</label>
+                        <label className="block text-slate-500 font-bold mb-1 text-[11px]">{isAr ? 'سعر البيع مفرق ($):' : 'Retail Price ($):'}</label>
                         <input 
                           type="text" 
                           inputMode="decimal"
