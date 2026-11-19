@@ -367,45 +367,44 @@ export default function App() {
 
   // Compute expired status on items (phone shops: goods have no expiry date, so never expired)
   const noExpiry = settings.businessType === 'phones';
-  const processedProducts = products.map(p => {
-    const expiryDate = new Date(p.expiryDate);
-    const currentDate = new Date(SYS_DATE);
-    const isExpired = !noExpiry && expiryDate < currentDate;
-    
-    // Near expiry is true if differences is less or equal to setting days
-    const diffTime = expiryDate.getTime() - currentDate.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const isNearExpiry = !noExpiry && !isExpired && diffDays <= settings.expiryAlertDays;
-
-    // Compute dynamic days since last sale across sales invoices
-    const matches = invoices.filter(inv => inv.items.some(item => item.productId === p.id));
-    let lastSoldDate: string | null = null;
-    let daysSinceLastSale: number | null = null;
-    
-    if (matches.length > 0) {
-      const dates = matches.map(inv => new Date(inv.date).getTime());
-      const maxTime = Math.max(...dates);
-      const latestInvoice = matches.find(inv => new Date(inv.date).getTime() === maxTime);
-      if (latestInvoice) {
-        lastSoldDate = latestInvoice.date;
-        const diffTimeSale = new Date(SYS_DATE).getTime() - new Date(lastSoldDate).getTime();
-        daysSinceLastSale = Math.floor(diffTimeSale / (1000 * 60 * 60 * 24));
+  // Worked out once per change of products, invoices or date, not on every tap: it used to scan
+  // every invoice for every product on each render, which froze big shops (2,000+ products).
+  const processedProducts = useMemo(() => {
+    const DAY = 1000 * 60 * 60 * 24;
+    const today = new Date(SYS_DATE).getTime();
+    // latest sale date per product, in one pass over the invoices
+    const lastSold = new Map<string, { time: number; date: string }>();
+    for (const inv of invoices) {
+      const t = new Date(inv.date).getTime();
+      for (const item of inv.items) {
+        const prev = lastSold.get(item.productId);
+        if (!prev || t > prev.time) lastSold.set(item.productId, { time: t, date: inv.date });
       }
     }
+    return products.map(p => {
+      const expiryTime = new Date(p.expiryDate).getTime();
+      const isExpired = !noExpiry && expiryTime < today;
+      // Near expiry is true if differences is less or equal to setting days
+      const diffDays = Math.ceil((expiryTime - today) / DAY);
+      const isNearExpiry = !noExpiry && !isExpired && diffDays <= settings.expiryAlertDays;
 
-    const isStagnant = daysSinceLastSale === null || daysSinceLastSale >= stagnantDaysThreshold;
+      const last = lastSold.get(p.id);
+      const lastSoldDate: string | null = last ? last.date : null;
+      const daysSinceLastSale: number | null = last ? Math.floor((today - new Date(last.date).getTime()) / DAY) : null;
+      const isStagnant = daysSinceLastSale === null || daysSinceLastSale >= stagnantDaysThreshold;
 
-    return {
-      ...p,
-      isExpired,
-      isNearExpiry,
-      lastSoldDate,
-      daysSinceLastSale,
-      isStagnant
-    };
-  })
-    // Products in stock first, sold-out ones after (stable: keeps the order within each group)
-    .sort((a, b) => Number(a.quantity <= 0) - Number(b.quantity <= 0));
+      return {
+        ...p,
+        isExpired,
+        isNearExpiry,
+        lastSoldDate,
+        daysSinceLastSale,
+        isStagnant
+      };
+    })
+      // Products in stock first, sold-out ones after (stable: keeps the order within each group)
+      .sort((a, b) => Number(a.quantity <= 0) - Number(b.quantity <= 0));
+  }, [products, invoices, SYS_DATE, noExpiry, settings.expiryAlertDays, stagnantDaysThreshold]);
 
   // Toast auto dismiss
   useEffect(() => {

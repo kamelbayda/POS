@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Product, StockCountItem } from '../../types';
 import { ColumnSelector } from '../../components/ColumnSelector';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
@@ -34,6 +34,11 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
   const [stockCounts, setStockCounts] = useState<StockCountItem[]>([]);
   const [onlyShowCountDiffs, setOnlyShowCountDiffs] = useState<boolean>(false);
   const [stockCountSearchQuery, setStockCountSearchQuery] = useState<string>('');
+  // A long list is drawn 100 rows at a time, so a big shop does not freeze the screen
+  const ROWS_STEP = 100;
+  const [rowsShown, setRowsShown] = useState(ROWS_STEP);
+  useEffect(() => { setRowsShown(ROWS_STEP); }, [stockCountSearchQuery, onlyShowCountDiffs, stockCountLocation]);
+  const productById = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
   const [visibleStockCols, setVisibleStockCols] = useState<{ [key: string]: boolean }>({
     val_diff: true,
     qty_diff: true,
@@ -268,7 +273,7 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
                     .filter(item => {
                       const q = stockCountSearchQuery.toLowerCase().trim();
                       if (!q) return true;
-                      const prod = products.find(p => p.id === item.productId);
+                      const prod = productById.get(item.productId);
                       return (
                         item.name.toLowerCase().includes(q) ||
                         item.barcode.toLowerCase().includes(q) ||
@@ -287,7 +292,8 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
                     );
                   }
 
-                  return list.map(item => {
+                  const hidden = list.length - rowsShown;
+                  const rows = list.slice(0, rowsShown).map(item => {
                     const diffValUSD = item.difference * item.priceUSD;
                     return (
                       <tr 
@@ -338,6 +344,22 @@ export function StockCountTab({ products, setProducts, lang, showToast }: StockC
                       </tr>
                     );
                   });
+                  if (hidden <= 0) return rows;
+                  const visibleCount = Object.values(visibleStockCols).filter(Boolean).length;
+                  return (
+                    <>
+                      {rows}
+                      <tr>
+                        <td colSpan={visibleCount} className="p-3 text-center">
+                          <button type="button" id="btn-stock-count-more" onClick={() => setRowsShown(n => n + ROWS_STEP)}
+                            className="text-xs font-black text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg px-4 py-2 cursor-pointer">
+                            {lang === 'ar' ? `عرض ${Math.min(ROWS_STEP, hidden)} صنف كمان (باقي ${hidden})` : `Show ${Math.min(ROWS_STEP, hidden)} more (${hidden} left)`}
+                          </button>
+                          <div className="text-[11px] text-slate-400 mt-1">{lang === 'ar' ? 'أو ابحث بالاسم أو امسح الباركود' : 'or search by name or scan a barcode'}</div>
+                        </td>
+                      </tr>
+                    </>
+                  );
                 })()}
               </tbody>
             </table>
