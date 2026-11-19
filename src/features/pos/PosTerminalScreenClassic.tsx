@@ -1,7 +1,7 @@
 import type { PosRegister } from './usePosRegister';
 import { ShoppingCart, Globe, Sun, Moon, Maximize, Menu, Monitor, X, Plus, Check, Lock, Percent, Truck, CreditCard, User, DollarSign, MessageSquare, Save, Trash2, Tag, Search, Home, Pin } from 'lucide-react';
 import { Product, Category, CartItem, SystemSettings, Promotion, Customer, CartSession } from '../../types';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BeeCashMark, BeeCashWordmark } from '../../components/BeeCashLogo';
 import { matchesProductSearch } from '../../lib/productSearch';
 import * as storage from '../../lib/storage';
@@ -108,6 +108,13 @@ export function PosTerminalScreenClassic({
     openTouchPayment,
   } = register;
   const [selectedCartItemId, setSelectedCartItemId] = useState<string | null>(null);
+
+  // products per section, counted once per change instead of on every tap
+  const countByCategory = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of processedProducts) { const id = categoryIdOf(p.category, categories); m.set(id, (m.get(id) || 0) + 1); }
+    return m;
+  }, [processedProducts, categories]);
 
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={`flex-1 h-full min-h-0 flex flex-col w-full font-sans overflow-hidden select-none no-print ${theme === 'dark' ? 'bg-[#121213] text-stone-100' : 'bg-slate-50 text-slate-800'}`} id="tab-pos-terminal">
@@ -908,7 +915,7 @@ export function PosTerminalScreenClassic({
                           { id: 'everything', title: lang === 'ar' ? 'كل المنتجات' : 'All products', sub: `${processedProducts.length} ${items}`, open: () => openCategory('everything') },
                           ...categories.map(cat => ({
                             id: cat.id, title: cat.name,
-                            sub: `${processedProducts.filter(p => categoryIdOf(p.category, categories) === cat.id).length} ${items}`,
+                            sub: `${countByCategory.get(cat.id) || 0} ${items}`,
                             open: () => openCategory(cat.id),
                           })),
                           ...(businessType === 'phones' && onOpenTab ? [

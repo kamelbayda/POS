@@ -12,7 +12,29 @@ const norm = (s: string) => s.trim().toLowerCase();
  */
 export function categoryIdOf(value: string | undefined, categories: Category[]): string {
   if (!value) return UNCATEGORIZED;
-  if (categories.some(c => c.id === value)) return value;
-  const v = norm(value);
-  return categories.find(c => norm(c.name) === v || norm(c.id) === v)?.id ?? UNCATEGORIZED;
+  const index = indexOf(categories);
+  if (index.ids.has(value)) return value;
+  return index.byName.get(norm(value)) ?? UNCATEGORIZED;
+}
+
+/**
+ * Lookup tables for one categories array, built once and reused: screens call categoryIdOf for
+ * every product on every render (counts per section, filters), and scanning the list each time
+ * froze big shops. Keyed by the array itself, so a changed list gets fresh tables.
+ */
+interface CategoryIndex { ids: Set<string>; byName: Map<string, string> }
+const indexes = new WeakMap<Category[], CategoryIndex>();
+function indexOf(categories: Category[]): CategoryIndex {
+  let index = indexes.get(categories);
+  if (!index) {
+    const ids = new Set(categories.map(c => c.id));
+    const byName = new Map<string, string>();
+    // same precedence as before: the first category whose name or id matches wins
+    for (const c of categories) {
+      for (const key of [norm(c.name || ''), norm(c.id)]) if (key && !byName.has(key)) byName.set(key, c.id);
+    }
+    index = { ids, byName };
+    indexes.set(categories, index);
+  }
+  return index;
 }
