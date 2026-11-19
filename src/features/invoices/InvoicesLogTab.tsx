@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Printer, Scan, Search, Trash2 } from 'lucide-react';
 import { Invoice } from '../../types';
 import { ColumnSelector } from '../../components/ColumnSelector';
@@ -16,6 +16,10 @@ interface InvoicesLogTabProps {
 
 export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang, showToast }: InvoicesLogTabProps) {
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState<string>('');
+  // A long history is drawn 100 invoices at a time, so the screen does not freeze
+  const ROWS_STEP = 100;
+  const [rowsShown, setRowsShown] = useState(ROWS_STEP);
+  useEffect(() => { setRowsShown(ROWS_STEP); }, [invoiceSearchQuery]);
   const [visibleInvLogCols, setVisibleInvLogCols] = useState<{ [key: string]: boolean }>({
     actions: true,
     cashier: true,
@@ -310,7 +314,7 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang,
                 </td>
               </tr>
             ) : (
-              filteredInvoices.map(inv => (
+              filteredInvoices.slice(0, rowsShown).map(inv => (
                 <tr key={inv.id} className="hover:bg-slate-50/50">
                   {visibleInvLogCols.actions !== false && (
                     <td className="p-3 flex items-center gap-1.5">
@@ -360,7 +364,18 @@ export function InvoicesLogTab({ invoices, onOpenInvoice, onDeleteInvoice, lang,
                     <td className="p-3 font-mono font-extrabold text-slate-900">{inv.invoiceNumber}</td>
                   )}
                 </tr>
-              ))
+              )).concat(filteredInvoices.length > rowsShown ? [
+                <tr key="more-invoices">
+                  <td colSpan={Object.values(visibleInvLogCols).filter(Boolean).length} className="p-3 text-center">
+                    <button type="button" id="btn-invoices-more" onClick={() => setRowsShown(n => n + ROWS_STEP)}
+                      className="text-xs font-black text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg px-4 py-2 cursor-pointer">
+                      {lang === 'ar'
+                        ? `عرض ${Math.min(ROWS_STEP, filteredInvoices.length - rowsShown)} فاتورة كمان (باقي ${filteredInvoices.length - rowsShown})`
+                        : `Show ${Math.min(ROWS_STEP, filteredInvoices.length - rowsShown)} more (${filteredInvoices.length - rowsShown} left)`}
+                    </button>
+                  </td>
+                </tr>,
+              ] : [])
             )}
           </tbody>
         </table>

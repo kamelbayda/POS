@@ -138,6 +138,13 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
       })
     : products; // default is all products if selection is empty
 
+  // Drawing every label (each barcode is ~100 bars) freezes a big shop: the sheet shows the first
+  // PREVIEW_LIMIT labels, and printing draws them all for the print only.
+  const PREVIEW_LIMIT = 48;
+  const [printingAll, setPrintingAll] = useState(false);
+  const shownLabels = printingAll ? finalRenderLabels : finalRenderLabels.slice(0, PREVIEW_LIMIT);
+  const hiddenLabels = finalRenderLabels.length - shownLabels.length;
+
   const handleAddProductToLabels = (prod: Product) => {
     const exists = plSelectedProducts.find(x => x.productId === prod.id);
     if (exists) {
@@ -148,7 +155,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
     showToast('success', lang === 'ar' ? `تم إضافة المنتج: ${prod.name}` : `Added ${prod.name}`);
   };
 
-  const triggerBatchPrint = () => {
+  const printNow = () => {
     const borderStyle = plShowBorders ? 'border: 1px solid #000 !important;' : 'border: none !important;';
     const customPrintStyles = `
       @media print {
@@ -212,6 +219,17 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
     `;
     printElementViaIFrame('price-labels-print-area', customPrintStyles, false);
   };
+  const triggerBatchPrint = () => {
+    if (finalRenderLabels.length > PREVIEW_LIMIT && !printingAll) { setPrintingAll(true); return; } // draw them all, then print
+    printNow();
+  };
+  // once every label is drawn, print (the print copies the sheet at once), then go back to the short preview
+  useEffect(() => {
+    if (!printingAll) return;
+    const id = requestAnimationFrame(() => { printNow(); setPrintingAll(false); });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [printingAll]);
 
   const resetPlDesign = () => {
     setPlPaperSize('custom');
@@ -911,6 +929,13 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
                 : 'Actual visual layout sheet layout matching print size'}
             </span>
 
+            {hiddenLabels > 0 && (
+              <div className="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 no-print" id="price-labels-preview-note">
+                {lang === 'ar'
+                  ? `المعاينة بتعرض أول ${shownLabels.length} بطاقة من أصل ${finalRenderLabels.length}. الطباعة بتطبعهن كلّن.`
+                  : `The preview shows the first ${shownLabels.length} of ${finalRenderLabels.length} labels. Printing prints them all.`}
+              </div>
+            )}
             {/* Printable Outer Container / Emulating standard paper size sheets */}
             <div 
               id="price-labels-print-area"
@@ -938,7 +963,7 @@ export function PriceLabelsTab({ products, settings, theme, lang, showToast }: P
                   backgroundColor: 'white'
                 }}
               >
-                {finalRenderLabels.map((p, idx) => {
+                {shownLabels.map((p, idx) => {
                   const computedPriceLBP = p.priceUSD * (settings.exchangeRate || 89500);
                   return (
                     <div

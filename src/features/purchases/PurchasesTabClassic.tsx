@@ -1746,7 +1746,7 @@ export function PurchasesTabClassic({
                       >
                         {isAr ? 'إغلاق القائمة' : 'Close'}
                       </button>
-                      <span>{isAr ? 'اختر صنفاً متاحاً لإدراجه في فاتورة الشراء:' : 'Select product to put on receipt:'}</span>
+                      <span>{isAr ? 'اختر صنفاً متاحاً لإدراجه في فاتورة الشراء:' : 'Select product to put on receipt:'}{products.length > 60 && (isAr ? ' (بيظهر أول 60، اكتب للبحث)' : ' (first 60 shown, type to search)')}</span>
                     </div>
 
                     {products
@@ -1755,6 +1755,7 @@ export function PurchasesTabClassic({
                         const s = prodSearchQuery.toLowerCase().trim();
                         return p.name.toLowerCase().includes(s) || p.barcode.includes(s) || (p.barcodes && p.barcodes.some(b => b.includes(s)));
                       })
+                      .slice(0, 60) // a big shop would draw thousands of rows and freeze; the search narrows it down
                       .map(p => (
                         <button
                           key={p.id}
