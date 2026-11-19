@@ -4,7 +4,7 @@ import { useStoredState } from '../../lib/storage';
 import { Customer, Product, Category, CartItem, SystemSettings, Promotion, CartSession } from '../../types';
 import { handleMathBlur, handleMathKeyDown } from '../../mathEvaluator';
 import { getGridColsStyle, getCardStyle } from './posGrid';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import * as storage from '../../lib/storage';
 import { matchesProductSearch } from '../../lib/productSearch';
 import { categoryIdOf } from '../../lib/categories';
@@ -106,6 +106,13 @@ export function PosModernScreen({
     const saved = storage.getItem('pos_categories_per_page');
     return saved ? parseInt(saved, 10) : 10;
   });
+
+  // products per section, counted once per change instead of on every tap
+  const countByCategory = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of processedProducts) { const id = categoryIdOf(p.category, categories); m.set(id, (m.get(id) || 0) + 1); }
+    return m;
+  }, [processedProducts, categories]);
 
   return (
     <div className={`flex-1 h-full min-h-0 flex flex-col ${lang === 'ar' ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-4 overflow-hidden`} id="tab-pos-register">
@@ -886,7 +893,7 @@ export function PosModernScreen({
                   {paginatedItems.map(item => {
                     if (item.type === 'category') {
                       const cat = item.data as Category;
-                      const count = processedProducts.filter(p => categoryIdOf(p.category, categories) === cat.id).length;
+                      const count = countByCategory.get(cat.id) || 0;
                       const cardStyle = getCardStyle(settings.posGridSize || 'auto');
                       return (
                         <div 
